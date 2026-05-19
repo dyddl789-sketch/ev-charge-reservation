@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.MemberDAO">
+
+    <select id="findMemberById" parameterType="int" resultType="com.ev.dto.MemberDTO">
+        SELECT
+            member_id AS memberId,
+            email,
+            password,
+            nickname
+        FROM member
+        WHERE member_id = #{memberId}
+    </select>
+
+</mapper>
