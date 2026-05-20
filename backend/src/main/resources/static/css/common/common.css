@@ -1,0 +1,182 @@
+/* =========================
+   Common Reset
+========================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f7f8fa;
+    color: #1f2933;
+    font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button,
+input,
+select {
+    font-family: inherit;
+}
+
+/* =========================
+   Header
+========================= */
+
+.top-header {
+    height: 68px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    display: grid;
+    grid-template-columns: 240px 1fr 260px;
+    align-items: center;
+    padding: 0 30px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #f05a00;
+}
+
+.logo-icon {
+    width: 34px;
+    height: 34px;
+    background: #f05a00;
+    color: #ffffff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.logo-text {
+    font-size: 23px;
+    font-weight: 700;
+}
+
+.top-nav {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 54px;
+}
+
+.top-nav a {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    border-bottom: 3px solid transparent;
+    color: #333333;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.top-nav a.active {
+    color: #f05a00;
+    border-bottom-color: #f05a00;
+    font-weight: 700;
+}
+
+.top-nav a:hover {
+    color: #f05a00;
+}
+
+.user-area {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 14px;
+    font-size: 15px;
+}
+
+.alarm-icon {
+    font-size: 18px;
+}
+
+.user-icon {
+    width: 34px;
+    height: 34px;
+    background: #f3f4f6;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-name {
+    font-weight: 600;
+}
+
+.arrow {
+    color: #777777;
+}
+
+/* =========================
+   Footer
+========================= */
+
+.footer {
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    padding: 22px 30px;
+}
+
+.footer-inner {
+    max-width: 1500px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer p {
+    margin: 0;
+    color: #777777;
+    font-size: 13px;
+}
+
+.footer-links {
+    display: flex;
+    gap: 20px;
+}
+
+.footer-links a {
+    color: #555555;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.footer-links a:hover {
+    color: #f05a00;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1300px) {
+    .top-header {
+        grid-template-columns: 220px 1fr;
+    }
+
+    .user-area {
+        display: none;
+    }
+}

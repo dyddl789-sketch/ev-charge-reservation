@@ -1,0 +1,420 @@
+/* =========================
+   Reservation Page
+========================= */
+
+.reservation-page {
+    min-height: 100vh;
+    background: #f7f8fa;
+}
+
+.reservation-main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 34px 36px 60px;
+}
+
+/* =========================
+   Page Title
+========================= */
+
+.page-title {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.page-title h1 {
+    margin: 0 0 10px;
+    font-size: 34px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.page-title p {
+    margin: 0;
+    font-size: 15px;
+    color: #666666;
+}
+
+.back-btn {
+    height: 44px;
+    padding: 0 24px;
+    border: 1px solid #f05a00;
+    background: #ffffff;
+    color: #f05a00;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.back-btn:hover {
+    background: #fff4ec;
+}
+
+/* =========================
+   Layout
+========================= */
+
+.reservation-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 18px;
+}
+
+.reservation-form-card,
+.reservation-summary-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.reservation-form-card {
+    padding: 30px;
+}
+
+.reservation-summary-card {
+    padding: 26px;
+    align-self: start;
+    position: sticky;
+    top: 88px;
+}
+
+/* =========================
+   Section
+========================= */
+
+.section-title {
+    margin-bottom: 28px;
+}
+
+.section-title h2,
+.summary-header h2 {
+    margin: 0 0 8px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.section-title p,
+.summary-header p {
+    margin: 0;
+    color: #777777;
+    font-size: 14px;
+}
+
+.form-section {
+    margin-bottom: 30px;
+}
+
+.form-section h3 {
+    margin: 0 0 16px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+}
+
+/* =========================
+   Station Box
+========================= */
+
+.station-box {
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: center;
+}
+
+.station-box strong {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 18px;
+    color: #111827;
+}
+
+.station-box p {
+    margin: 0;
+    color: #666666;
+    font-size: 14px;
+}
+
+.station-box span {
+    height: 30px;
+    padding: 0 12px;
+    background: #eaf7ee;
+    color: #138a43;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* =========================
+   Form
+========================= */
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333333;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    height: 46px;
+    border: 1px solid #dcdfe6;
+    padding: 0 13px;
+    outline: none;
+    font-size: 14px;
+    background: #ffffff;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #f05a00;
+    box-shadow: 0 0 0 2px rgba(240, 90, 0, 0.08);
+}
+
+.help-text {
+    margin: 6px 0 0;
+    color: #777777;
+    font-size: 12px;
+}
+
+/* =========================
+   Charger
+========================= */
+
+.charger-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.charger-option {
+    cursor: pointer;
+}
+
+.charger-option input {
+    display: none;
+}
+
+.charger-content {
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    padding: 16px;
+    min-height: 138px;
+}
+
+.charger-option input:checked + .charger-content {
+    border-color: #f05a00;
+    background: #fff7ed;
+}
+
+.charger-content strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 16px;
+    color: #111827;
+}
+
+.charger-content p {
+    margin: 0 0 14px;
+    color: #666666;
+    font-size: 13px;
+}
+
+.available {
+    height: 28px;
+    padding: 0 10px;
+    background: #eaf7ee;
+    color: #138a43;
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* =========================
+   Buttons
+========================= */
+
+.form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 26px;
+    border-top: 1px solid #eeeeee;
+}
+
+.calc-btn,
+.submit-btn {
+    height: 46px;
+    padding: 0 26px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.calc-btn {
+    border: 1px solid #f05a00;
+    background: #ffffff;
+    color: #f05a00;
+}
+
+.calc-btn:hover {
+    background: #fff4ec;
+}
+
+.submit-btn {
+    border: 1px solid #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
+
+.submit-btn:hover {
+    background: #d94f00;
+}
+
+/* =========================
+   Summary
+========================= */
+
+.summary-header {
+    margin-bottom: 22px;
+}
+
+.summary-station {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 18px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    margin-bottom: 18px;
+}
+
+.summary-icon {
+    width: 44px;
+    height: 44px;
+    background: #f05a00;
+    color: #ffffff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.summary-station strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #111827;
+    font-size: 16px;
+}
+
+.summary-station p {
+    margin: 0;
+    color: #9a3412;
+    font-size: 13px;
+}
+
+.summary-list {
+    border-top: 1px solid #eeeeee;
+}
+
+.summary-list div {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 15px 0;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.summary-list span {
+    color: #777777;
+    font-size: 14px;
+}
+
+.summary-list strong {
+    color: #111827;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: right;
+}
+
+.summary-list .cost-row strong {
+    color: #f05a00;
+    font-size: 22px;
+}
+
+.summary-notice {
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: #f9fafb;
+    border: 1px solid #eeeeee;
+    color: #666666;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.summary-notice p {
+    margin: 0;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1200px) {
+    .reservation-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .reservation-summary-card {
+        position: static;
+    }
+
+    .charger-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .reservation-main {
+        padding: 24px 16px 40px;
+    }
+
+    .page-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-buttons {
+        flex-direction: column;
+    }
+
+    .calc-btn,
+    .submit-btn {
+        width: 100%;
+    }
+}
