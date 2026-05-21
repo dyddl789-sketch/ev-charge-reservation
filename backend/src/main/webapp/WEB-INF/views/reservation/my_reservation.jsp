@@ -57,9 +57,11 @@
             <div class="filter-left">
                 <button type="button" class="filter-tab active">전체</button>
                 <button type="button" class="filter-tab">예약완료</button>
+                <button type="button" class="filter-tab">인증완료</button>
                 <button type="button" class="filter-tab">사용중</button>
                 <button type="button" class="filter-tab">완료</button>
                 <button type="button" class="filter-tab">취소</button>
+                <button type="button" class="filter-tab">노쇼</button>
             </div>
 
             <div class="filter-right">
@@ -122,8 +124,10 @@
 
                 <div class="reservation-card-actions">
                     <a href="/station/detail" class="outline-action">충전소 상세</a>
-                    <button type="button" class="outline-action">예약 변경</button>
-                    <button type="button" class="cancel-action">예약 취소</button>
+    				<a href="/reservation/form" class="outline-action">예약 변경</a>
+<!--     			나중에 DB 연결하면 reservationId로 기존 예약 정보를 조회해서 예약 폼에 채워 넣음 -->
+<!--     			<a href="/reservation/form?reservationId=1" class="outline-action">예약 변경</a> -->
+                    <button type="button" class="cancel-action reservation-cancel-btn">예약 취소</button>
                 </div>
 
             </article>
@@ -274,6 +278,46 @@
             });
 
             tab.classList.add("active");
+        });
+    });
+
+    // 예약 취소 처리
+    const cancelButtons = document.querySelectorAll(".reservation-cancel-btn");
+
+    cancelButtons.forEach(function(button) {
+        button.addEventListener("click", function() {
+            const isCancel = confirm("예약을 취소하시겠습니까?");
+
+            if (!isCancel) {
+                return;
+            }
+
+            const reservationCard = button.closest(".my-reservation-card");
+            const statusBadge = reservationCard.querySelector(".status-badge");
+            const dateBoxStrong = reservationCard.querySelector(".reservation-date-box strong");
+
+            // 상태 배지 변경
+            statusBadge.textContent = "취소";
+            statusBadge.className = "status-badge canceled";
+
+            // 카드 스타일 변경
+            reservationCard.classList.add("canceled-card");
+
+            // 우측 날짜 영역 문구 변경
+            dateBoxStrong.textContent = "취소됨";
+
+            // 예약 변경 / 예약 취소 버튼 제거
+            const actionArea = reservationCard.querySelector(".reservation-card-actions");
+            actionArea.innerHTML = `
+                <a href="/station/detail" class="outline-action">충전소 상세</a>
+                <span class="disabled-action">취소된 예약입니다</span>
+            `;
+
+            alert("예약이 취소되었습니다.");
+
+            // 나중에 DB 연결 시 여기에서 Ajax로 예약 상태 변경
+            // POST /reservation/cancel
+            // reservation.status = '취소'
         });
     });
 </script>

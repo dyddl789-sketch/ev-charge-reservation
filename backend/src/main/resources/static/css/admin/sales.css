@@ -1,0 +1,486 @@
+/* =========================
+   Sales Page Title
+========================= */
+
+.sales-title-row {
+display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 22px;
+}
+
+.sales-title-row h1 {
+margin: 0 0 8px;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+}
+
+.sales-title-row p {
+margin: 0;
+    color: #666666;
+    font-size: 14px;
+}
+
+/* =========================
+   Summary
+========================= */
+
+.sales-summary {
+display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.summary-card {
+background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0;
+    padding: 20px 22px;
+    min-height: 108px;
+    box-shadow: none;
+}
+
+.summary-card span {
+display: block;
+    margin-bottom: 10px;
+    color: #333333;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.summary-card strong {
+display: block;
+    margin-bottom: 8px;
+    color: #f05a00;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.summary-card p {
+margin: 0;
+    color: #666666;
+    font-size: 13px;
+}
+
+.summary-card em {
+color: #2563eb;
+    font-style: normal;
+    font-weight: 700;
+}
+
+/* =========================
+   Chart Layout
+========================= */
+
+.chart-grid {
+display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.chart-card {
+background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0;
+    padding: 20px 22px;
+    min-height: 270px;
+    box-shadow: none;
+}
+
+.card-header {
+display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.card-header h2 {
+margin: 0;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+}
+
+.card-header span,
+.card-header a {
+color: #555555;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.card-header a {
+color: #333333;
+    border: 1px solid #dcdfe6;
+    padding: 7px 12px;
+    background: #ffffff;
+}
+
+.card-header a:hover {
+color: #f05a00;
+    border-color: #f05a00;
+}
+
+/* =========================
+   SVG Chart
+========================= */
+
+.chart-box {
+width: 100%;
+    height: 230px;
+    border-top: 1px solid #eeeeee;
+    overflow: hidden;
+}
+
+.sales-svg-chart {
+width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.grid-line {
+stroke: #eeeeee;
+    stroke-width: 1;
+}
+
+.bar {
+fill: #f05a00;
+}
+
+.sales-line {
+stroke: #f05a00;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.line-dot {
+fill: #ffffff;
+    stroke: #f05a00;
+    stroke-width: 2;
+}
+
+.x-label {
+fill: #444444;
+    font-size: 12px;
+    font-weight: 400;
+    text-anchor: middle;
+}
+
+/* =========================
+   Table Layout
+========================= */
+
+.sales-table-grid {
+display: grid;
+    grid-template-columns: 0.9fr 1.35fr;
+    gap: 18px;
+}
+
+.table-card {
+background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0;
+    padding: 20px 22px;
+    box-shadow: none;
+}
+
+/* 카드 제목 + 전체보기 */
+.table-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.table-card-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.3;
+}
+
+/* 이용 통계 스타일처럼 텍스트형 전체 보기 */
+.section-more-link {
+    display: inline-block;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    color: #f05a00;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.section-more-link:hover {
+    color: #d94f00;
+    text-decoration: none;
+}
+
+/* =========================
+   Tables
+========================= */
+
+.rank-table,
+.sales-history-table {
+width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.rank-table th,
+.sales-history-table th {
+height: 42px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: #555555;
+    font-weight: 700;
+}
+
+.rank-table td,
+.sales-history-table td {
+height: 46px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+    color: #333333;
+    padding: 0 8px;
+    font-weight: 400;
+}
+
+.rank-table td:nth-child(2),
+.sales-history-table td:nth-child(2) {
+text-align: left;
+    padding-left: 16px;
+}
+
+.rank-badge {
+width: 28px;
+    height: 28px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.rank-badge.top {
+background: #f05a00;
+    border-color: #f05a00;
+    color: #ffffff;
+}
+
+.up-text {
+color: #f05a00 !important;
+    font-weight: 700 !important;
+}
+
+.status-badge {
+height: 26px;
+    padding: 0 10px;
+    background: #eaf7ee;
+    color: #138a43;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1400px) {
+
+    .sales-summary {
+grid-template-columns: repeat(2, 1fr);
+}
+
+    .chart-grid,
+    .sales-table-grid {
+grid-template-columns: 1fr;
+}
+
+}
+
+@media (max-width: 900px) {
+
+    .sales-title-row {
+flex-direction: column;
+        gap: 14px;
+}
+
+    
+
+    .sales-summary {
+grid-template-columns: 1fr;
+}
+
+    .chart-card,
+    .table-card {
+overflow-x: auto;
+}
+
+    .chart-box {
+min-width: 680px;
+}
+
+    .rank-table,
+    .sales-history-table {
+min-width: 900px;
+}
+
+}
+
+
+/* =========================
+   Typography Consistency
+   - admin.css의 공통 기준값과 맞춤
+========================= */
+
+.page-title-row h1,
+.sales-title-row h1,
+.detail-title-row h1 {
+    color: var(--admin-text-main);
+    font-size: var(--admin-title-size);
+    font-weight: var(--admin-title-weight);
+    letter-spacing: -0.8px;
+}
+
+.page-title-row p,
+.sales-title-row p,
+.detail-title-row p {
+    color: var(--admin-text-sub);
+    font-size: var(--admin-body-size);
+    font-weight: var(--admin-body-weight);
+}
+
+.summary-card span,
+.member-summary-card span,
+.station-summary-card span,
+.reservation-summary-card span,
+.usage-summary-card span,
+.summary-row span,
+.overview-item span {
+    color: var(--admin-text-sub);
+    font-size: var(--admin-label-size);
+    font-weight: var(--admin-label-weight);
+}
+
+.summary-card strong,
+.member-summary-card strong,
+.station-summary-card strong,
+.reservation-summary-card strong,
+.usage-summary-card strong,
+.summary-row strong {
+    color: var(--admin-primary);
+    font-size: var(--admin-number-size);
+    font-weight: var(--admin-number-weight);
+    letter-spacing: -0.5px;
+}
+
+.admin-table th,
+.member-table th,
+.station-table th,
+.reservation-table th,
+.usage-table th,
+.recent-usage-table th,
+.rank-table th,
+.sales-history-table th,
+.history-table th,
+.charger-list-preview th {
+    color: var(--admin-text-head);
+    font-size: var(--admin-table-size);
+    font-weight: var(--admin-table-head-weight);
+}
+
+.admin-table td,
+.member-table td,
+.station-table td,
+.reservation-table td,
+.usage-table td,
+.recent-usage-table td,
+.rank-table td,
+.sales-history-table td,
+.history-table td,
+.charger-list-preview td {
+    color: var(--admin-text-body);
+    font-size: var(--admin-table-size);
+    font-weight: var(--admin-table-body-weight);
+}
+
+.card-header h2,
+.usage-card-header h2,
+.detail-card h2,
+.status-history-card h2,
+.form-section h2,
+.manage-guide h2,
+.charger-list-preview h3,
+.side-card-header h2 {
+    color: var(--admin-text-main);
+    font-size: var(--admin-section-size);
+    font-weight: var(--admin-section-weight);
+}
+
+button,
+.back-btn,
+.list-btn,
+.add-station-btn,
+.detail-btn,
+.edit-btn,
+.cancel-btn,
+.start-btn,
+.receipt-btn,
+.delete-btn,
+.withdraw-btn,
+.restore-btn,
+.submit-btn,
+.reset-form-btn,
+.add-charger-btn,
+.address-btn,
+.filter-btn {
+    font-size: var(--admin-button-size);
+    font-weight: var(--admin-button-weight);
+}
+
+.status-badge,
+.type-badge,
+.member-type,
+.table-badge,
+.rank-badge {
+    font-size: var(--admin-badge-size);
+    font-weight: var(--admin-badge-weight);
+}
+
+.point-text,
+.up-text,
+.orange-text,
+.cost-text,
+.auth-code {
+    color: var(--admin-primary) !important;
+}
+
+/* 전체 보기 텍스트 링크 통일 */
+.section-more-link {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    color: #f05a00 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+}
+
+.section-more-link:hover {
+    color: #d94f00 !important;
+    text-decoration: none !important;
+}

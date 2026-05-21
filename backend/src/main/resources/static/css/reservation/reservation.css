@@ -923,3 +923,35 @@
         width: 100%;
     }
 }
+
+/* =========================
+   예약 취소
+========================= */
+
+.status-badge.canceled {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.canceled-card {
+    border-color: #d1d5db;
+    opacity: 0.82;
+}
+
+.canceled-card h2,
+.canceled-card .reservation-info-grid strong {
+    color: #6b7280;
+}
+
+.disabled-action {
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #777777;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}

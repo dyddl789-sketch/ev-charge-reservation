@@ -132,5 +132,13 @@
 <jsp:include page="/WEB-INF/views/common/footer.jsp" />
 </div>
 
+<script>
+    const msg = "${msg}";
+
+    if (msg !== "") {
+        alert(msg);
+    }
+</script>
+
 </body>
 </html>

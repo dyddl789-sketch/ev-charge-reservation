@@ -1,0 +1,440 @@
+/* =========================
+   Member Summary
+========================= */
+
+.member-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.member-summary-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 24px;
+    min-height: 120px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.member-summary-card span {
+    display: block;
+    margin-bottom: 8px;
+    color: #666666;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.member-summary-card strong {
+    color: #111827;
+    font-size: 30px;
+    font-weight: 800;
+}
+
+
+/* =========================
+   Search Card
+========================= */
+
+.member-search-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.search-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+}
+
+.search-row.second {
+    margin-top: 16px;
+}
+
+.search-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.search-group label {
+    color: #333333;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.search-group select,
+.search-group input {
+    width: 150px;
+    height: 40px;
+    border: 1px solid #dcdfe6;
+    padding: 0 12px;
+    background: #ffffff;
+    outline: none;
+}
+
+.date-wave {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    color: #777777;
+}
+
+.search-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+}
+
+.reset-btn {
+    height: 40px;
+    padding: 0 18px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.reset-btn:hover {
+    border-color: #f05a00;
+    color: #f05a00;
+}
+
+.keyword-box {
+    display: flex;
+    flex: 1;
+    gap: 10px;
+}
+
+.keyword-box input {
+    flex: 1;
+    height: 40px;
+    border: 1px solid #dcdfe6;
+    padding: 0 14px;
+    outline: none;
+}
+
+.keyword-box button {
+    width: 90px;
+    height: 40px;
+    border: 1px solid #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.keyword-box button:hover {
+    background: #d94f00;
+}
+
+/* =========================
+   Table
+========================= */
+
+.member-table-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 22px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.table-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.table-top p {
+    margin: 0;
+    color: #333333;
+    font-size: 15px;
+}
+
+.table-top strong {
+    color: #f05a00;
+}
+
+.table-top select {
+    height: 38px;
+    border: 1px solid #dcdfe6;
+    padding: 0 12px;
+    background: #ffffff;
+}
+
+.member-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.member-table th {
+    height: 44px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: #555555;
+    font-weight: 800;
+}
+
+.member-table td {
+    height: 48px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+    color: #333333;
+    padding: 0 8px;
+}
+
+.member-table input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+}
+
+.member-type,
+.status-badge {
+    min-width: 64px;
+    height: 28px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.member-type.user {
+    background: #eaf7ee;
+    color: #138a43;
+}
+
+.status-badge.active {
+    background: #eaf7ee;
+    color: #138a43;
+}
+
+.status-badge.withdraw {
+    background: #f3f4f6;
+    color: #777777;
+}
+
+.detail-btn,
+.withdraw-btn,
+.restore-btn {
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.detail-btn:hover {
+    border-color: #f05a00;
+    color: #f05a00;
+}
+
+.withdraw-btn {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.withdraw-btn:hover {
+    background: #fff1f2;
+}
+
+.restore-btn {
+    color: #555555;
+    background: #f3f4f6;
+}
+
+/* =========================
+   Pagination
+========================= */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 24px;
+}
+
+.pagination button {
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pagination button.active {
+    border-color: #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1300px) {
+    .member-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .search-row {
+        flex-wrap: wrap;
+    }
+
+    .search-actions {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 900px) {
+
+    .member-table-card {
+        overflow-x: auto;
+    }
+
+    .member-table {
+        min-width: 1100px;
+    }
+}
+
+/* =========================
+   Typography Consistency
+   - admin.css의 공통 기준값과 맞춤
+========================= */
+
+.page-title-row h1,
+.sales-title-row h1,
+.detail-title-row h1 {
+    color: var(--admin-text-main);
+    font-size: var(--admin-title-size);
+    font-weight: var(--admin-title-weight);
+    letter-spacing: -0.8px;
+}
+
+.page-title-row p,
+.sales-title-row p,
+.detail-title-row p {
+    color: var(--admin-text-sub);
+    font-size: var(--admin-body-size);
+    font-weight: var(--admin-body-weight);
+}
+
+.summary-card span,
+.member-summary-card span,
+.station-summary-card span,
+.reservation-summary-card span,
+.usage-summary-card span,
+.summary-row span,
+.overview-item span {
+    color: var(--admin-text-sub);
+    font-size: var(--admin-label-size);
+    font-weight: var(--admin-label-weight);
+}
+
+.summary-card strong,
+.member-summary-card strong,
+.station-summary-card strong,
+.reservation-summary-card strong,
+.usage-summary-card strong,
+.summary-row strong {
+    color: var(--admin-primary);
+    font-size: var(--admin-number-size);
+    font-weight: var(--admin-number-weight);
+    letter-spacing: -0.5px;
+}
+
+.admin-table th,
+.member-table th,
+.station-table th,
+.reservation-table th,
+.usage-table th,
+.recent-usage-table th,
+.rank-table th,
+.sales-history-table th,
+.history-table th,
+.charger-list-preview th {
+    color: var(--admin-text-head);
+    font-size: var(--admin-table-size);
+    font-weight: var(--admin-table-head-weight);
+}
+
+.admin-table td,
+.member-table td,
+.station-table td,
+.reservation-table td,
+.usage-table td,
+.recent-usage-table td,
+.rank-table td,
+.sales-history-table td,
+.history-table td,
+.charger-list-preview td {
+    color: var(--admin-text-body);
+    font-size: var(--admin-table-size);
+    font-weight: var(--admin-table-body-weight);
+}
+
+.card-header h2,
+.usage-card-header h2,
+.detail-card h2,
+.status-history-card h2,
+.form-section h2,
+.manage-guide h2,
+.charger-list-preview h3,
+.side-card-header h2 {
+    color: var(--admin-text-main);
+    font-size: var(--admin-section-size);
+    font-weight: var(--admin-section-weight);
+}
+
+button,
+.back-btn,
+.list-btn,
+.add-station-btn,
+.detail-btn,
+.edit-btn,
+.cancel-btn,
+.start-btn,
+.receipt-btn,
+.delete-btn,
+.withdraw-btn,
+.restore-btn,
+.submit-btn,
+.reset-form-btn,
+.add-charger-btn,
+.address-btn,
+.filter-btn {
+    font-size: var(--admin-button-size);
+    font-weight: var(--admin-button-weight);
+}
+
+.status-badge,
+.type-badge,
+.member-type,
+.table-badge,
+.rank-badge {
+    font-size: var(--admin-badge-size);
+    font-weight: var(--admin-badge-weight);
+}
+
+.point-text,
+.up-text,
+.orange-text,
+.cost-text,
+.auth-code {
+    color: var(--admin-primary) !important;
+}

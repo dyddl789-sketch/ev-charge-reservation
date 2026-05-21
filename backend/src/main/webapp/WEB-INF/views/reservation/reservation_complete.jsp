@@ -28,14 +28,20 @@
                 <p class="complete-desc">
                     선택한 충전소와 충전기에 대한 예약이 정상적으로 등록되었습니다.
                 </p>
-
+					
                 <div class="complete-station-box">
                     <div>
                         <strong>부산 사상 EV 충전소</strong>
                         <p>부산 사상구 괘법동 518-1</p>
                     </div>
                 </div>
-
+				
+				<div class="auth-code-box">
+				    <span>예약 인증 코드</span>
+				    <strong>EV-4821</strong>
+				    <p>충전소 도착 후 인증 코드 입력 시 충전이 가능합니다.</p>
+				</div>
+				
                 <div class="complete-summary">
 
                     <div>

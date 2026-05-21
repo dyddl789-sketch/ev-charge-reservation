@@ -6,7 +6,7 @@
 <head>
 <meta charset="UTF-8">
 <title>EV Charge 로그인</title>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/member/member.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/member/login.css">
 </head>
 <body>
 
