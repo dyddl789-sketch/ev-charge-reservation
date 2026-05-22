@@ -1,0 +1,658 @@
+/* =========================
+   Reset
+========================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f7f8fa;
+    color: #111827;
+    font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button,
+input,
+select {
+    font-family: inherit;
+}
+
+/* =========================
+   Page / Header
+========================= */
+
+.admin-page {
+    min-height: 100vh;
+    background: #f7f8fa;
+}
+
+.admin-top-header {
+    height: 68px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    align-items: center;
+    padding: 0 30px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.admin-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #f05a00;
+}
+
+.logo-icon {
+    width: 34px;
+    height: 34px;
+    background: #f05a00;
+    color: #ffffff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.logo-text {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.admin-top-nav {
+    height: 100%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 42px;
+}
+
+.admin-top-nav a {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    color: #333333;
+    font-size: 15px;
+    font-weight: 600;
+    border-bottom: 3px solid transparent;
+}
+
+.admin-top-nav a:hover,
+.admin-top-nav a.active {
+    color: #f05a00;
+}
+
+.admin-top-nav a.active {
+    border-bottom-color: #f05a00;
+    font-weight: 800;
+}
+
+/* =========================
+   Layout / Sidebar
+========================= */
+
+.admin-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 68px);
+}
+
+.admin-sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    padding: 22px 16px;
+}
+
+.admin-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.dashboard-link {
+    height: 44px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    color: #333333;
+    font-size: 15px;
+    font-weight: 800;
+    border: 1px solid transparent;
+}
+
+.dashboard-link.active,
+.dashboard-link:hover {
+    color: #f05a00;
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.menu-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.menu-group p {
+    margin: 0 0 4px;
+    padding: 0 8px;
+    color: #111827;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.menu-group a {
+    height: 36px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    color: #555555;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+
+.menu-group a:hover,
+.menu-group a.active {
+    color: #f05a00;
+    background: #fff7ed;
+}
+
+/* =========================
+   Content
+========================= */
+
+.admin-content {
+    min-width: 0;
+    padding: 32px 36px 60px;
+}
+
+.admin-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.admin-title-row h1 {
+    margin: 0 0 8px;
+    color: #111827;
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.admin-title-row p {
+    margin: 0;
+    color: #666666;
+    font-size: 15px;
+}
+
+.list-btn {
+    height: 44px;
+    padding: 0 20px;
+    background: #ffffff;
+    border: 1px solid #f05a00;
+    color: #f05a00;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+}
+
+.list-btn:hover {
+    background: #fff7ed;
+}
+
+/* =========================
+   Manage Layout
+========================= */
+
+.manage-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 18px;
+}
+
+.station-form,
+.manage-guide {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 28px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.form-section {
+    margin-bottom: 32px;
+}
+
+.form-section h2,
+.manage-guide h2 {
+    margin: 0 0 20px;
+    color: #111827;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px 20px;
+}
+
+.form-group.full {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333333;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    height: 44px;
+    border: 1px solid #dcdfe6;
+    padding: 0 12px;
+    background: #ffffff;
+    outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #f05a00;
+    box-shadow: 0 0 0 2px rgba(240, 90, 0, 0.08);
+}
+
+.help-text {
+    margin: 6px 0 0;
+    color: #777777;
+    font-size: 12px;
+}
+
+.address-row {
+    display: flex;
+    gap: 10px;
+}
+
+.address-row input {
+    flex: 1;
+}
+
+.address-btn {
+    width: 110px;
+    height: 44px;
+    border: 1px solid #f05a00;
+    background: #ffffff;
+    color: #f05a00;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.address-btn:hover {
+    background: #fff7ed;
+}
+
+/* =========================
+   Charger
+========================= */
+
+.charger-form-box {
+    border: 1px solid #eeeeee;
+    background: #f9fafb;
+    padding: 20px;
+}
+
+.charger-add-area {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 18px;
+}
+
+.add-charger-btn {
+    height: 42px;
+    padding: 0 18px;
+    border: 1px solid #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.add-charger-btn:hover {
+    background: #d94f00;
+}
+
+.charger-list-preview {
+    margin-top: 20px;
+}
+
+.charger-list-preview h3 {
+    margin: 0 0 12px;
+    color: #111827;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.charger-list-preview table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.charger-list-preview th {
+    height: 42px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: #555555;
+    font-weight: 800;
+}
+
+.charger-list-preview td {
+    height: 46px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+    color: #333333;
+}
+
+.status-badge {
+    height: 28px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.status-badge.active {
+    background: #eaf7ee;
+    color: #138a43;
+}
+
+/* =========================
+   Notice / Buttons / Guide
+========================= */
+
+.form-notice {
+    padding: 14px 16px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.form-notice p {
+    margin: 0;
+}
+
+.form-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 28px;
+    border-top: 1px solid #eeeeee;
+}
+
+.submit-btn,
+.reset-form-btn {
+    width: 140px;
+    height: 44px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.submit-btn {
+    border-color: #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
+
+.submit-btn:hover {
+    background: #d94f00;
+}
+
+.reset-form-btn:hover {
+    border-color: #f05a00;
+    color: #f05a00;
+}
+
+.manage-guide ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #555555;
+    font-size: 14px;
+    line-height: 1.9;
+}
+
+.guide-box {
+    margin-top: 24px;
+    padding: 16px;
+    background: #f9fafb;
+    border: 1px solid #eeeeee;
+}
+
+.guide-box strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #111827;
+}
+
+.guide-box p {
+    margin: 0;
+    color: #666666;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1300px) {
+    .manage-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 900px) {
+    .admin-top-header {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding: 18px;
+        gap: 14px;
+    }
+
+    .admin-top-nav {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-sidebar {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .admin-content {
+        padding: 24px 16px 40px;
+    }
+
+    .admin-title-row {
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .address-row {
+        flex-direction: column;
+    }
+
+    .address-btn {
+        width: 100%;
+    }
+
+    .charger-list-preview {
+        overflow-x: auto;
+    }
+
+    .charger-list-preview table {
+        min-width: 700px;
+    }
+}
+
+
+/* =========================
+   Typography Consistency
+   - admin.css의 공통 기준값과 맞춤
+========================= */
+
+.page-title-row h1,
+.sales-title-row h1,
+.detail-title-row h1 {
+    color: var(--admin-text-main);
+    font-size: var(--admin-title-size);
+    font-weight: var(--admin-title-weight);
+    letter-spacing: -0.8px;
+}
+
+.page-title-row p,
+.sales-title-row p,
+.detail-title-row p {
+    color: var(--admin-text-sub);
+    font-size: var(--admin-body-size);
+    font-weight: var(--admin-body-weight);
+}
+
+.summary-card span,
+.member-summary-card span,
+.station-summary-card span,
+.reservation-summary-card span,
+.usage-summary-card span,
+.summary-row span,
+.overview-item span {
+    color: var(--admin-text-sub);
+    font-size: var(--admin-label-size);
+    font-weight: var(--admin-label-weight);
+}
+
+.summary-card strong,
+.member-summary-card strong,
+.station-summary-card strong,
+.reservation-summary-card strong,
+.usage-summary-card strong,
+.summary-row strong {
+    color: var(--admin-primary);
+    font-size: var(--admin-number-size);
+    font-weight: var(--admin-number-weight);
+    letter-spacing: -0.5px;
+}
+
+.admin-table th,
+.member-table th,
+.station-table th,
+.reservation-table th,
+.usage-table th,
+.recent-usage-table th,
+.rank-table th,
+.sales-history-table th,
+.history-table th,
+.charger-list-preview th {
+    color: var(--admin-text-head);
+    font-size: var(--admin-table-size);
+    font-weight: var(--admin-table-head-weight);
+}
+
+.admin-table td,
+.member-table td,
+.station-table td,
+.reservation-table td,
+.usage-table td,
+.recent-usage-table td,
+.rank-table td,
+.sales-history-table td,
+.history-table td,
+.charger-list-preview td {
+    color: var(--admin-text-body);
+    font-size: var(--admin-table-size);
+    font-weight: var(--admin-table-body-weight);
+}
+
+.card-header h2,
+.usage-card-header h2,
+.detail-card h2,
+.status-history-card h2,
+.form-section h2,
+.manage-guide h2,
+.charger-list-preview h3,
+.side-card-header h2 {
+    color: var(--admin-text-main);
+    font-size: var(--admin-section-size);
+    font-weight: var(--admin-section-weight);
+}
+
+button,
+.back-btn,
+.list-btn,
+.add-station-btn,
+.detail-btn,
+.edit-btn,
+.cancel-btn,
+.start-btn,
+.receipt-btn,
+.delete-btn,
+.withdraw-btn,
+.restore-btn,
+.submit-btn,
+.reset-form-btn,
+.add-charger-btn,
+.address-btn,
+.filter-btn {
+    font-size: var(--admin-button-size);
+    font-weight: var(--admin-button-weight);
+}
+
+.status-badge,
+.type-badge,
+.member-type,
+.table-badge,
+.rank-badge {
+    font-size: var(--admin-badge-size);
+    font-weight: var(--admin-badge-weight);
+}
+
+.point-text,
+.up-text,
+.orange-text,
+.cost-text,
+.auth-code {
+    color: var(--admin-primary) !important;
+}
