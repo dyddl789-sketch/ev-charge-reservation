@@ -1,4 +1,4 @@
-package com.ev.controller;
+package com.ev.controller.user;
 
 import java.util.HashMap;
 
@@ -11,18 +11,18 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/vehicle")
-public class VehicleController {
+public class EvVehicleController {
 	
 	// 내 차량 목록 화면
     @GetMapping("/list")
     public String vehicleList() {
-        return "vehicle/vehicle_list";
+        return "user/vehicle/vehicle_list";
     }
 
     // 차량 등록 화면
     @GetMapping("/register")
     public String vehicleRegister() {
-        return "vehicle/vehicle_register";
+        return "user/vehicle/vehicle_register";
     }
     
     // 차량 등록 처리

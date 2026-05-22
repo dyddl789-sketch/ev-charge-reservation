@@ -1,4 +1,4 @@
-package com.ev.controller;
+package com.ev.controller.user;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -7,10 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 
 @Controller
 @Slf4j
-public class MainController {
+public class EvMainController {
 	
 	@GetMapping("/main")
 	public String main() {
-			return "main/main";
+			return "user/main/main";
 	}
 }
