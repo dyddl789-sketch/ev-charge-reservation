@@ -1,4 +1,4 @@
-package com.ev.controller;
+package com.ev.controller.user;
 
 import java.util.HashMap;
 
@@ -11,12 +11,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/reservation")
-public class ReservationController {
-
+public class EvReservationController {
+	
+	
+	// 예약 메인 화면
+    @GetMapping("")
+    public String reservation() {
+        return "user/reservation/reservation";
+    }
+    
     // 예약하기 화면
     @GetMapping("/form")
     public String reservationForm() {
-        return "reservation/reservation_form";
+        return "user/reservation/reservation_form";
     }
 
     // 예약 확정 처리
@@ -28,18 +35,18 @@ public class ReservationController {
 
         model.addAttribute("reservation", param);
 
-        return "reservation/reservation_complete";
+        return "user/reservation/reservation_complete";
     }
 
     // 예약 완료 화면 직접 확인용
     @GetMapping("/complete")
     public String reservationComplete() {
-        return "reservation/reservation_complete";
+        return "user/reservation/reservation_complete";
     }
 
     // 내 예약 화면
     @GetMapping("/my")
     public String myReservation() {
-        return "reservation/my_reservation";
+        return "user/reservation/my_reservation";
     }
 }
