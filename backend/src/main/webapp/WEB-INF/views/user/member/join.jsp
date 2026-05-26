@@ -1,146 +1,134 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 
+<%-- JSTL 사용을 위한 태그 라이브러리 --%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+
+<%--
+    사용자 공통 헤더 include
+
+    절대 경로로 include하면 JSP 위치가 바뀌어도 깨질 가능성이 적다.
+--%>
+<%@ include file="/WEB-INF/views/common/header.jsp" %>
+
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>EV Charge 회원가입</title>
+
+<%-- 공통 CSS --%>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/common/common.css">
+
+<%-- 회원가입/로그인 CSS --%>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/member/join.css">
 </head>
 <body>
 
-<div class="join-page">
+<main class="join-page">
 
-    <div class="join-card">
+    <section class="join-card">
 
-        <div class="join-header">
-            <h1>회원가입</h1>
-            <p>EV Charge 서비스를 이용하기 위해 회원 정보를 입력하세요.</p>
-        </div>
+        <h1>회원가입</h1>
+        <p>EV Charge 서비스를 이용하기 위한 계정을 생성합니다.</p>
 
-        <form action="/member/joinProcess" method="post" class="join-form" onsubmit="return joinSubmit();">
+        <%--
+            회원가입 실패 메시지 출력 영역
 
-            <!-- DB 기본값 처리용 -->
-            <input type="hidden" name="userType" value="USER">
-            <input type="hidden" name="loginType" value="LOCAL">
-            <input type="hidden" name="status" value="ACTIVE">
+            Controller에서
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+            로 전달한 값을 출력한다.
+        --%>
+        <c:if test="${not empty errorMsg}">
+            <div class="error-message">${errorMsg}</div>
+        </c:if>
 
-            <!-- 아이디 -->
+        <%--
+            회원가입 form
+
+            action:
+            POST /member/join 요청을 보낸다.
+
+            중요:
+            input의 name 값은 MemberDTO의 필드명과 같아야 한다.
+        --%>
+        <form action="${pageContext.request.contextPath}/member/join" method="post">
+
+            <%--
+                MemberDTO.userId로 자동 매핑
+                DB 컬럼: user_id
+            --%>
             <div class="form-group">
-                <label for="userId">아이디</label>
-                <span class="guide-text">로그인에 사용할 아이디입니다.</span>
-
-                <div class="id-row">
-                    <input type="text" id="userId" name="userId" placeholder="아이디 입력 (4~20자)">
-                    <button type="button" class="check-btn">중복 확인</button>
-                </div>
+                <label>아이디</label>
+                <input type="text" name="userId" placeholder="아이디를 입력하세요." required>
             </div>
 
-            <!-- 비밀번호 -->
+            <%--
+                MemberDTO.password로 자동 매핑
+                DB 컬럼: password
+            --%>
             <div class="form-group">
-                <label for="password">비밀번호</label>
-                <span class="guide-text">소셜 로그인 회원은 비밀번호가 없을 수 있습니다.</span>
-
-                <input type="password" id="password" name="password"
-                       placeholder="비밀번호 입력 (8~20자)">
+                <label>비밀번호</label>
+                <input type="password" name="password" placeholder="비밀번호를 입력하세요." required>
             </div>
 
-            <!-- 비밀번호 확인 -->
+            <%--
+                MemberDTO.memberName으로 자동 매핑
+                DB 컬럼: member_name
+            --%>
             <div class="form-group">
-                <label for="passwordCheck">비밀번호 확인</label>
-                <span class="error-text" id="passwordError">비밀번호가 일치하지 않습니다.</span>
-
-                <input type="password" id="passwordCheck" name="passwordCheck"
-                       placeholder="비밀번호 재입력">
+                <label>이름</label>
+                <input type="text" name="memberName" placeholder="이름을 입력하세요." required>
             </div>
 
-            <!-- 이름 -->
+            <%--
+                MemberDTO.nickname으로 자동 매핑
+                DB 컬럼: nickname
+            --%>
             <div class="form-group">
-                <label for="memberName">이름</label>
-                <input type="text" id="memberName" name="memberName" placeholder="이름을 입력해주세요">
+                <label>닉네임</label>
+                <input type="text" name="nickname" placeholder="닉네임을 입력하세요.">
             </div>
 
-            <!-- 닉네임 -->
+            <%--
+                MemberDTO.phone으로 자동 매핑
+                DB 컬럼: phone
+
+                phone은 DB에서 unique지만 null 가능하다.
+            --%>
             <div class="form-group">
-                <label for="nickname">닉네임</label>
-                <input type="text" id="nickname" name="nickname" placeholder="닉네임을 입력해주세요">
+                <label>휴대폰 번호</label>
+                <input type="text" name="phone" placeholder="010-1234-5678">
             </div>
 
-            <!-- 전화번호 -->
+            <%--
+                MemberDTO.email로 자동 매핑
+                DB 컬럼: email
+
+                email은 DB에서 not null + unique이므로 필수 입력
+            --%>
             <div class="form-group">
-                <label for="phone">전화번호</label>
-                <input type="text" id="phone" name="phone" placeholder="01012345678">
+                <label>이메일</label>
+                <input type="email" name="email" placeholder="example@email.com" required>
             </div>
 
-            <!-- 이메일 -->
-            <div class="form-group">
-                <label for="email">이메일</label>
-                <input type="email" id="email" name="email" placeholder="example@email.com">
-            </div>
-
-            <div class="button-row">
-                <button type="submit" class="submit-btn">가입하기</button>
-                <a href="/member/login" class="cancel-btn">가입취소</a>
-            </div>
+            <button type="submit" class="join-btn">회원가입</button>
 
         </form>
 
-    </div>
+        <div class="join-bottom">
+            <span>이미 계정이 있으신가요?</span>
 
-</div>
+            <%--
+                로그인 화면으로 이동
+                GET /member/login
+            --%>
+            <a href="${pageContext.request.contextPath}/member/login">로그인</a>
+        </div>
 
-<script>
-    function joinSubmit() {
-        const userId = document.getElementById("userId").value.trim();
-        const password = document.getElementById("password").value;
-        const passwordCheck = document.getElementById("passwordCheck").value;
-        const memberName = document.getElementById("memberName").value.trim();
-        const phone = document.getElementById("phone").value.trim();
-        const email = document.getElementById("email").value.trim();
-        const passwordError = document.getElementById("passwordError");
+    </section>
 
-        passwordError.style.display = "none";
-
-        if (userId === "") {
-            alert("아이디를 입력해주세요.");
-            document.getElementById("userId").focus();
-            return false;
-        }
-
-        if (password === "") {
-            alert("비밀번호를 입력해주세요.");
-            document.getElementById("password").focus();
-            return false;
-        }
-
-        if (password !== passwordCheck) {
-            passwordError.style.display = "inline-block";
-            document.getElementById("passwordCheck").focus();
-            return false;
-        }
-
-        if (memberName === "") {
-            alert("이름을 입력해주세요.");
-            document.getElementById("memberName").focus();
-            return false;
-        }
-
-        if (phone === "") {
-            alert("전화번호를 입력해주세요.");
-            document.getElementById("phone").focus();
-            return false;
-        }
-
-        if (email === "") {
-            alert("이메일을 입력해주세요.");
-            document.getElementById("email").focus();
-            return false;
-        }
-
-        return true;
-    }
-</script>
+</main>
 
 </body>
 </html>

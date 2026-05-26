@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>    
 <!DOCTYPE html>
 <html>
 <head>
@@ -19,7 +20,14 @@
         <aside class="left-panel">
 
             <section class="welcome-card">
-                <h1>홍길동 님, 안녕하세요!</h1>
+                <c:choose>
+				    <c:when test="${not empty sessionScope.loginMemberName}">
+				        <h2>${sessionScope.loginMemberName} 님, 안녕하세요!</h2>
+				    </c:when>
+				    <c:otherwise>
+				        <h2>비회원 님, 안녕하세요!</h2>
+				    </c:otherwise>
+				</c:choose>
                 <p>내 주변 최적의 충전소와 예약 정보를 확인해 보세요.</p>
 
                 <div class="welcome-buttons">
@@ -297,6 +305,15 @@
     </main>
 <jsp:include page="/WEB-INF/views/common/footer.jsp" />
 </div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const authMsg = params.get("authMsg");
+
+    if (authMsg === "adminOnly") {
+        alert("관리자만 접근할 수 있습니다.");
+    }
+</script>
 
 </body>
 </html>

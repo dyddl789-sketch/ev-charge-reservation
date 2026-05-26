@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
-
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -28,6 +28,13 @@
             <div class="login-header">
                 <h2>로그인</h2>
                 <p>서비스를 이용하려면 로그인하세요.</p>
+                <c:if test="${not empty errorMsg}">
+				    <div class="error-message">${errorMsg}</div>
+				</c:if>
+				
+				<c:if test="${not empty msg}">
+				    <div class="success-message">${msg}</div>
+				</c:if>
             </div>
 
          <!-- 사용자 / 관리자 선택 -->
@@ -37,7 +44,7 @@
 		</div>
 
             <!-- 로그인 폼 -->
-            <form action="/member/loginProcess" method="post" class="login-form">
+            <form action="${pageContext.request.contextPath}/login" method="post" class="login-form">
 				
 				<!-- 일반회원 / 관리자 구분값 -->
     			<input type="hidden" name="userType" id="userType" value="USER">
@@ -87,7 +94,13 @@
     const tabButtons = document.querySelectorAll(".tab-btn");
     const userTypeInput = document.getElementById("userType");
     const loginGuideText = document.querySelector(".login-header p");
+    const params = new URLSearchParams(window.location.search);
+    const authMsg = params.get("authMsg");
 
+    if (authMsg === "loginRequired") {
+        alert("로그인이 필요한 페이지입니다.");
+    }
+    
     tabButtons.forEach(function(button) {
         button.addEventListener("click", function() {
             // 모든 탭 active 제거
@@ -114,3 +127,8 @@
 
 </body>
 </html>
+
+
+
+
+
