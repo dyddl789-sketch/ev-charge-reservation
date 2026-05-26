@@ -108,6 +108,9 @@ create table vehicle_model (
 
 comment on table vehicle_model is '전기차 모델 기본 정보를 저장하는 마스터 테이블';
 
+alter table vehicle_model
+add column image_url varchar(500);
+
 ------------------------------------------------------------------------------------------------------------------------
 -- 사용자 등록 차량
 create table vehicle (
@@ -138,6 +141,13 @@ create table vehicle (
 );
 
 comment on table vehicle is '회원이 등록한 전기차 정보를 저장하는 테이블';
+
+--논리삭제
+alter table vehicle
+add column is_deleted boolean not null default false;
+--논리삭제시간
+alter table vehicle
+add column deleted_at timestamp;
 
 ------------------------------------------------------------------------------------------------------------------------
 -- 충전소
