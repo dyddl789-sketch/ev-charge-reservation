@@ -1,0 +1,957 @@
+/* =========================
+   Reservation Page
+========================= */
+
+.reservation-page {
+    min-height: 100vh;
+    background: #f7f8fa;
+}
+
+.reservation-main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 34px 36px 60px;
+}
+
+/* =========================
+   Page Title
+========================= */
+
+.page-title {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.page-title h1 {
+    margin: 0 0 10px;
+    font-size: 34px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.page-title p {
+    margin: 0;
+    font-size: 15px;
+    color: #666666;
+}
+
+.back-btn {
+    height: 44px;
+    padding: 0 24px;
+    border: 1px solid #f05a00;
+    background: #ffffff;
+    color: #f05a00;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.back-btn:hover {
+    background: #fff4ec;
+}
+
+/* =========================
+   Layout
+========================= */
+
+.reservation-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 18px;
+}
+
+.reservation-form-card,
+.reservation-summary-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.reservation-form-card {
+    padding: 30px;
+}
+
+.reservation-summary-card {
+    padding: 26px;
+    align-self: start;
+    position: sticky;
+    top: 88px;
+}
+
+/* =========================
+   Section
+========================= */
+
+.section-title {
+    margin-bottom: 28px;
+}
+
+.section-title h2,
+.summary-header h2 {
+    margin: 0 0 8px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.section-title p,
+.summary-header p {
+    margin: 0;
+    color: #777777;
+    font-size: 14px;
+}
+
+.form-section {
+    margin-bottom: 30px;
+}
+
+.form-section h3 {
+    margin: 0 0 16px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+}
+
+/* =========================
+   Station Box
+========================= */
+
+.station-box {
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: center;
+}
+
+.station-box strong {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 18px;
+    color: #111827;
+}
+
+.station-box p {
+    margin: 0;
+    color: #666666;
+    font-size: 14px;
+}
+
+.station-box span {
+    height: 30px;
+    padding: 0 12px;
+    background: #eaf7ee;
+    color: #138a43;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* =========================
+   Form
+========================= */
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333333;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    height: 46px;
+    border: 1px solid #dcdfe6;
+    padding: 0 13px;
+    outline: none;
+    font-size: 14px;
+    background: #ffffff;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #f05a00;
+    box-shadow: 0 0 0 2px rgba(240, 90, 0, 0.08);
+}
+
+.help-text {
+    margin: 6px 0 0;
+    color: #777777;
+    font-size: 12px;
+}
+
+/* =========================
+   Charger
+========================= */
+
+.charger-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.charger-option {
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    padding: 16px;
+    cursor: pointer;
+    position: relative;
+}
+
+.charger-option input {
+    position: absolute;
+    right: 14px;
+    top: 14px;
+}
+
+.charger-option:has(input:checked) {
+    border-color: #f05a00;
+    background: #fff7ed;
+}
+
+.charger-option strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 16px;
+    color: #111827;
+}
+
+.charger-option p {
+    margin: 0 0 14px;
+    color: #666666;
+    font-size: 13px;
+}
+
+.available {
+    height: 28px;
+    padding: 0 10px;
+    background: #eaf7ee;
+    color: #138a43;
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* =========================
+   Buttons
+========================= */
+
+.form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 26px;
+    border-top: 1px solid #eeeeee;
+}
+
+.calc-btn,
+.submit-btn {
+    height: 46px;
+    padding: 0 26px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.calc-btn {
+    border: 1px solid #f05a00;
+    background: #ffffff;
+    color: #f05a00;
+}
+
+.calc-btn:hover {
+    background: #fff4ec;
+}
+
+.submit-btn {
+    border: 1px solid #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
+
+.submit-btn:hover {
+    background: #d94f00;
+}
+
+/* =========================
+   Summary
+========================= */
+
+.summary-header {
+    margin-bottom: 22px;
+}
+
+.summary-station {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 18px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    margin-bottom: 18px;
+}
+
+.summary-icon {
+    width: 44px;
+    height: 44px;
+    background: #f05a00;
+    color: #ffffff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.summary-station strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #111827;
+    font-size: 16px;
+}
+
+.summary-station p {
+    margin: 0;
+    color: #9a3412;
+    font-size: 13px;
+}
+
+.summary-list {
+    border-top: 1px solid #eeeeee;
+}
+
+.summary-list div {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 15px 0;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.summary-list span {
+    color: #777777;
+    font-size: 14px;
+}
+
+.summary-list strong {
+    color: #111827;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: right;
+}
+
+.summary-list .cost-row strong {
+    color: #f05a00;
+    font-size: 22px;
+}
+
+.summary-notice {
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: #f9fafb;
+    border: 1px solid #eeeeee;
+    color: #666666;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.summary-notice p {
+    margin: 0;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1200px) {
+    .reservation-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .reservation-summary-card {
+        position: static;
+    }
+
+    .charger-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .reservation-main {
+        padding: 24px 16px 40px;
+    }
+
+    .page-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-buttons {
+        flex-direction: column;
+    }
+
+    .calc-btn,
+    .submit-btn {
+        width: 100%;
+    }
+}
+/* =========================
+   My Reservation Page
+========================= */
+
+.my-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.my-summary-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 22px 24px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.my-summary-card span {
+    display: block;
+    margin-bottom: 8px;
+    color: #777777;
+    font-size: 14px;
+}
+
+.my-summary-card strong {
+    display: block;
+    color: #111827;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.reservation-filter-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.filter-left {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.filter-tab {
+    height: 38px;
+    padding: 0 16px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.filter-tab.active {
+    border-color: #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
+
+.filter-right input {
+    height: 38px;
+    border: 1px solid #dcdfe6;
+    padding: 0 12px;
+    font-size: 14px;
+}
+
+.my-reservation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.my-reservation-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.my-reservation-card.active-session {
+    border-color: #138a43;
+}
+
+.reservation-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #eeeeee;
+    margin-bottom: 18px;
+}
+
+.reservation-card-header h2 {
+    margin: 10px 0 8px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.reservation-card-header p {
+    margin: 0;
+    color: #666666;
+    font-size: 14px;
+}
+
+.status-badge {
+    height: 28px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.status-badge.reserved {
+    background: #fff0e6;
+    color: #f05a00;
+}
+
+.status-badge.using {
+    background: #eaf7ee;
+    color: #138a43;
+}
+
+.status-badge.completed {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.reservation-date-box {
+    text-align: right;
+    min-width: 160px;
+}
+
+.reservation-date-box strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #111827;
+    font-size: 20px;
+}
+
+.reservation-date-box span {
+    color: #777777;
+    font-size: 14px;
+}
+
+.reservation-info-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    border-top: 1px solid #f0f1f3;
+    border-bottom: 1px solid #f0f1f3;
+    margin-bottom: 18px;
+}
+
+.reservation-info-grid div {
+    padding: 16px 10px;
+    text-align: center;
+    border-right: 1px solid #f0f1f3;
+}
+
+.reservation-info-grid div:last-child {
+    border-right: none;
+}
+
+.reservation-info-grid span {
+    display: block;
+    margin-bottom: 7px;
+    color: #777777;
+    font-size: 13px;
+}
+
+.reservation-info-grid strong {
+    display: block;
+    color: #111827;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.green-text {
+    color: #138a43 !important;
+}
+
+.reservation-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.outline-action,
+.cancel-action {
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.outline-action {
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+}
+
+.outline-action:hover {
+    border-color: #f05a00;
+    color: #f05a00;
+    background: #fff4ec;
+}
+
+.cancel-action {
+    border: 1px solid #ef4444;
+    background: #ffffff;
+    color: #ef4444;
+}
+
+.cancel-action:hover {
+    background: #fff1f2;
+}
+
+.charging-progress {
+    margin-bottom: 18px;
+    padding: 16px;
+    background: #f9fafb;
+    border: 1px solid #eeeeee;
+}
+
+.progress-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: #333333;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.progress-top strong {
+    color: #138a43;
+}
+
+.progress-bar {
+    height: 10px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.progress-bar span {
+    display: block;
+    height: 100%;
+    background: #138a43;
+    border-radius: 999px;
+}
+
+.compare-box {
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    background: #f9fafb;
+    border: 1px solid #eeeeee;
+    color: #666666;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.compare-box p {
+    margin: 0;
+}
+
+@media (max-width: 1200px) {
+    .my-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .reservation-info-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 720px) {
+    .my-summary-grid,
+    .reservation-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .reservation-filter-card,
+    .reservation-card-header {
+        flex-direction: column;
+    }
+
+    .reservation-date-box {
+        text-align: left;
+    }
+
+    .reservation-card-actions {
+        flex-direction: column;
+    }
+
+    .outline-action,
+    .cancel-action {
+        width: 100%;
+    }
+}
+
+/* =========================
+   Reservation Complete Page
+========================= */
+
+.complete-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 30px 0 60px;
+}
+
+.complete-card {
+    width: 760px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 46px 54px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.complete-icon {
+    width: 76px;
+    height: 76px;
+    margin: 0 auto 22px;
+    border-radius: 50%;
+    background: #eaf7ee;
+    color: #138a43;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38px;
+    font-weight: 800;
+}
+
+.complete-card h1 {
+    margin: 0 0 12px;
+    color: #111827;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.complete-desc {
+    margin: 0 0 30px;
+    color: #666666;
+    font-size: 15px;
+}
+
+.complete-station-box {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+}
+
+.complete-station-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #f05a00;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 22px;
+}
+
+.complete-station-box strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #111827;
+    font-size: 17px;
+}
+
+.complete-station-box p {
+    margin: 0;
+    color: #9a3412;
+    font-size: 14px;
+}
+
+.complete-summary {
+    border-top: 1px solid #eeeeee;
+    margin-bottom: 24px;
+}
+
+.complete-summary div {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 15px 0;
+    border-bottom: 1px solid #eeeeee;
+    text-align: left;
+}
+
+.complete-summary span {
+    color: #777777;
+    font-size: 14px;
+}
+
+.complete-summary strong {
+    color: #111827;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: right;
+}
+
+.orange-text {
+    color: #f05a00 !important;
+}
+
+.complete-cost-row strong {
+    color: #f05a00;
+    font-size: 22px;
+}
+
+.complete-notice {
+    text-align: left;
+    background: #f9fafb;
+    border: 1px solid #eeeeee;
+    padding: 15px 18px;
+    margin-bottom: 28px;
+    color: #666666;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.complete-notice p {
+    margin: 0;
+}
+
+.complete-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.complete-main-btn,
+.complete-outline-btn {
+    height: 44px;
+    min-width: 130px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.complete-main-btn {
+    background: #f05a00;
+    border: 1px solid #f05a00;
+    color: #ffffff;
+}
+
+.complete-main-btn:hover {
+    background: #d94f00;
+}
+
+.complete-outline-btn {
+    background: #ffffff;
+    border: 1px solid #dcdfe6;
+    color: #333333;
+}
+
+.complete-outline-btn:hover {
+    border-color: #f05a00;
+    color: #f05a00;
+    background: #fff4ec;
+}
+
+@media (max-width: 820px) {
+    .complete-card {
+        width: 100%;
+        padding: 36px 24px;
+    }
+
+    .complete-buttons {
+        flex-direction: column;
+    }
+
+    .complete-main-btn,
+    .complete-outline-btn {
+        width: 100%;
+    }
+}
+
+/* =========================
+   예약 취소
+========================= */
+
+.status-badge.canceled {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.canceled-card {
+    border-color: #d1d5db;
+    opacity: 0.82;
+}
+
+.canceled-card h2,
+.canceled-card .reservation-info-grid strong {
+    color: #6b7280;
+}
+
+.disabled-action {
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #777777;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}

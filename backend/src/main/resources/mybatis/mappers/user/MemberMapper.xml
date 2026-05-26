@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.user.MemberDAO">
+
+    <!--
+        아이디 중복 확인
+    -->
+    <select id="countByUserId" parameterType="string" resultType="int">
+        select count(*)
+          from app_member
+         where user_id = #{userId}
+    </select>
+
+    <!--
+        이메일 중복 확인
+    -->
+    <select id="countByEmail" parameterType="string" resultType="int">
+        select count(*)
+          from app_member
+         where email = #{email}
+    </select>
+
+    <!--
+        전화번호 중복 확인
+    -->
+    <select id="countByPhone" parameterType="string" resultType="int">
+        select count(*)
+          from app_member
+         where phone = #{phone}
+    </select>
+
+    <!--
+        회원가입 insert
+    -->
+    <insert id="insertMember" parameterType="com.ev.dto.member.MemberDTO">
+        insert into app_member (
+              user_id
+            , password
+            , member_name
+            , nickname
+            , phone
+            , email
+            , user_type
+            , login_type
+            , status
+            , created_at
+        )
+        values (
+              #{userId}
+            , #{password}
+            , #{memberName}
+            , #{nickname}
+            , #{phone}
+            , #{email}
+            , #{userType}
+            , #{loginType}
+            , #{status}
+            , current_timestamp
+        )
+    </insert>
+	
+	<!--
+    로그인용 회원 조회
+
+    user_id로 회원 정보를 조회한다.
+    비밀번호 비교는 ServiceImpl에서 처리한다.
+
+    status가 ACTIVE인 회원만 로그인 가능하게 한다.
+	-->
+	<select id="findByUserId" parameterType="string" resultType="com.ev.dto.member.MemberDTO">
+	    select
+	          member_id
+	        , user_id
+	        , password
+	        , member_name
+	        , nickname
+	        , phone
+	        , email
+	        , profile_image_url
+	        , user_type
+	        , login_type
+	        , status
+	        , last_login_at
+	        , created_at
+	        , updated_at
+	      from app_member
+	     where user_id = #{userId}
+	       and status = 'ACTIVE'
+	</select>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+

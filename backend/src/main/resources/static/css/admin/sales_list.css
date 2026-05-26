@@ -1,0 +1,544 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f7f8fa;
+    color: #111827;
+    font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+    font-weight: 400;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button,
+input,
+select {
+    font-family: inherit;
+}
+
+.admin-page {
+    min-height: 100vh;
+    background: #f7f8fa;
+}
+
+/* header */
+
+.admin-top-header {
+    height: 68px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    align-items: center;
+    padding: 0 30px;
+}
+
+.logo-text {
+    color: #f05a00;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.admin-top-nav {
+    height: 100%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 42px;
+}
+
+.admin-top-nav a {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    color: #333333;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.admin-top-nav a:hover {
+    color: #f05a00;
+}
+
+/* layout */
+
+.admin-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 68px);
+}
+
+.admin-sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    padding: 22px 16px;
+}
+
+.admin-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.dashboard-link {
+    height: 44px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    color: #333333;
+    font-size: 15px;
+    font-weight: 700;
+    border: 1px solid transparent;
+}
+
+.dashboard-link:hover,
+.dashboard-link.active {
+    color: #f05a00;
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.menu-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.menu-group p {
+    margin: 0 0 4px;
+    padding: 0 8px;
+    color: #111827;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.menu-group a {
+    height: 36px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    color: #555555;
+    font-size: 14px;
+    font-weight: 400;
+    border: 1px solid transparent;
+}
+
+.menu-group a:hover,
+.menu-group a.active {
+    color: #f05a00;
+    background: #fff7ed;
+}
+
+/* content */
+
+.admin-content {
+    min-width: 0;
+    padding: 28px 36px 60px;
+}
+
+.page-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 22px;
+}
+
+.page-title-row h1 {
+    margin: 0 0 8px;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.page-title-row p {
+    margin: 0;
+    color: #666666;
+    font-size: 14px;
+}
+
+.back-btn {
+    height: 42px;
+    padding: 0 18px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    color: #333333;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.back-btn:hover {
+    border-color: #f05a00;
+    color: #f05a00;
+}
+
+/* search */
+
+.search-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+}
+
+.search-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+}
+
+.search-group,
+.keyword-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.search-group label,
+.keyword-box label {
+    color: #333333;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.search-group select,
+.search-group input,
+.keyword-box input {
+    height: 40px;
+    border: 1px solid #dcdfe6;
+    padding: 0 12px;
+    outline: none;
+    background: #ffffff;
+}
+
+.search-group select {
+    width: 150px;
+}
+
+.date-range {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.date-range input {
+    width: 150px;
+}
+
+.keyword-box {
+    flex: 1;
+}
+
+.keyword-box div {
+    display: flex;
+    gap: 10px;
+}
+
+.keyword-box input {
+    flex: 1;
+}
+
+.keyword-box button {
+    width: 90px;
+    height: 40px;
+    border: 1px solid #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* summary */
+
+.summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.summary-row article {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 20px 22px;
+}
+
+.summary-row span {
+    display: block;
+    margin-bottom: 10px;
+    color: #333333;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.summary-row strong {
+    color: #f05a00;
+    font-size: 25px;
+    font-weight: 700;
+}
+
+/* table */
+
+.table-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 20px 22px;
+}
+
+.table-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.table-top p {
+    margin: 0;
+    font-size: 15px;
+}
+
+.table-top strong {
+    color: #f05a00;
+}
+
+.table-top select {
+    height: 38px;
+    border: 1px solid #dcdfe6;
+    padding: 0 12px;
+    background: #ffffff;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.admin-table th {
+    height: 42px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: #555555;
+    font-weight: 700;
+}
+
+.admin-table td {
+    height: 48px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+    color: #333333;
+    padding: 0 8px;
+}
+
+.admin-table td:nth-child(2),
+.admin-table td:nth-child(3),
+.admin-table td:nth-child(4) {
+    text-align: left;
+    padding-left: 16px;
+}
+
+.rank-badge {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.rank-badge.top {
+    background: #f05a00;
+    border-color: #f05a00;
+    color: #ffffff;
+}
+
+.up-text {
+    color: #f05a00 !important;
+    font-weight: 700;
+}
+
+.status-badge {
+    height: 26px;
+    padding: 0 10px;
+    background: #eaf7ee;
+    color: #138a43;
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.detail-btn {
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.detail-btn:hover {
+    border-color: #f05a00;
+    color: #f05a00;
+}
+
+/* pagination */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 24px;
+}
+
+.pagination button {
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pagination button.active {
+    border-color: #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
+
+/* =========================
+   Typography Consistency
+   - admin.css의 공통 기준값과 맞춤
+========================= */
+
+.page-title-row h1,
+.sales-title-row h1,
+.detail-title-row h1 {
+    color: var(--admin-text-main);
+    font-size: var(--admin-title-size);
+    font-weight: var(--admin-title-weight);
+    letter-spacing: -0.8px;
+}
+
+.page-title-row p,
+.sales-title-row p,
+.detail-title-row p {
+    color: var(--admin-text-sub);
+    font-size: var(--admin-body-size);
+    font-weight: var(--admin-body-weight);
+}
+
+.summary-card span,
+.member-summary-card span,
+.station-summary-card span,
+.reservation-summary-card span,
+.usage-summary-card span,
+.summary-row span,
+.overview-item span {
+    color: var(--admin-text-sub);
+    font-size: var(--admin-label-size);
+    font-weight: var(--admin-label-weight);
+}
+
+.summary-card strong,
+.member-summary-card strong,
+.station-summary-card strong,
+.reservation-summary-card strong,
+.usage-summary-card strong,
+.summary-row strong {
+    color: var(--admin-primary);
+    font-size: var(--admin-number-size);
+    font-weight: var(--admin-number-weight);
+    letter-spacing: -0.5px;
+}
+
+.admin-table th,
+.member-table th,
+.station-table th,
+.reservation-table th,
+.usage-table th,
+.recent-usage-table th,
+.rank-table th,
+.sales-history-table th,
+.history-table th,
+.charger-list-preview th {
+    color: var(--admin-text-head);
+    font-size: var(--admin-table-size);
+    font-weight: var(--admin-table-head-weight);
+}
+
+.admin-table td,
+.member-table td,
+.station-table td,
+.reservation-table td,
+.usage-table td,
+.recent-usage-table td,
+.rank-table td,
+.sales-history-table td,
+.history-table td,
+.charger-list-preview td {
+    color: var(--admin-text-body);
+    font-size: var(--admin-table-size);
+    font-weight: var(--admin-table-body-weight);
+}
+
+.card-header h2,
+.usage-card-header h2,
+.detail-card h2,
+.status-history-card h2,
+.form-section h2,
+.manage-guide h2,
+.charger-list-preview h3,
+.side-card-header h2 {
+    color: var(--admin-text-main);
+    font-size: var(--admin-section-size);
+    font-weight: var(--admin-section-weight);
+}
+
+button,
+.back-btn,
+.list-btn,
+.add-station-btn,
+.detail-btn,
+.edit-btn,
+.cancel-btn,
+.start-btn,
+.receipt-btn,
+.delete-btn,
+.withdraw-btn,
+.restore-btn,
+.submit-btn,
+.reset-form-btn,
+.add-charger-btn,
+.address-btn,
+.filter-btn {
+    font-size: var(--admin-button-size);
+    font-weight: var(--admin-button-weight);
+}
+
+.status-badge,
+.type-badge,
+.member-type,
+.table-badge,
+.rank-badge {
+    font-size: var(--admin-badge-size);
+    font-weight: var(--admin-badge-weight);
+}
+
+.point-text,
+.up-text,
+.orange-text,
+.cost-text,
+.auth-code {
+    color: var(--admin-primary) !important;
+}

@@ -1,0 +1,850 @@
+/* =========================
+   Reset
+========================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f7f8fa;
+    color: #111827;
+    font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button,
+input,
+select {
+    font-family: inherit;
+}
+
+/* =========================
+   Page / Header
+========================= */
+
+.admin-page {
+    min-height: 100vh;
+    background: #f7f8fa;
+}
+
+.admin-top-header {
+    height: 68px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    align-items: center;
+    padding: 0 30px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.admin-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #f05a00;
+}
+
+.logo-icon {
+    width: 34px;
+    height: 34px;
+    background: #f05a00;
+    color: #ffffff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.logo-text {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.admin-top-nav {
+    height: 100%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 42px;
+}
+
+.admin-top-nav a {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    color: #333333;
+    font-size: 15px;
+    font-weight: 600;
+    border-bottom: 3px solid transparent;
+}
+
+.admin-top-nav a:hover,
+.admin-top-nav a.active {
+    color: #f05a00;
+}
+
+.admin-top-nav a.active {
+    border-bottom-color: #f05a00;
+    font-weight: 800;
+}
+
+/* =========================
+   Layout / Sidebar
+========================= */
+
+.admin-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 68px);
+}
+
+.admin-sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    padding: 22px 16px;
+}
+
+.admin-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.dashboard-link {
+    height: 44px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    color: #333333;
+    font-size: 15px;
+    font-weight: 800;
+    border: 1px solid transparent;
+}
+
+.dashboard-link.active,
+.dashboard-link:hover {
+    color: #f05a00;
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.menu-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.menu-group p {
+    margin: 0 0 4px;
+    padding: 0 8px;
+    color: #111827;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.menu-group a {
+    height: 36px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    color: #555555;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+
+.menu-group a:hover,
+.menu-group a.active {
+    color: #f05a00;
+    background: #fff7ed;
+}
+
+/* =========================
+   Content
+========================= */
+
+.admin-content {
+    min-width: 0;
+    padding: 32px 36px 60px;
+}
+
+.admin-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.admin-title-row h1 {
+    margin: 0 0 8px;
+    color: #111827;
+    font-size: 34px;
+    font-weight: 800;
+}
+
+.admin-title-row p {
+    margin: 0;
+    color: #666666;
+    font-size: 15px;
+}
+
+/* =========================
+   Date Box
+========================= */
+
+.date-box {
+    height: 44px;
+    padding: 0 14px;
+    background: #ffffff;
+    border: 1px solid #dcdfe6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.date-box label {
+    color: #555555;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.date-box input[type="date"] {
+    width: 150px;
+    height: 34px;
+    border: none;
+    outline: none;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 700;
+    background: transparent;
+}
+
+/* =========================
+   Summary
+========================= */
+
+.reservation-summary {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.reservation-summary-card {
+    min-height: 112px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.reservation-summary-card span {
+    display: block;
+    margin-bottom: 8px;
+    color: #666666;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.reservation-summary-card strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #111827;
+    font-size: 26px;
+    font-weight: 800;
+}
+
+.reservation-summary-card p {
+    margin: 0;
+    color: #777777;
+    font-size: 12px;
+}
+
+.orange-text {
+    color: #f05a00 !important;
+}
+
+.blue-text {
+    color: #2563eb !important;
+}
+
+.green-text {
+    color: #138a43 !important;
+}
+
+.red-text {
+    color: #ef4444 !important;
+}
+
+/* =========================
+   Search
+========================= */
+
+.reservation-search-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.filter-title {
+    margin-right: 8px;
+    color: #333333;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.filter-btn {
+    height: 36px;
+    padding: 0 14px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.filter-btn.active,
+.filter-btn:hover {
+    border-color: #f05a00;
+    background: #fff7ed;
+    color: #f05a00;
+}
+
+.search-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.search-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.search-group label {
+    color: #333333;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.search-group select,
+.search-group input {
+    width: 150px;
+    height: 40px;
+    border: 1px solid #dcdfe6;
+    padding: 0 12px;
+    background: #ffffff;
+    outline: none;
+}
+
+.search-group.date input {
+    width: 150px;
+}
+
+.keyword-box {
+    display: flex;
+    flex: 1;
+    gap: 10px;
+}
+
+.keyword-box input {
+    flex: 1;
+    height: 40px;
+    border: 1px solid #dcdfe6;
+    padding: 0 14px;
+    outline: none;
+}
+
+.keyword-box button {
+    width: 90px;
+    height: 40px;
+    border: 1px solid #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.keyword-box button:hover {
+    background: #d94f00;
+}
+
+.date-wave {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    color: #777777;
+}
+
+/* =========================
+   Content Grid
+========================= */
+
+.reservation-content-grid {
+    display: grid;
+    grid-template-columns: 1fr 330px;
+    gap: 18px;
+}
+
+.reservation-table-card,
+.issue-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 22px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.table-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.table-top p {
+    margin: 0;
+    color: #333333;
+    font-size: 15px;
+}
+
+.table-top strong {
+    color: #f05a00;
+}
+
+.table-top select {
+    height: 38px;
+    border: 1px solid #dcdfe6;
+    padding: 0 12px;
+    background: #ffffff;
+}
+
+/* =========================
+   Table
+========================= */
+
+.reservation-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.reservation-table th {
+    height: 44px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: #555555;
+    font-weight: 800;
+}
+
+.reservation-table td {
+    height: 48px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+    color: #333333;
+    padding: 0 8px;
+}
+
+.status-badge {
+    min-width: 70px;
+    height: 28px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.status-badge.reserved {
+    background: #fff0e6;
+    color: #f05a00;
+}
+
+.status-badge.verified {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.status-badge.charging {
+    background: #eaf7ee;
+    color: #138a43;
+}
+
+.status-badge.completed {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.status-badge.canceled {
+    background: #fff1f2;
+    color: #ef4444;
+}
+
+.status-badge.noshow {
+    background: #f5f3ff;
+    color: #7c3aed;
+}
+
+/* =========================
+   Buttons
+========================= */
+
+.detail-btn,
+.cancel-btn,
+.start-btn,
+.receipt-btn,
+.delete-btn {
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    margin: 2px;
+}
+
+.detail-btn:hover {
+    border-color: #f05a00;
+    color: #f05a00;
+}
+
+.cancel-btn,
+.delete-btn {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.cancel-btn:hover,
+.delete-btn:hover {
+    background: #fff1f2;
+}
+
+.start-btn {
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+.start-btn:hover {
+    background: #eff6ff;
+}
+
+.receipt-btn {
+    border-color: #138a43;
+    color: #138a43;
+}
+
+.receipt-btn:hover {
+    background: #eaf7ee;
+}
+
+/* =========================
+   Side Panel
+========================= */
+
+.reservation-side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.side-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.side-card-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #111827;
+}
+
+.side-card-header a {
+    color: #f05a00;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.issue-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.issue-list div {
+    display: flex;
+    justify-content: space-between;
+    padding: 13px 0;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.issue-list div:last-child {
+    border-bottom: none;
+}
+
+.issue-list span {
+    color: #555555;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.issue-list strong {
+    color: #111827;
+    font-size: 18px;
+}
+
+.notice-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.notice-list div {
+    padding: 14px 0;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.notice-list div:last-child {
+    border-bottom: none;
+}
+
+.notice-list strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #333333;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.notice-list span {
+    color: #777777;
+    font-size: 13px;
+}
+
+/* =========================
+   Pagination
+========================= */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 24px;
+}
+
+.pagination button {
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pagination button.active {
+    border-color: #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1500px) {
+    .reservation-summary {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .reservation-content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .reservation-table-card {
+        overflow-x: auto;
+    }
+
+    .reservation-table {
+        min-width: 1300px;
+    }
+}
+
+@media (max-width: 1000px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-sidebar {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .search-row,
+    .filter-row {
+        flex-wrap: wrap;
+    }
+
+    .admin-content {
+        padding: 24px 16px 40px;
+    }
+
+    .admin-title-row {
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .reservation-summary {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================
+   Typography Consistency
+   - admin.css의 공통 기준값과 맞춤
+========================= */
+
+.page-title-row h1,
+.sales-title-row h1,
+.detail-title-row h1 {
+    color: var(--admin-text-main);
+    font-size: var(--admin-title-size);
+    font-weight: var(--admin-title-weight);
+    letter-spacing: -0.8px;
+}
+
+.page-title-row p,
+.sales-title-row p,
+.detail-title-row p {
+    color: var(--admin-text-sub);
+    font-size: var(--admin-body-size);
+    font-weight: var(--admin-body-weight);
+}
+
+.summary-card span,
+.member-summary-card span,
+.station-summary-card span,
+.reservation-summary-card span,
+.usage-summary-card span,
+.summary-row span,
+.overview-item span {
+    color: var(--admin-text-sub);
+    font-size: var(--admin-label-size);
+    font-weight: var(--admin-label-weight);
+}
+
+.summary-card strong,
+.member-summary-card strong,
+.station-summary-card strong,
+.reservation-summary-card strong,
+.usage-summary-card strong,
+.summary-row strong {
+    color: var(--admin-primary);
+    font-size: var(--admin-number-size);
+    font-weight: var(--admin-number-weight);
+    letter-spacing: -0.5px;
+}
+
+.admin-table th,
+.member-table th,
+.station-table th,
+.reservation-table th,
+.usage-table th,
+.recent-usage-table th,
+.rank-table th,
+.sales-history-table th,
+.history-table th,
+.charger-list-preview th {
+    color: var(--admin-text-head);
+    font-size: var(--admin-table-size);
+    font-weight: var(--admin-table-head-weight);
+}
+
+.admin-table td,
+.member-table td,
+.station-table td,
+.reservation-table td,
+.usage-table td,
+.recent-usage-table td,
+.rank-table td,
+.sales-history-table td,
+.history-table td,
+.charger-list-preview td {
+    color: var(--admin-text-body);
+    font-size: var(--admin-table-size);
+    font-weight: var(--admin-table-body-weight);
+}
+
+.card-header h2,
+.usage-card-header h2,
+.detail-card h2,
+.status-history-card h2,
+.form-section h2,
+.manage-guide h2,
+.charger-list-preview h3,
+.side-card-header h2 {
+    color: var(--admin-text-main);
+    font-size: var(--admin-section-size);
+    font-weight: var(--admin-section-weight);
+}
+
+button,
+.back-btn,
+.list-btn,
+.add-station-btn,
+.detail-btn,
+.edit-btn,
+.cancel-btn,
+.start-btn,
+.receipt-btn,
+.delete-btn,
+.withdraw-btn,
+.restore-btn,
+.submit-btn,
+.reset-form-btn,
+.add-charger-btn,
+.address-btn,
+.filter-btn {
+    font-size: var(--admin-button-size);
+    font-weight: var(--admin-button-weight);
+}
+
+.status-badge,
+.type-badge,
+.member-type,
+.table-badge,
+.rank-badge {
+    font-size: var(--admin-badge-size);
+    font-weight: var(--admin-badge-weight);
+}
+
+.point-text,
+.up-text,
+.orange-text,
+.cost-text,
+.auth-code {
+    color: var(--admin-primary) !important;
+}

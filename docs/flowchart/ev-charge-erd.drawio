@@ -1,0 +1,513 @@
+<mxfile host="Electron" agent="ChatGPT">
+  <diagram id="ev-charge-erd-readable" name="EV Charge ERD">
+    <mxGraphModel dx="4057" dy="1402" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1450" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#333333;align=left;" value="EV Charge Reservation ERD" vertex="1">
+          <mxGeometry height="40" width="600" x="180" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontSize=12;align=left;spacingLeft=12;" value="&lt;div style=&quot;font-size:13px;&quot;&gt;&lt;b&gt;표기&lt;/b&gt; &amp;nbsp; &lt;span style=&quot;background-color:#ffd966;border-radius:8px;padding:2px 8px;font-weight:bold;&quot;&gt;PK&lt;/span&gt; Primary Key &amp;nbsp;&amp;nbsp; &lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:2px 8px;font-weight:bold;&quot;&gt;FK&lt;/span&gt; Foreign Key &amp;nbsp;&amp;nbsp; • 일반 컬럼&lt;/div&gt;" vertex="1">
+          <mxGeometry height="51" width="720" x="630" y="11" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1000" edge="1" parent="1" source="table_app_member" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="table_saved_location" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-85" y="640" />
+              <mxPoint x="-85" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1001" edge="1" parent="1" source="table_app_member" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="table_vehicle" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/span&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="50" y="619" />
+              <mxPoint x="150" y="619" />
+              <mxPoint x="150" y="939" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1002" edge="1" parent="1" source="table_vehicle_model" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="table_vehicle" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/span&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="410" y="395" />
+              <mxPoint x="410" y="542" />
+              <mxPoint x="385" y="542" />
+            </Array>
+            <mxPoint x="360" y="395" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1003" edge="1" parent="1" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;entryX=0.469;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=orthogonalEdgeStyle;" target="table_charger" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/span&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1400" y="494" as="sourcePoint" />
+            <mxPoint x="1420" y="770.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1004" edge="1" parent="1" source="table_app_member" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="table_reservation" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/span&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="710" y="360" />
+              <mxPoint x="710" y="360" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1005" edge="1" parent="1" source="table_vehicle" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="table_reservation" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/span&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="850" />
+              <mxPoint x="700" y="595" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1007" edge="1" parent="1" source="table_reservation" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="table_charging_session" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;1:0..1&lt;/span&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1025" y="1090" />
+              <mxPoint x="1025" y="1090" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1009" edge="1" parent="1" source="table_vehicle" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="table_charging_session" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/span&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="355" y="1170" />
+              <mxPoint x="940" y="1170" />
+              <mxPoint x="940" y="1410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1010" edge="1" parent="1" source="table_charger" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.451;exitY=1.006;exitDx=0;exitDy=0;exitPerimeter=0;edgeStyle=orthogonalEdgeStyle;" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/span&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1398" y="1290" />
+              <mxPoint x="1170" y="1290" />
+            </Array>
+            <mxPoint x="1450" y="860" as="sourcePoint" />
+            <mxPoint x="1170" y="1293" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1011" edge="1" parent="1" source="table_app_member" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="table_favorite_station" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/span&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="220" y="185" />
+              <mxPoint x="220" y="185" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1012" edge="1" parent="1" source="table_charging_station" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="table_favorite_station" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/span&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1170" y="210" />
+              <mxPoint x="1170" y="210" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1013" edge="1" parent="1" source="table_app_member" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;entryX=1;entryY=0.75;entryDx=0;entryDy=0;exitX=0.017;exitY=0.621;exitDx=0;exitDy=0;exitPerimeter=0;" target="table_ai_chat_room_r1" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="0.5" y="494" as="sourcePoint" />
+            <mxPoint x="-385" y="993.732" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1014" edge="1" parent="1" source="table_ai_chat_room" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="table_ai_chat_message" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/span&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-1" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="520" width="460" x="710" y="920" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session" parent="a90haJhLJR13RW1xN1mw-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;strokeWidth=2;shadow=0;" value="" vertex="1">
+          <mxGeometry height="520" width="460" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_header" parent="a90haJhLJR13RW1xN1mw-1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#8a1f11;fontSize=13;align=center;verticalAlign=middle;fontStyle=1;" value="&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;charging_session&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;충전 세션&lt;/div&gt;" vertex="1">
+          <mxGeometry height="54.41860465116279" width="460" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r0" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#fff8dc;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#ffd966;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;PK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;session_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;세션 고유 번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="54.41860465116279" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r1" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;reservation_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;예약 참조, unique&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="88.68217054263566" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r2" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;member_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;회원 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="122.94573643410853" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r3" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;vehicle_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;차량 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="157.2093023255814" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r4" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;charger_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;충전기 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="191.47286821705427" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r5" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;actual_start_time&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;timestamp&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;실제 시작&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="225.73643410852713" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r6" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;actual_end_time&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;timestamp&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;실제 종료&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r7" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;start_soc&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;int&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;시작 배터리 %&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="294.26356589147287" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r8" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;end_soc&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;int&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;종료 배터리 %&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="328.52713178294573" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r9" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;actual_kwh&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;numeric&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;실제 충전량&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="362.7906976744186" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r10" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;actual_minutes&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;int&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;실제 시간&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="397.05426356589146" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r11" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;actual_cost&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;numeric&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;실제 비용&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="431.3178294573643" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_session_r12" parent="a90haJhLJR13RW1xN1mw-1" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;status&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;충전 상태&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34.26356589147287" width="460" y="465.5813953488372" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-2" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="596" width="780" x="-260" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member" parent="a90haJhLJR13RW1xN1mw-2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=2;shadow=0;" value="" vertex="1">
+          <mxGeometry height="448" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member_header" parent="a90haJhLJR13RW1xN1mw-2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f4e79;fontSize=13;align=center;verticalAlign=middle;fontStyle=1;" value="&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;app_member&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;회원&lt;/div&gt;" vertex="1">
+          <mxGeometry height="54" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member_r0" parent="a90haJhLJR13RW1xN1mw-2" style="whiteSpace=wrap;html=1;fillColor=#fff8dc;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#ffd966;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;PK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;member_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;회원 고유 번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member_r1" parent="a90haJhLJR13RW1xN1mw-2" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;user_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(50)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;로그인 아이디&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member_r2" parent="a90haJhLJR13RW1xN1mw-2" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;password&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(255)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;암호화 비밀번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member_r3" parent="a90haJhLJR13RW1xN1mw-2" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;member_name&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(50)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;회원 이름&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="156" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member_r4" parent="a90haJhLJR13RW1xN1mw-2" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;nickname&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(50)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;닉네임&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member_r5" parent="a90haJhLJR13RW1xN1mw-2" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;phone&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;전화번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="224" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member_r6" parent="a90haJhLJR13RW1xN1mw-2" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;email&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(100)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;이메일&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="258" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member_r7" parent="a90haJhLJR13RW1xN1mw-2" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;user_type&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;USER / ADMIN&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="292" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member_r8" parent="a90haJhLJR13RW1xN1mw-2" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;login_type&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;LOCAL / OAuth&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="326" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member_r9" parent="a90haJhLJR13RW1xN1mw-2" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;status&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;계정 상태&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="table_app_member_r10" parent="a90haJhLJR13RW1xN1mw-2" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;created_at&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;timestamp&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;가입일&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="394" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-8" connectable="0" parent="a90haJhLJR13RW1xN1mw-2" style="group;fontSize=20;" value="" vertex="1">
+          <mxGeometry height="278" width="350" x="430" y="302" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_model" parent="a90haJhLJR13RW1xN1mw-8" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;strokeWidth=2;shadow=0;" value="" vertex="1">
+          <mxGeometry height="278" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_model_header" parent="a90haJhLJR13RW1xN1mw-8" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#2f6b2f;fontSize=13;align=center;verticalAlign=middle;fontStyle=1;" value="&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;vehicle_model&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;차량 모델&lt;/div&gt;" vertex="1">
+          <mxGeometry height="54" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_model_r0" parent="a90haJhLJR13RW1xN1mw-8" style="whiteSpace=wrap;html=1;fillColor=#fff8dc;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#ffd966;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;PK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;model_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;모델 고유 번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_model_r1" parent="a90haJhLJR13RW1xN1mw-8" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;manufacturer&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(50)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;제조사&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_model_r2" parent="a90haJhLJR13RW1xN1mw-8" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;model_name&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(100)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;모델명&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_model_r3" parent="a90haJhLJR13RW1xN1mw-8" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;battery_capacity_kwh&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;numeric&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;배터리 용량&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="156" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_model_r4" parent="a90haJhLJR13RW1xN1mw-8" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;connector_type&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(50)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;커넥터 타입&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_model_r5" parent="a90haJhLJR13RW1xN1mw-8" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;max_charging_speed_kw&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;numeric&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;최대 충전 속도&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="224" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-3" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="380" width="350" x="-240" y="667" as="geometry" />
+        </mxCell>
+        <mxCell id="table_saved_location" parent="a90haJhLJR13RW1xN1mw-3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=2;shadow=0;" value="" vertex="1">
+          <mxGeometry height="380" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_saved_location_header" parent="a90haJhLJR13RW1xN1mw-3" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f4e79;fontSize=13;align=center;verticalAlign=middle;fontStyle=1;" value="&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;saved_location&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;저장 위치&lt;/div&gt;" vertex="1">
+          <mxGeometry height="54" width="350" y="2" as="geometry" />
+        </mxCell>
+        <mxCell id="table_saved_location_r0" parent="a90haJhLJR13RW1xN1mw-3" style="whiteSpace=wrap;html=1;fillColor=#fff8dc;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#ffd966;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;PK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;location_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;위치 고유 번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="table_saved_location_r1" parent="a90haJhLJR13RW1xN1mw-3" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;member_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;회원 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="table_saved_location_r2" parent="a90haJhLJR13RW1xN1mw-3" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;location_name&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(50)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;집/회사 등&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="table_saved_location_r3" parent="a90haJhLJR13RW1xN1mw-3" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;location_type&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;HOME/WORK/CUSTOM&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="156" as="geometry" />
+        </mxCell>
+        <mxCell id="table_saved_location_r4" parent="a90haJhLJR13RW1xN1mw-3" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;address&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(255)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;주소&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="table_saved_location_r5" parent="a90haJhLJR13RW1xN1mw-3" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;latitude&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;double&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;위도&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="224" as="geometry" />
+        </mxCell>
+        <mxCell id="table_saved_location_r6" parent="a90haJhLJR13RW1xN1mw-3" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;longitude&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;double&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;경도&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="258" as="geometry" />
+        </mxCell>
+        <mxCell id="table_saved_location_r7" parent="a90haJhLJR13RW1xN1mw-3" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;location&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;geography&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;PostGIS 위치&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="292" as="geometry" />
+        </mxCell>
+        <mxCell id="table_saved_location_r8" parent="a90haJhLJR13RW1xN1mw-3" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;is_default&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;boolean&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;기본 위치 여부&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="326" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-5" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="244" width="350" x="-750" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_room" parent="a90haJhLJR13RW1xN1mw-5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;strokeWidth=2;shadow=0;" value="" vertex="1">
+          <mxGeometry height="244" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_room_header" parent="a90haJhLJR13RW1xN1mw-5" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#674ea7;fontSize=13;align=center;verticalAlign=middle;fontStyle=1;" value="&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;ai_chat_room&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;AI 채팅방&lt;/div&gt;" vertex="1">
+          <mxGeometry height="54" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-4" connectable="0" parent="a90haJhLJR13RW1xN1mw-5" style="group" value="" vertex="1">
+          <mxGeometry height="170" width="350" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_room_r0" parent="a90haJhLJR13RW1xN1mw-4" style="whiteSpace=wrap;html=1;fillColor=#fff8dc;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;line-height: 1.5;&quot;&gt;&lt;font&gt;&lt;span style=&quot;display: inline-block; width: 28px;&quot;&gt;&lt;span style=&quot;background-color: rgb(255, 217, 102); border-radius: 8px; padding: 1px 5px; font-weight: bold;&quot;&gt;PK&lt;/span&gt;&lt;/span&gt; &lt;b style=&quot;&quot;&gt;room_id&lt;/b&gt; &lt;span style=&quot;color: rgb(102, 102, 102);&quot;&gt;bigint&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;margin-left: 34px; color: rgb(119, 119, 119);&quot;&gt;채팅방 고유 번호&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_room_r1" parent="a90haJhLJR13RW1xN1mw-4" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;line-height: 1.5;&quot;&gt;&lt;font&gt;&lt;span style=&quot;display: inline-block; width: 28px;&quot;&gt;&lt;span style=&quot;background-color: rgb(207, 226, 243); border-radius: 8px; padding: 1px 5px; font-weight: bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b style=&quot;&quot;&gt;member_id&lt;/b&gt; &lt;span style=&quot;color: rgb(102, 102, 102);&quot;&gt;bigint&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;margin-left: 34px; color: rgb(119, 119, 119);&quot;&gt;회원 참조&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="34" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_room_r2" parent="a90haJhLJR13RW1xN1mw-4" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;line-height: 1.5;&quot;&gt;&lt;font&gt;&lt;span style=&quot;display: inline-block; width: 28px;&quot;&gt;&lt;span style=&quot;color: rgb(153, 153, 153);&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b style=&quot;&quot;&gt;title&lt;/b&gt; &lt;span style=&quot;color: rgb(102, 102, 102);&quot;&gt;varchar(100)&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;margin-left: 34px; color: rgb(119, 119, 119);&quot;&gt;채팅방 제목&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="68" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_room_r3" parent="a90haJhLJR13RW1xN1mw-4" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;created_at&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;timestamp&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;생성일&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="102" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_room_r4" parent="a90haJhLJR13RW1xN1mw-4" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;updated_at&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;timestamp&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;수정일&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="136" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-6" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="244" width="350" x="-750" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_message" parent="a90haJhLJR13RW1xN1mw-6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;strokeWidth=2;shadow=0;" value="" vertex="1">
+          <mxGeometry height="244" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_message_header" parent="a90haJhLJR13RW1xN1mw-6" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#674ea7;fontSize=13;align=center;verticalAlign=middle;fontStyle=1;" value="&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;ai_chat_message&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;AI 채팅 메시지&lt;/div&gt;" vertex="1">
+          <mxGeometry height="54" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_message_r0" parent="a90haJhLJR13RW1xN1mw-6" style="whiteSpace=wrap;html=1;fillColor=#fff8dc;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#ffd966;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;PK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;message_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;메시지 고유 번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_message_r1" parent="a90haJhLJR13RW1xN1mw-6" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;room_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;채팅방 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_message_r2" parent="a90haJhLJR13RW1xN1mw-6" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;sender_type&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;USER / AI&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_message_r3" parent="a90haJhLJR13RW1xN1mw-6" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;message&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;text&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;메시지 내용&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="156" as="geometry" />
+        </mxCell>
+        <mxCell id="table_ai_chat_message_r4" parent="a90haJhLJR13RW1xN1mw-6" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;created_at&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;timestamp&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;작성일&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-7" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="210" width="350" x="570" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="table_favorite_station" parent="a90haJhLJR13RW1xN1mw-7" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;strokeWidth=2;shadow=0;" value="" vertex="1">
+          <mxGeometry height="210" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_favorite_station_header" parent="a90haJhLJR13RW1xN1mw-7" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7f6000;fontSize=13;align=center;verticalAlign=middle;fontStyle=1;" value="&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;favorite_station&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;충전소 즐겨찾기&lt;/div&gt;" vertex="1">
+          <mxGeometry height="54" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_favorite_station_r0" parent="a90haJhLJR13RW1xN1mw-7" style="whiteSpace=wrap;html=1;fillColor=#fff8dc;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#ffd966;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;PK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;favorite_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;즐겨찾기 고유 번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="table_favorite_station_r1" parent="a90haJhLJR13RW1xN1mw-7" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;member_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;회원 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="table_favorite_station_r2" parent="a90haJhLJR13RW1xN1mw-7" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;station_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;충전소 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="table_favorite_station_r3" parent="a90haJhLJR13RW1xN1mw-7" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;created_at&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;timestamp&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;등록일&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="156" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-9" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="278" width="350" x="180" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle" parent="a90haJhLJR13RW1xN1mw-9" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;strokeWidth=2;shadow=0;" value="" vertex="1">
+          <mxGeometry height="278" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_header" parent="a90haJhLJR13RW1xN1mw-9" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#2f6b2f;fontSize=13;align=center;verticalAlign=middle;fontStyle=1;" value="&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;vehicle&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;사용자 차량&lt;/div&gt;" vertex="1">
+          <mxGeometry height="54" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_r0" parent="a90haJhLJR13RW1xN1mw-9" style="whiteSpace=wrap;html=1;fillColor=#fff8dc;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#ffd966;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;PK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;vehicle_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;차량 고유 번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_r1" parent="a90haJhLJR13RW1xN1mw-9" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;member_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;회원 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_r2" parent="a90haJhLJR13RW1xN1mw-9" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;model_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;차량 모델 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_r3" parent="a90haJhLJR13RW1xN1mw-9" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;vehicle_nickname&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(100)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;차량 별칭&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="156" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_r4" parent="a90haJhLJR13RW1xN1mw-9" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;plate_number&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;차량 번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="table_vehicle_r5" parent="a90haJhLJR13RW1xN1mw-9" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;is_default&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;boolean&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;기본 차량 여부&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="224" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-12" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="550" width="350" x="750" y="304" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-10" connectable="0" parent="a90haJhLJR13RW1xN1mw-12" style="group" value="" vertex="1">
+          <mxGeometry height="550" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation" parent="a90haJhLJR13RW1xN1mw-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;strokeWidth=2;shadow=0;" value="" vertex="1">
+          <mxGeometry height="550" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_header" parent="a90haJhLJR13RW1xN1mw-10" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#8a1f11;fontSize=13;align=center;verticalAlign=middle;fontStyle=1;" value="&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;reservation&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;예약&lt;/div&gt;" vertex="1">
+          <mxGeometry height="54" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r0" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#fff8dc;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#ffd966;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;PK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;reservation_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;예약 고유 번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r1" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;member_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;회원 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r2" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;vehicle_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;차량 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r3" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;charger_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;충전기 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="156" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r4" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;reservation_date&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;date&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;예약 날짜&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r5" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;start_time&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;timestamp&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;예약 시작&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="224" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r6" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;end_time&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;timestamp&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;예약 종료&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="258" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r7" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;current_soc&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;int&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;현재 배터리 %&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="292" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r8" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;target_soc&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;int&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;목표 배터리 %&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="326" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r9" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;required_kwh&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;numeric&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;예상 필요량&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r10" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;estimated_minutes&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;int&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;예상 시간&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="394" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r11" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;estimated_cost&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;numeric&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;예상 비용&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="428" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r12" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;status&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;예약 상태&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="462" as="geometry" />
+        </mxCell>
+        <mxCell id="table_reservation_r13" parent="a90haJhLJR13RW1xN1mw-10" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;auth_code&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;예약 인증 코드&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="496" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-13" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="346" width="350" x="1240" y="770" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charger" parent="a90haJhLJR13RW1xN1mw-13" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;strokeWidth=2;shadow=0;" value="" vertex="1">
+          <mxGeometry height="346" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-22" edge="1" parent="a90haJhLJR13RW1xN1mw-13" source="table_charger_header" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="40" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="table_charger_header" parent="a90haJhLJR13RW1xN1mw-13" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7f6000;fontSize=13;align=center;verticalAlign=middle;fontStyle=1;" value="&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;charger&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;충전기&lt;/div&gt;" vertex="1">
+          <mxGeometry height="54" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charger_r0" parent="a90haJhLJR13RW1xN1mw-13" style="whiteSpace=wrap;html=1;fillColor=#fff8dc;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#ffd966;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;PK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;charger_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;충전기 고유 번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charger_r1" parent="a90haJhLJR13RW1xN1mw-13" style="whiteSpace=wrap;html=1;fillColor=#eef7ff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#cfe2f3;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;FK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;station_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;충전소 참조&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charger_r2" parent="a90haJhLJR13RW1xN1mw-13" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;charger_name&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(100)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;충전기 이름&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charger_r3" parent="a90haJhLJR13RW1xN1mw-13" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;charger_type&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;완속/급속/초급속&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="156" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charger_r4" parent="a90haJhLJR13RW1xN1mw-13" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;connector_type&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(50)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;커넥터 타입&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charger_r5" parent="a90haJhLJR13RW1xN1mw-13" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;charging_speed_kw&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;numeric&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;출력 kW&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="224" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charger_r6" parent="a90haJhLJR13RW1xN1mw-13" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;price_per_kwh&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;numeric&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;kWh당 요금&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="258" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charger_r7" parent="a90haJhLJR13RW1xN1mw-13" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;status&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;충전기 상태&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="292" as="geometry" />
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-21" edge="1" parent="a90haJhLJR13RW1xN1mw-13" source="table_charger_header" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=0.011;entryY=0.098;entryDx=0;entryDy=0;entryPerimeter=0;" target="table_charger">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1006" edge="1" parent="1" source="table_charger" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#666666;endArrow=ERmany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=0;exitY=0.25;exitDx=0;exitDy=0;edgeStyle=orthogonalEdgeStyle;" target="table_reservation" value="1:N">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1372" y="750" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-15" connectable="0" parent="edge1006" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;1:N&lt;/span&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.0482" y="-1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a90haJhLJR13RW1xN1mw-14" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="414" width="350" x="1220" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_station" parent="a90haJhLJR13RW1xN1mw-14" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;strokeWidth=2;shadow=0;" value="" vertex="1">
+          <mxGeometry height="414" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_station_header" parent="a90haJhLJR13RW1xN1mw-14" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7f6000;fontSize=13;align=center;verticalAlign=middle;fontStyle=1;" value="&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;charging_station&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;충전소&lt;/div&gt;" vertex="1">
+          <mxGeometry height="54" width="350" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_station_r0" parent="a90haJhLJR13RW1xN1mw-14" style="whiteSpace=wrap;html=1;fillColor=#fff8dc;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;background-color:#ffd966;border-radius:8px;padding:1px 5px;font-weight:bold;&quot;&gt;PK&lt;/span&gt;&lt;/span&gt; &lt;b&gt;station_id&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;bigint&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;충전소 고유 번호&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_station_r1" parent="a90haJhLJR13RW1xN1mw-14" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;station_name&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(100)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;충전소 이름&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_station_r2" parent="a90haJhLJR13RW1xN1mw-14" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;address&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(255)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;주소&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_station_r3" parent="a90haJhLJR13RW1xN1mw-14" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;latitude&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;double&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;위도&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="156" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_station_r4" parent="a90haJhLJR13RW1xN1mw-14" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;longitude&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;double&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;경도&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_station_r5" parent="a90haJhLJR13RW1xN1mw-14" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;location&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;geography&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;PostGIS 위치&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="224" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_station_r6" parent="a90haJhLJR13RW1xN1mw-14" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;operator_name&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(100)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;운영기관&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="258" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_station_r7" parent="a90haJhLJR13RW1xN1mw-14" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;open_time&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;time&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;운영 시작&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="292" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_station_r8" parent="a90haJhLJR13RW1xN1mw-14" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;close_time&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;time&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;운영 종료&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="326" as="geometry" />
+        </mxCell>
+        <mxCell id="table_charging_station_r9" parent="a90haJhLJR13RW1xN1mw-14" style="whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#eeeeee;fontSize=11;align=left;verticalAlign=middle;spacingLeft=8;" value="&lt;div style=&quot;font-size:11px;line-height:1.5;&quot;&gt;&lt;span style=&quot;display:inline-block;width:28px;&quot;&gt;&lt;span style=&quot;color:#999;&quot;&gt;•&lt;/span&gt;&lt;/span&gt; &lt;b&gt;station_status&lt;/b&gt; &lt;span style=&quot;color:#666;&quot;&gt;varchar(20)&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;margin-left:34px;color:#777;&quot;&gt;운영 상태&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="34" width="350" y="360" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,288 @@
+/* =========================
+   Search
+========================= */
+
+.usage-search-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.search-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+}
+
+.search-group,
+.keyword-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.search-group label,
+.keyword-box label {
+    color: #333333;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.search-group select,
+.search-group input,
+.keyword-box input {
+    height: 40px;
+    border: 1px solid #dcdfe6;
+    padding: 0 12px;
+    background: #ffffff;
+    outline: none;
+}
+
+.search-group select {
+    width: 180px;
+}
+
+.keyword-box {
+    flex: 1;
+}
+
+.keyword-box div {
+    display: flex;
+    gap: 10px;
+}
+
+.keyword-box input {
+    flex: 1;
+}
+
+.keyword-box button,
+.reset-btn {
+    width: 90px;
+    height: 40px;
+    border: 1px solid #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.reset-btn {
+    background: #ffffff;
+    color: #333333;
+    border-color: #dcdfe6;
+}
+
+.reset-btn:hover {
+    border-color: #f05a00;
+    color: #f05a00;
+}
+
+.keyword-box button:hover {
+    background: #d94f00;
+}
+
+/* =========================
+   Summary
+========================= */
+
+.usage-summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.usage-summary-row article {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 22px;
+    min-height: 112px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.usage-summary-row span {
+    display: block;
+    margin-bottom: 8px;
+    color: #666666;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.usage-summary-row strong {
+    display: block;
+    color: #f05a00;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+/* =========================
+   Table
+========================= */
+
+.usage-table-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 22px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.table-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.table-top p {
+    margin: 0;
+    color: #333333;
+    font-size: 15px;
+}
+
+.table-top strong {
+    color: #f05a00;
+}
+
+.table-top select {
+    height: 38px;
+    border: 1px solid #dcdfe6;
+    padding: 0 12px;
+    background: #ffffff;
+}
+
+.usage-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.usage-list-table th {
+    height: 44px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: #555555;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.usage-list-table td {
+    height: 48px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+    color: #333333;
+    font-size: 14px;
+    font-weight: 400;
+    padding: 0 8px;
+}
+
+.station-name {
+    text-align: left !important;
+    padding-left: 16px !important;
+    color: #111827 !important;
+    font-weight: 700 !important;
+}
+
+.point-text {
+    color: #f05a00 !important;
+    font-weight: 700 !important;
+}
+
+.rank-badge {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.rank-badge.top {
+    background: #f05a00;
+    border-color: #f05a00;
+    color: #ffffff;
+}
+
+.detail-btn {
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.detail-btn:hover {
+    border-color: #f05a00;
+    color: #f05a00;
+}
+
+/* =========================
+   Pagination
+========================= */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 24px;
+}
+
+.pagination button {
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pagination button.active {
+    border-color: #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1300px) {
+    .usage-summary-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .search-row {
+        flex-wrap: wrap;
+    }
+
+    .reset-btn {
+        margin-top: 0;
+    }
+}
+
+@media (max-width: 900px) {
+    .usage-summary-row {
+        grid-template-columns: 1fr;
+    }
+
+    .usage-table-card {
+        overflow-x: auto;
+    }
+
+    .usage-list-table {
+        min-width: 1100px;
+    }
+}

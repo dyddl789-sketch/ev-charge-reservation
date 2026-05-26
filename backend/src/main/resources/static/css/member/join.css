@@ -1,0 +1,187 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+    background: #f6f6f6;
+    color: #222;
+}
+
+a {
+    text-decoration: none;
+}
+
+/* 전체 배경 */
+.join-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 54px 0;
+}
+
+/* 회원가입 카드 */
+.join-card {
+    width: 640px;
+    background: #ffffff;
+    border: 1px solid #dddddd;
+    border-radius: 4px;
+    padding: 54px 82px 46px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* 제목 */
+.join-header {
+    margin-bottom: 36px;
+}
+
+.join-header h1 {
+    margin: 0 0 12px;
+    font-size: 30px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.join-header p {
+    margin: 0;
+    font-size: 14px;
+    color: #555555;
+}
+
+/* 폼 */
+.join-form {
+    width: 100%;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    display: inline-block;
+    margin: 0 8px 7px 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333333;
+}
+
+.form-group input {
+    width: 100%;
+    height: 48px;
+    border: 1px solid #dcdfe6;
+    border-radius: 3px;
+    padding: 0 14px;
+    font-size: 14px;
+    color: #222222;
+    background: #ffffff;
+    outline: none;
+}
+
+.form-group input::placeholder {
+    color: #999999;
+}
+
+.form-group input:focus {
+    border-color: #f05a00;
+    box-shadow: 0 0 0 2px rgba(240, 90, 0, 0.08);
+}
+
+/* 안내 문구 */
+.guide-text {
+    display: inline-block;
+    font-size: 12px;
+    color: #777777;
+}
+
+.error-text {
+    display: none;
+    font-size: 12px;
+    color: #ef4444;
+}
+
+/* 아이디 + 중복 확인 */
+.id-row {
+    display: grid;
+    grid-template-columns: 1fr 120px;
+    gap: 10px;
+}
+
+.check-btn {
+    height: 48px;
+    border: 1px solid #f05a00;
+    border-radius: 3px;
+    background: #ffffff;
+    color: #f05a00;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.check-btn:hover {
+    background: #fff4ec;
+}
+
+/* 버튼 */
+.button-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 34px;
+    padding-top: 28px;
+    border-top: 1px solid #eeeeee;
+}
+
+.submit-btn,
+.cancel-btn {
+    width: 140px;
+    height: 44px;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* 가입하기 */
+.submit-btn {
+    border: 1px solid #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
+
+.submit-btn:hover {
+    background: #d94f00;
+}
+
+/* 가입취소 */
+.cancel-btn {
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+}
+
+.cancel-btn:hover {
+    border-color: #f05a00;
+    color: #f05a00;
+    background: #fff4ec;
+}
+
+/* 반응형 */
+@media (max-width: 720px) {
+    .join-page {
+        padding: 24px 16px;
+    }
+
+    .join-card {
+        width: 100%;
+        padding: 42px 28px;
+    }
+
+    .id-row {
+        grid-template-columns: 1fr;
+    }
+}
