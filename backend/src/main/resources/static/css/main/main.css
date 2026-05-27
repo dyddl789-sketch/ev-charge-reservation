@@ -452,7 +452,7 @@ select {
 .station-img {
     height: 170px;
     position: relative;
-    background-image: url("/image/main-hero.png");
+    background-image: url("/images/station/main-hero.png");
     background-size: cover;
     background-position: center;
 }
