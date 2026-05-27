@@ -3,36 +3,86 @@ package com.ev.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+import com.ev.security.EvLoginFailureHandler;
+import com.ev.security.EvLoginSuccessHandler;
+import com.ev.security.EvOAuth2UserService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 // Spring Security 설정 클래스라는 의미
+@Slf4j
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    // SecurityFilterChain Bean 등록
-    // -> Spring Security의 보안 규칙 설정
+    private final EvLoginSuccessHandler evLoginSuccessHandler;
+    private final EvLoginFailureHandler evLoginFailureHandler;
+    private final EvOAuth2UserService evOAuth2UserService;
+    
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-        
-            // CSRF 보안 기능 비활성화
-            // 개발 초기 단계에서는 보통 꺼두고 사용
             .csrf(csrf -> csrf.disable())
 
-            // URL 접근 권한 설정
             .authorizeHttpRequests(auth -> auth
-            
-                // 모든 요청(URL) 허용
-                // 현재는 로그인 없이 전체 접근 가능
+                .requestMatchers(
+                    "/login",
+                    "/member/join",
+                    "/css/**",
+                    "/js/**",
+                    "/image/**",
+                    "/images/**"
+                ).permitAll()
+
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/vehicle/**", "/reservation/**").authenticated()
+
                 .anyRequest().permitAll()
             )
 
-            // Spring Security 기본 로그인 화면 비활성화
-            // 기본 "Please sign in" 페이지 제거
-            .formLogin(form -> form.disable());
+            .formLogin(form -> form
+                .loginPage("/login")
+                .loginProcessingUrl("/login")
+                .usernameParameter("userId")
+                .passwordParameter("password")
+                .successHandler(evLoginSuccessHandler)
+                .failureHandler(evLoginFailureHandler)
+                .permitAll()
+            )
+            
+            .oauth2Login(oauth2 -> oauth2
+            	    .loginPage("/login")
+            	    .userInfoEndpoint(userInfo -> userInfo
+            	        .userService(evOAuth2UserService)
+            	    )
+            	    .successHandler((request, response, authentication) -> {
+            	        log.info("@# OAuth2 login success");
+            	        response.sendRedirect("/main");
+            	    })
+            	    .failureHandler((request, response, exception) -> {
+            	        log.error("@# OAuth2 login fail", exception);
+            	        response.sendRedirect("/login?error");
+            	    })
+            	)
 
-        // 설정 내용 적용 후 반환
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login?logout=true")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+            );
+
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import lombok.Data;
 
 @Data
-public class MemberDTO {
+public class EvMemberDTO {
 
     // 회원 고유 번호
     private Long memberId;

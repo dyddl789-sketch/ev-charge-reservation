@@ -126,17 +126,49 @@ function bindDeleteVehicleButtons() {
             data: {
                 vehicleId: vehicleId
             },
-            success: function (result) {
+			success: function (result) {
 
-                if (result !== "success") {
-                    alert("차량 삭제에 실패했습니다.");
-                    return;
-                }
+			    if (result !== "success") {
+			        alert("차량 삭제에 실패했습니다.");
+			        return;
+			    }
 
-                $(`.vehicle-card[data-vehicle-id="${vehicleId}"]`).remove();
+			    // 차량 카드 제거
+			    $(`.vehicle-card[data-vehicle-id="${vehicleId}"]`).remove();
 
-                alert("차량이 삭제되었습니다.");
-            },
+			    // 등록 차량 수 갱신
+			    const count = $(".vehicle-card").length;
+
+			    $(".total-card strong").text(count + "대");
+
+			    // 기본 차량 이름 갱신
+			    const $defaultCard = $(".vehicle-card.main-vehicle");
+
+			    if ($defaultCard.length > 0) {
+			        const defaultName = $defaultCard.find("h2").text();
+
+			        $("#defaultVehicleName").text(defaultName);
+			    } else {
+			        $("#defaultVehicleName").text("");
+			    }
+
+			    // 차량 없으면 empty-box 출력
+			    if (count === 0) {
+
+			        $(".vehicle-list").html(`
+			            <div class="empty-box">
+			                <p>등록된 차량이 없습니다.</p>
+
+			                <a href="${contextPath}/vehicle/register"
+			                   class="add-btn">
+			                    차량 등록하기
+			                </a>
+			            </div>
+			        `);
+			    }
+
+			    alert("차량이 삭제되었습니다.");
+			},
             error: function () {
                 alert("서버 오류가 발생했습니다.");
             }
