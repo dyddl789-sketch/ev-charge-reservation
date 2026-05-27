@@ -23,6 +23,7 @@ public class EvVehicleServiceImpl implements EvVehicleService {
     }
 //    내 차량 등록
     @Override
+    @Transactional
     public void registerVehicle(EvVehicleDTO vehicleDTO) {
     	evVehicleDAO.registerVehicle(vehicleDTO);
     }

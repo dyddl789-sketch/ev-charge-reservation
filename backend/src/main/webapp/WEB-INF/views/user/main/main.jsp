@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>    
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -20,14 +21,16 @@
         <aside class="left-panel">
 
             <section class="welcome-card">
-                <c:choose>
-				    <c:when test="${not empty sessionScope.loginMemberName}">
-				        <h2>${sessionScope.loginMemberName} 님, 안녕하세요!</h2>
-				    </c:when>
-				    <c:otherwise>
-				        <h2>비회원 님, 안녕하세요!</h2>
-				    </c:otherwise>
-				</c:choose>
+				<sec:authorize access="isAuthenticated()">
+				    <h2>
+				        <sec:authentication property="principal.memberName" />
+				        님, 안녕하세요!
+				    </h2>
+				</sec:authorize>
+				
+				<sec:authorize access="isAnonymous()">
+				    <h2>비회원 님, 안녕하세요!</h2>
+				</sec:authorize>
                 <p>내 주변 최적의 충전소와 예약 정보를 확인해 보세요.</p>
 
                 <div class="welcome-buttons">
