@@ -75,9 +75,9 @@
             </form>
 
             <!-- 카카오 로그인 -->
-            <a href="/oauth2/authorization/kakao" class="kakao-btn">
-                카카오로 로그인
-            </a>
+			<a href="${pageContext.request.contextPath}/oauth2/authorization/kakao" class="kakao-btn">
+			    카카오로 로그인
+			</a>
 
             <!-- 회원가입 -->
             <a href="/member/join" class="join-btn">

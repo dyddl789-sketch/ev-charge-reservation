@@ -3,6 +3,7 @@ package com.ev.controller.user;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,10 +14,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ev.dto.map.EvSavedLocationDTO;
 import com.ev.dto.station.EvStationMapDTO;
+import com.ev.security.EvUserDetails;
 import com.ev.service.user.EvSavedLocationService;
 import com.ev.service.user.EvStationService;
 
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -63,17 +64,17 @@ public class EvMapController {
     // 저장 위치 목록 조회
     @ResponseBody
     @GetMapping("/saved-locations")
-    public List<EvSavedLocationDTO> savedLocationList(HttpSession session) {
+    public List<EvSavedLocationDTO> savedLocationList(
+            @AuthenticationPrincipal EvUserDetails userDetails) {
+
         log.info("@# EvMapController.savedLocationList()");
 
-        Object loginMemberId = session.getAttribute("loginMemberId");
-
-        if (loginMemberId == null) {
-            log.info("@# loginMemberId is null");
+        if (userDetails == null) {
+            log.info("@# userDetails is null");
             return List.of();
         }
 
-        Long memberId = Long.valueOf(String.valueOf(loginMemberId));
+        Long memberId = userDetails.getMemberId();
 
         log.info("@# memberId => {}", memberId);
 
@@ -84,17 +85,16 @@ public class EvMapController {
     @ResponseBody
     @PostMapping("/saved-locations")
     public String saveSavedLocation(EvSavedLocationDTO savedLocationDTO,
-                                    HttpSession session) {
+                                    @AuthenticationPrincipal EvUserDetails userDetails) {
+
         log.info("@# EvMapController.saveSavedLocation()");
         log.info("@# savedLocationDTO => {}", savedLocationDTO);
 
-        Object loginMemberId = session.getAttribute("loginMemberId");
-
-        if (loginMemberId == null) {
+        if (userDetails == null) {
             return "login_required";
         }
 
-        Long memberId = Long.valueOf(String.valueOf(loginMemberId));
+        Long memberId = userDetails.getMemberId();
 
         savedLocationDTO.setMemberId(memberId);
 
@@ -107,17 +107,16 @@ public class EvMapController {
     @ResponseBody
     @PostMapping("/saved-locations/default")
     public String setDefaultLocation(@RequestParam("locationId") Long locationId,
-                                     HttpSession session) {
+                                     @AuthenticationPrincipal EvUserDetails userDetails) {
+
         log.info("@# EvMapController.setDefaultLocation()");
         log.info("@# locationId => {}", locationId);
 
-        Object loginMemberId = session.getAttribute("loginMemberId");
-
-        if (loginMemberId == null) {
+        if (userDetails == null) {
             return "login_required";
         }
 
-        Long memberId = Long.valueOf(String.valueOf(loginMemberId));
+        Long memberId = userDetails.getMemberId();
 
         savedLocationService.setDefaultLocation(memberId, locationId);
 
@@ -128,17 +127,16 @@ public class EvMapController {
     @ResponseBody
     @PostMapping("/saved-locations/delete")
     public String deleteSavedLocation(@RequestParam("locationId") Long locationId,
-                                      HttpSession session) {
+                                      @AuthenticationPrincipal EvUserDetails userDetails) {
+
         log.info("@# EvMapController.deleteSavedLocation()");
         log.info("@# locationId => {}", locationId);
 
-        Object loginMemberId = session.getAttribute("loginMemberId");
-
-        if (loginMemberId == null) {
+        if (userDetails == null) {
             return "login_required";
         }
 
-        Long memberId = Long.valueOf(String.valueOf(loginMemberId));
+        Long memberId = userDetails.getMemberId();
 
         savedLocationService.deleteSavedLocation(memberId, locationId);
 
