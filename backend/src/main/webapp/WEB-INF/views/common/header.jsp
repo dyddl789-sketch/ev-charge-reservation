@@ -4,32 +4,35 @@
 
 <header class="top-header">
     <div class="logo-area">
-        <a href="/main" class="logo-link">
+        <a href="${pageContext.request.contextPath}/main" class="logo-link">
             <span class="logo-text">EV Charge</span>
         </a>
     </div>
 
     <nav class="top-nav">
-	    <a href="${pageContext.request.contextPath}/main" data-menu="main">홈</a>
-	    <a href="${pageContext.request.contextPath}/station/list" data-menu="station">충전소 검색</a>
-	    <a href="${pageContext.request.contextPath}/reservation/my" data-menu="reservation">내 예약</a>
-	    <a href="${pageContext.request.contextPath}/vehicle/list" data-menu="vehicle">내 차량</a>
-	
-	    <c:choose>
-	        <c:when test="${empty sessionScope.loginMemberId}">
-	            <a href="${pageContext.request.contextPath}/login" data-menu="login">로그인</a>
-	        </c:when>
-	        <c:otherwise>
-	            <a href="${pageContext.request.contextPath}/logout" data-menu="logout">로그아웃</a>
-	        </c:otherwise>
-	    </c:choose>
-	    
-	    <c:if test="${sessionScope.loginUserType eq 'ADMIN'}">
-		    <a href="${pageContext.request.contextPath}/admin/dashboard" data-menu="admin">
-		        관리자 대시보드
-		    </a>
-		</c:if>
-	</nav>
+        <a href="${pageContext.request.contextPath}/main" data-menu="main">홈</a>
+
+        <!-- 충전소 검색은 지도 기반 탐색 화면으로 이동 -->
+        <a href="${pageContext.request.contextPath}/station/map" data-menu="station">충전소 검색</a>
+
+        <a href="${pageContext.request.contextPath}/reservation/my" data-menu="reservation">내 예약</a>
+        <a href="${pageContext.request.contextPath}/vehicle/list" data-menu="vehicle">내 차량</a>
+
+        <c:choose>
+            <c:when test="${empty sessionScope.loginMemberId}">
+                <a href="${pageContext.request.contextPath}/login" data-menu="login">로그인</a>
+            </c:when>
+            <c:otherwise>
+                <a href="${pageContext.request.contextPath}/logout" data-menu="logout">로그아웃</a>
+            </c:otherwise>
+        </c:choose>
+
+        <c:if test="${sessionScope.loginUserType eq 'ADMIN'}">
+            <a href="${pageContext.request.contextPath}/admin/dashboard" data-menu="admin">
+                관리자 대시보드
+            </a>
+        </c:if>
+    </nav>
 
     <div class="user-area">
         <span class="user-icon">👤</span>
@@ -69,6 +72,10 @@
         }
 
         if (menu === "login" && currentPath === "/login") {
+            link.classList.add("active");
+        }
+
+        if (menu === "admin" && currentPath.startsWith("/admin")) {
             link.classList.add("active");
         }
     });

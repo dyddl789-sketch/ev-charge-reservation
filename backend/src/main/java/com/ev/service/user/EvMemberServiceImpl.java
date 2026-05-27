@@ -3,8 +3,8 @@ package com.ev.service.user;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ev.dao.user.MemberDAO;
-import com.ev.dto.member.MemberDTO;
+import com.ev.dao.user.EvMemberDAO;
+import com.ev.dto.member.EvMemberDTO;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,14 +13,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class MemberServiceImpl implements MemberService {
+public class EvMemberServiceImpl implements EvMemberService {
   
-    private final MemberDAO memberDAO;
+    private final EvMemberDAO memberDAO;
 
     
     @Override
     @Transactional // 회원가입 처리 중 오류가 발생하면 작업을 rollback
-    public void join(MemberDTO memberDTO) {
+    public void join(EvMemberDTO memberDTO) {
         log.info("@# MemberServiceImpl.join()");
         log.info("@# memberDTO => {}", memberDTO);
 
@@ -62,13 +62,13 @@ public class MemberServiceImpl implements MemberService {
 
 
     @Override
-    public MemberDTO login(String userId, String password, String userType) {
+    public EvMemberDTO login(String userId, String password, String userType) {
         log.info("@# MemberServiceImpl.login()");
         log.info("@# userId => {}", userId);
         log.info("@# selected userType => {}", userType);
 
         // 1. 아이디로 회원 조회
-        MemberDTO loginMember = memberDAO.findByUserId(userId);
+        EvMemberDTO loginMember = memberDAO.findByUserId(userId);
 
         // 2. 회원이 없거나 ACTIVE 상태가 아니면 로그인 실패
         if (loginMember == null) {

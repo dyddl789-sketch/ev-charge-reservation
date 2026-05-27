@@ -1,0 +1,776 @@
+/* station_map.css
+   충전소 탐색 지도 화면 전용 CSS
+*/
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f5f7fb;
+    color: #111827;
+}
+
+/* 전체 지도 페이지 */
+.map-page {
+    height: calc(100vh - 76px);
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr) 380px;
+    overflow: hidden;
+}
+
+/* 왼쪽 패널 */
+.map-left-panel {
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    padding: 22px 18px;
+    overflow-y: auto;
+}
+
+.panel-section {
+    padding-bottom: 22px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid #eef0f3;
+}
+
+.panel-section:last-child {
+    border-bottom: 0;
+}
+
+.panel-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.panel-title-row h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 900;
+}
+
+.panel-title-row button {
+    border: 0;
+    background: transparent;
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.saved-place,
+.favorite-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.saved-place {
+    padding: 14px 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.saved-place.active {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+}
+
+.place-icon,
+.favorite-icon {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    border-radius: 50%;
+    background: #eff6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.saved-place strong,
+.favorite-item strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.saved-place p,
+.favorite-item p {
+    margin: 5px 0 0;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.favorite-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 가운데 지도 영역 */
+.map-center {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: #eef2f7;
+}
+
+.map-toolbar {
+    height: 64px;
+    flex: 0 0 64px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 18px;
+    overflow-x: auto;
+}
+
+.search-box {
+    width: 300px;
+    height: 38px;
+    flex: 0 0 300px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+}
+
+.search-box input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    padding: 0 12px;
+    font-size: 13px;
+}
+
+.search-box button {
+    width: 42px;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.filter-btn,
+.detail-filter-btn {
+    height: 38px;
+    padding: 0 14px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.filter-btn.active {
+    border-color: #f05a00;
+    color: #f05a00;
+    background: #fff7ed;
+}
+
+.detail-filter-btn {
+    color: #2563eb;
+}
+
+.map-wrapper {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+/* 카카오맵 위 목록 보기 버튼 */
+.list-view-btn {
+    position: absolute;
+    left: 50%;
+    bottom: 34px;
+    transform: translateX(-50%);
+    z-index: 30;
+
+    height: 44px;
+    padding: 0 26px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #2563eb;
+    font-size: 14px;
+    font-weight: 900;
+    text-decoration: none;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+    cursor: pointer;
+}
+
+/* 오른쪽 상세 패널 */
+.map-right-panel {
+    background: #ffffff;
+    border-left: 1px solid #e5e7eb;
+    padding: 26px 24px;
+    overflow-y: auto;
+}
+
+.detail-empty {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-weight: 800;
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.detail-header h2 {
+    margin: 0 0 10px;
+    font-size: 24px;
+    font-weight: 900;
+}
+
+.detail-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.detail-meta {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.detail-meta .status {
+    color: #16a34a;
+    font-weight: 900;
+}
+
+.close-btn {
+    border: 0;
+    background: transparent;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.charger-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 22px 0;
+}
+
+.charger-tags span {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.detail-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.route-btn,
+.reserve-btn {
+    height: 46px;
+    border-radius: 8px;
+    font-weight: 900;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.route-btn {
+    border: 1px solid #16a34a;
+    background: #ffffff;
+    color: #15803d;
+}
+
+.reserve-btn {
+    border: 1px solid #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
+
+.detail-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 12px;
+}
+
+.detail-tabs button {
+    height: 46px;
+    border: 0;
+    background: #ffffff;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.detail-tabs button.active {
+    color: #f05a00;
+    border-bottom: 2px solid #f05a00;
+}
+
+.charger-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.charger-row {
+    display: grid;
+    grid-template-columns: 34px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #f0f1f3;
+}
+
+.charger-no {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #138a43;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+}
+
+.charger-row strong {
+    font-size: 14px;
+}
+
+.charger-row p {
+    margin: 5px 0 0;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.charger-row em {
+    font-style: normal;
+    color: #16a34a;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.detail-link {
+    margin-top: 18px;
+    height: 44px;
+    border: 1px solid #d1d5db;
+    color: #111827;
+    text-decoration: none;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 반응형 */
+@media (max-width: 1180px) {
+    .map-page {
+        grid-template-columns: 230px minmax(0, 1fr);
+    }
+
+    .map-right-panel {
+        display: none;
+    }
+}
+
+@media (max-width: 860px) {
+    .map-page {
+        height: auto;
+        grid-template-columns: 1fr;
+    }
+
+    .map-left-panel {
+        display: none;
+    }
+
+    .map-wrapper {
+        height: 620px;
+    }
+
+    .map-toolbar {
+        height: auto;
+        flex-wrap: wrap;
+        padding: 12px;
+    }
+}
+
+/* 저장 위치 추가 모달 */
+.location-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.35);
+}
+
+.location-modal.active {
+    display: flex;
+}
+
+.location-modal-content {
+    width: 420px;
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.24);
+}
+
+.location-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.location-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.location-modal-header button {
+    border: 0;
+    background: transparent;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.location-form-group {
+    margin-bottom: 14px;
+}
+
+.location-form-group label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.location-form-group input,
+.location-form-group select {
+    width: 100%;
+    height: 42px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 0 12px;
+    outline: none;
+}
+
+.default-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 18px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.location-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.cancel-location-btn,
+.save-location-btn {
+    height: 44px;
+    border-radius: 10px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.cancel-location-btn {
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #374151;
+}
+
+.save-location-btn {
+    border: 1px solid #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
+
+.empty-location {
+    padding: 18px 8px;
+    color: #6b7280;
+    font-size: 13px;
+    text-align: center;
+}
+
+.location-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.35);
+}
+
+.location-modal.active {
+    display: flex;
+}
+
+.location-modal-content {
+    width: 420px;
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.24);
+}
+
+.location-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.location-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.location-modal-header button {
+    border: 0;
+    background: transparent;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.location-form-group {
+    margin-bottom: 14px;
+}
+
+.location-form-group label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.location-form-group input,
+.location-form-group select {
+    width: 100%;
+    height: 42px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 0 12px;
+    outline: none;
+}
+
+.default-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 18px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.location-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.cancel-location-btn,
+.save-location-btn {
+    height: 44px;
+    border-radius: 10px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.cancel-location-btn {
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #374151;
+}
+
+.save-location-btn {
+    border: 1px solid #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
+
+.empty-location {
+    padding: 18px 8px;
+    color: #6b7280;
+    font-size: 13px;
+    text-align: center;
+}
+
+.start-location-text {
+    margin-top: 8px !important;
+    color: #2563eb !important;
+    font-size: 12px !important;
+    font-weight: 800;
+}
+
+.saved-place {
+    justify-content: space-between;
+}
+
+.saved-place-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.delete-location-btn {
+    flex: 0 0 auto;
+    border: 0;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.delete-location-btn:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* 지도 위 저장 위치 마커 */
+.saved-location-marker {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transform: translateY(-8px);
+    cursor: pointer;
+    user-select: none;
+}
+
+.saved-location-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #f05a00;
+    border: 3px solid #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.saved-location-label {
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #111827;
+    font-size: 12px;
+    font-weight: 900;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+    white-space: nowrap;
+}
+
+.route-btn {
+    border: 1px solid #16a34a;
+    background: #ffffff;
+    color: #15803d;
+    font-family: inherit;
+}
+
+.route-summary-box {
+    margin-bottom: 18px;
+    padding: 16px;
+    border-radius: 14px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+}
+
+.route-summary-box strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 15px;
+    font-weight: 900;
+    color: #111827;
+}
+
+.route-summary-box p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: #4b5563;
+}
+
+.route-summary-box div {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.route-summary-box span {
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #f05a00;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.route-summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.route-summary-header strong {
+    margin-bottom: 0;
+}
+
+.route-summary-header button {
+    border: 0;
+    background: #ffffff;
+    color: #dc2626;
+    font-size: 12px;
+    font-weight: 900;
+    padding: 6px 9px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.route-summary-header button:hover {
+    background: #fee2e2;
+}
+
+.route-summary-info {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}

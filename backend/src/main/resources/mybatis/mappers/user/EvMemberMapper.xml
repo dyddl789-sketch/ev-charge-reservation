@@ -3,7 +3,7 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.ev.dao.user.MemberDAO">
+<mapper namespace="com.ev.dao.user.EvMemberDAO">
 
     <!--
         아이디 중복 확인
@@ -35,7 +35,7 @@
     <!--
         회원가입 insert
     -->
-    <insert id="insertMember" parameterType="com.ev.dto.member.MemberDTO">
+    <insert id="insertMember" parameterType="com.ev.dto.member.EvMemberDTO">
         insert into app_member (
               user_id
             , password
@@ -70,7 +70,7 @@
 
     status가 ACTIVE인 회원만 로그인 가능하게 한다.
 	-->
-	<select id="findByUserId" parameterType="string" resultType="com.ev.dto.member.MemberDTO">
+	<select id="findByUserId" parameterType="string" resultType="com.ev.dto.member.EvMemberDTO">
 	    select
 	          member_id
 	        , user_id

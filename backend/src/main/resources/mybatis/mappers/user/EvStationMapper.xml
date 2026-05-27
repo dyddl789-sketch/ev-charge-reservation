@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.ev.dao.user.EvStationDAO">
+
+ 	<!-- 충전소 목록 조회 -->
+
+        
+	<!-- left join을 쓰는 이유: -->
+	<!-- 충전기가 아직 등록되지 않은 충전소도 목록에 보여주기 위해서 -->
+    
+    <select id="findStationList" resultType="com.ev.dto.station.EvChargingStationDTO">
+        select
+              cs.station_id
+            , cs.station_name
+            , cs.address
+            , cs.latitude
+            , cs.longitude
+            , cs.operator_name
+            , cs.open_time
+            , cs.close_time
+            , cs.station_status
+            , cs.created_at
+            , cs.updated_at
+            , count(c.charger_id) as charger_count
+            , coalesce(
+                sum(
+                    case
+                        when c.status = '사용가능' then 1
+                        else 0
+                    end
+                ), 0
+              ) as available_charger_count
+
+          from charging_station cs
+
+          left join charger c
+            on cs.station_id = c.station_id
+
+         where 1 = 1
+
+        <!-- 검색어가 있을 때만 검색 조건 적용 -->
+        <if test="keyword != null and keyword != ''">
+           and (
+                  cs.station_name like concat('%', #{keyword}, '%')
+               or cs.address like concat('%', #{keyword}, '%')
+               or cs.operator_name like concat('%', #{keyword}, '%')
+           )
+        </if>
+
+         group by
+              cs.station_id
+            , cs.station_name
+            , cs.address
+            , cs.latitude
+            , cs.longitude
+            , cs.operator_name
+            , cs.open_time
+            , cs.close_time
+            , cs.station_status
+            , cs.created_at
+            , cs.updated_at
+
+         order by cs.station_id desc
+    </select>
+
+
+    <!--충전소 상세 조회-->
+    <select id="findStationById" resultType="com.ev.dto.station.EvChargingStationDTO">
+        select
+              station_id
+            , station_name
+            , address
+            , latitude
+            , longitude
+            , operator_name
+            , open_time
+            , close_time
+            , station_status
+            , created_at
+            , updated_at
+          from charging_station
+         where station_id = #{stationId}
+    </select>
+
+
+    <!--특정 충전소의 충전기 목록 조회 -->
+    <select id="findChargerListByStationId" resultType="com.ev.dto.station.EvChargerDTO">
+        select
+              charger_id
+            , station_id
+            , charger_name
+            , charger_type
+            , connector_type
+            , charging_speed_kw
+            , price_per_kwh
+            , status
+            , created_at
+            , updated_at
+          from charger
+         where station_id = #{stationId}
+         order by charger_id asc
+    </select>
+    
+    <select id="findStationMapList"
+        resultType="com.ev.dto.station.EvStationMapDTO">
+	    select
+	          cs.station_id
+	        , cs.station_name
+	        , cs.address
+	        , cs.operator_name
+	        , cs.station_status
+	        , cs.latitude
+	        , cs.longitude
+	        , count(c.charger_id) as charger_count
+	        , coalesce(
+	            sum(
+	                case
+	                    when c.status = '사용가능' then 1
+	                    else 0
+	                end
+	            ), 0
+	          ) as available_charger_count
+	      from charging_station cs
+	      left join charger c
+	        on cs.station_id = c.station_id
+	     where 1=1
+	
+	    <if test="keyword != null and keyword != ''">
+	       and (
+	              cs.station_name ilike '%' || #{keyword} || '%'
+	           or cs.address ilike '%' || #{keyword} || '%'
+	           or cs.operator_name ilike '%' || #{keyword} || '%'
+	       )
+	    </if>
+	
+	     group by
+	          cs.station_id
+	        , cs.station_name
+	        , cs.address
+	        , cs.operator_name
+	        , cs.station_status
+	        , cs.latitude
+	        , cs.longitude
+	     order by cs.station_id desc
+	</select>
+
+</mapper>

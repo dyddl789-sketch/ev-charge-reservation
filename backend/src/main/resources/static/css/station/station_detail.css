@@ -488,3 +488,207 @@
         flex-direction: column;
     }
 }
+
+/* =========================
+   Station Detail Page
+========================= */
+
+body {
+    margin: 0;
+    background: #f6f7fb;
+    color: #111827;
+}
+
+.station-detail-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 36px 24px 90px;
+}
+
+.detail-header {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 18px;
+    color: #f05a00;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.detail-header h2 {
+    margin: 0 0 10px;
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: -0.6px;
+}
+
+.detail-header > p {
+    margin: 0 0 18px;
+    color: #4b5563;
+    font-size: 15px;
+}
+
+.detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.detail-meta span {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.charger-section {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.charger-section h3 {
+    margin: 0 0 20px;
+    font-size: 23px;
+    font-weight: 900;
+}
+
+.charger-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.charger-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    padding: 22px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    background: #ffffff;
+    transition: 0.15s ease;
+}
+
+.charger-card:hover {
+    border-color: #fed7aa;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.charger-info h4 {
+    margin: 0 0 10px;
+    font-size: 19px;
+    font-weight: 900;
+    color: #111827;
+}
+
+.charger-info p {
+    margin: 6px 0;
+    color: #4b5563;
+    font-size: 14px;
+}
+
+.charger-status {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 8px;
+    padding: 6px 11px;
+    border-radius: 999px;
+    background: #ecfdf5;
+    color: #138a43;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.charger-action {
+    min-width: 110px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.charger-action a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 100px;
+    height: 42px;
+    padding: 0 16px;
+    border-radius: 12px;
+    background: #f05a00;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.charger-action a:hover {
+    background: #d94f00;
+}
+
+.charger-action button {
+    min-width: 100px;
+    height: 42px;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    background: #f3f4f6;
+    color: #9ca3af;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: not-allowed;
+}
+
+.empty-box {
+    padding: 70px 30px;
+    text-align: center;
+    background: #f9fafb;
+    border: 1px dashed #d1d5db;
+    border-radius: 16px;
+    color: #6b7280;
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    .station-detail-page {
+        padding: 28px 16px 70px;
+    }
+
+    .detail-header,
+    .charger-section {
+        padding: 22px;
+    }
+
+    .charger-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .charger-action {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .charger-action a,
+    .charger-action button {
+        width: 100%;
+    }
+}

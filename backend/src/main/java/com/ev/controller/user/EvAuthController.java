@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.ev.dto.member.MemberDTO;
-import com.ev.service.user.MemberService;
+import com.ev.dto.member.EvMemberDTO;
+import com.ev.service.user.EvMemberService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class EvAuthController {
 
-    private final MemberService memberService;
+    private final EvMemberService memberService;
 
     
     @GetMapping("/login")
@@ -54,7 +54,7 @@ public class EvAuthController {
         log.info("@# userId => {}", userId);
 
         try {
-            MemberDTO loginMember = memberService.login(userId, password, userType);
+            EvMemberDTO loginMember = memberService.login(userId, password, userType);
 
             /*
              * 로그인 성공 시 세션에 필요한 정보 저장

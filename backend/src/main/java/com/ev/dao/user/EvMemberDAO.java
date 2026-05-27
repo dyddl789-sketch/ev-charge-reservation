@@ -2,7 +2,7 @@ package com.ev.dao.user;
 
 import org.apache.ibatis.annotations.Mapper;
 
-import com.ev.dto.member.MemberDTO;
+import com.ev.dto.member.EvMemberDTO;
 
 /*
  * 회원가입에서 필요한 기능:
@@ -12,7 +12,7 @@ import com.ev.dto.member.MemberDTO;
  * 4. 회원 정보 저장
 */
 @Mapper
-public interface MemberDAO {
+public interface EvMemberDAO {
     /*
      * 아이디 중복 확인
      */
@@ -31,12 +31,12 @@ public interface MemberDAO {
     /*
      * 회원가입 정보 저장
      */
-    void insertMember(MemberDTO memberDTO);
+    void insertMember(EvMemberDTO memberDTO);
     
     /*
      * 로그인용 회원 조회
      *
      * user_id로 회원 1명을 조회한다.
      */
-    MemberDTO findByUserId(String userId);
+    EvMemberDTO findByUserId(String userId);
 }
