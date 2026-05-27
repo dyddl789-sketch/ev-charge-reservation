@@ -18,6 +18,17 @@ public class EvMemberServiceImpl implements EvMemberService {
     private final EvMemberDAO evMemberDAO;
     private final PasswordEncoder passwordEncoder;
 
+    /*
+     * 회원가입 처리
+     *
+     * 처리 순서:
+     * 1. 아이디 중복 확인
+     * 2. 이메일 중복 확인
+     * 3. 전화번호 중복 확인
+     * 4. 비밀번호 BCrypt 암호화
+     * 5. 기본값 설정
+     * 6. 회원 정보 DB 저장
+     */
     @Override
     @Transactional
     public void join(EvMemberDTO evMemberDTO) {

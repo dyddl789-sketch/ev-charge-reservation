@@ -22,6 +22,7 @@ public class EvMemberController {
 //							   2. 테스트 용이성: 의존성을 명시적으로 선언하여 단위 테스트가 쉬워집니다.
 //	 						   3. 순환 의존성 탐지: 컴파일 시점에 순환 의존성을 쉽게 발견할 수 있습니다.
     
+
     private final EvMemberService evMemberService;
 
     

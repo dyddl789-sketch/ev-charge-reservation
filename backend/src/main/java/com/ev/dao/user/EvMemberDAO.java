@@ -39,6 +39,7 @@ public interface EvMemberDAO {
      * user_id로 회원 1명을 조회한다.
      */
     EvMemberDTO findByUserId(String userId);
+
     //소셜로그인 정보 저장
     void insertSocialMember(EvMemberDTO evMemberDTO);
 }
