@@ -25,7 +25,7 @@
 
         <section class="panel-section">
             <div class="panel-title-row">
-                <h3>주소 등록</h3>
+                <h3>출발지 등록</h3>
                 <button type="button" id="openLocationModalBtn">+ 위치 추가</button>
             </div>
 
@@ -856,8 +856,8 @@
 
         html += "<div class='detail-actions'>";
         html += "   <button type='button' class='route-btn' onclick='requestRouteSimulation()'>길찾기</button>";
-        html += "   <a class='reserve-btn' href='" + contextPath + "/reservation/write?stationId="
-            + station.stationId + "'>예약하기</a>";
+        html += "   <button type='button' class='reserve-btn' onclick='goReservation("
+            + station.stationId + ")'>예약하기</button>";
         html += "</div>";
 
         html += "<div class='detail-tabs'>";
@@ -1029,6 +1029,49 @@
          summaryHtml += "</div>";
 
          panel.insertAdjacentHTML("afterbegin", summaryHtml);
+     }
+    
+     /*
+      * 예약하기
+      *
+      * 1. 선택한 충전소의 충전기 목록 조회
+      * 2. 사용 가능한 충전기 선택
+      * 3. 예약 폼으로 이동
+      */
+     function goReservation(stationId) {
+         fetch(contextPath + "/station/chargers?stationId=" + stationId)
+             .then(function(response) {
+                 return response.json();
+             })
+             .then(function(chargers) {
+                 console.log("chargers => ", chargers);
+
+                 if (!chargers || chargers.length === 0) {
+                     alert("등록된 충전기가 없습니다.");
+                     return;
+                 }
+
+                 var selectedCharger = null;
+
+                 for (var i = 0; i < chargers.length; i++) {
+                     if (chargers[i].status === "사용가능") {
+                         selectedCharger = chargers[i];
+                         break;
+                     }
+                 }
+
+                 if (!selectedCharger) {
+                     alert("사용 가능한 충전기가 없습니다.");
+                     return;
+                 }
+
+                 location.href = contextPath + "/reservation/form?chargerId="
+                     + selectedCharger.chargerId;
+             })
+             .catch(function(error) {
+                 console.log("charger list error => ", error);
+                 alert("충전기 정보를 불러오지 못했습니다.");
+             });
      }
 </script>
 
