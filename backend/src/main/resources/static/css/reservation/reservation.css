@@ -224,6 +224,10 @@
     background: #fff7ed;
 }
 
+.charger-content {
+    padding-right: 28px;
+}
+
 .charger-option strong {
     display: block;
     margin-bottom: 8px;
@@ -287,6 +291,13 @@
 
 .submit-btn:hover {
     background: #d94f00;
+}
+
+.submit-btn:disabled {
+    border-color: #dcdfe6;
+    background: #e5e7eb;
+    color: #777777;
+    cursor: not-allowed;
 }
 
 /* =========================
@@ -375,48 +386,6 @@
     margin: 0;
 }
 
-/* =========================
-   Responsive
-========================= */
-
-@media (max-width: 1200px) {
-    .reservation-layout {
-        grid-template-columns: 1fr;
-    }
-
-    .reservation-summary-card {
-        position: static;
-    }
-
-    .charger-list {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 720px) {
-    .reservation-main {
-        padding: 24px 16px 40px;
-    }
-
-    .page-title {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 14px;
-    }
-
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .form-buttons {
-        flex-direction: column;
-    }
-
-    .calc-btn,
-    .submit-btn {
-        width: 100%;
-    }
-}
 /* =========================
    My Reservation Page
 ========================= */
@@ -557,6 +526,11 @@
     color: #2563eb;
 }
 
+.status-badge.canceled {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
 .reservation-date-box {
     text-align: right;
     min-width: 160px;
@@ -610,6 +584,10 @@
     color: #138a43 !important;
 }
 
+.orange-text {
+    color: #f05a00 !important;
+}
+
 .reservation-card-actions {
     display: flex;
     justify-content: flex-end;
@@ -617,7 +595,8 @@
 }
 
 .outline-action,
-.cancel-action {
+.cancel-action,
+.disabled-action {
     height: 40px;
     padding: 0 18px;
     border-radius: 6px;
@@ -625,8 +604,12 @@
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    cursor: pointer;
     font-size: 14px;
+}
+
+.outline-action,
+.cancel-action {
+    cursor: pointer;
 }
 
 .outline-action {
@@ -649,6 +632,21 @@
 
 .cancel-action:hover {
     background: #fff1f2;
+}
+
+.disabled-action {
+    background: #f3f4f6;
+    color: #777777;
+}
+
+.canceled-card {
+    border-color: #d1d5db;
+    opacity: 0.82;
+}
+
+.canceled-card h2,
+.canceled-card .reservation-info-grid strong {
+    color: #6b7280;
 }
 
 .charging-progress {
@@ -697,41 +695,6 @@
 
 .compare-box p {
     margin: 0;
-}
-
-@media (max-width: 1200px) {
-    .my-summary-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .reservation-info-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (max-width: 720px) {
-    .my-summary-grid,
-    .reservation-info-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .reservation-filter-card,
-    .reservation-card-header {
-        flex-direction: column;
-    }
-
-    .reservation-date-box {
-        text-align: left;
-    }
-
-    .reservation-card-actions {
-        flex-direction: column;
-    }
-
-    .outline-action,
-    .cancel-action {
-        width: 100%;
-    }
 }
 
 /* =========================
@@ -845,10 +808,6 @@
     text-align: right;
 }
 
-.orange-text {
-    color: #f05a00 !important;
-}
-
 .complete-cost-row strong {
     color: #f05a00;
     font-size: 22px;
@@ -908,6 +867,32 @@
     background: #fff4ec;
 }
 
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1200px) {
+    .reservation-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .reservation-summary-card {
+        position: static;
+    }
+
+    .charger-list {
+        grid-template-columns: 1fr;
+    }
+
+    .my-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .reservation-info-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 @media (max-width: 820px) {
     .complete-card {
         width: 100%;
@@ -924,34 +909,203 @@
     }
 }
 
+@media (max-width: 720px) {
+    .reservation-main {
+        padding: 24px 16px 40px;
+    }
+
+    .page-title,
+    .reservation-filter-card,
+    .reservation-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .form-grid,
+    .my-summary-grid,
+    .reservation-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-buttons,
+    .reservation-card-actions {
+        flex-direction: column;
+    }
+
+    .calc-btn,
+    .submit-btn,
+    .outline-action,
+    .cancel-action,
+    .complete-main-btn,
+    .complete-outline-btn {
+        width: 100%;
+    }
+
+    .reservation-date-box {
+        text-align: left;
+    }
+}
+
 /* =========================
-   예약 취소
+   Reservation Actions / Redis Auth Modal
 ========================= */
 
-.status-badge.canceled {
-    background: #f3f4f6;
-    color: #6b7280;
+.inline-cancel-form {
+    display: inline-block;
+    margin: 0;
 }
 
-.canceled-card {
-    border-color: #d1d5db;
-    opacity: 0.82;
-}
-
-.canceled-card h2,
-.canceled-card .reservation-info-grid strong {
-    color: #6b7280;
-}
-
-.disabled-action {
-    height: 40px;
-    padding: 0 18px;
-    border-radius: 6px;
-    background: #f3f4f6;
-    color: #777777;
+.reservation-action-group {
     display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.inline-action-form {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    margin: 0;
+}
+
+.status-badge.verified {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.status-badge.noshow {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.arrival-action {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    background: #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.arrival-action:hover {
+    background: #1d4ed8;
+}
+
+.wait-action {
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px 14px;
+    background: #f3f4f6;
+    color: #9ca3af;
+    font-weight: 700;
+    cursor: not-allowed;
+}
+
+.auth-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
+}
+
+.auth-modal {
+    width: 420px;
+    max-width: calc(100% - 32px);
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 26px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.auth-modal h2 {
+    margin: 0 0 10px;
+    font-size: 22px;
+    color: #111827;
+}
+
+.auth-modal-desc {
+    margin: 0 0 18px;
     font-size: 14px;
+    line-height: 1.6;
+    color: #6b7280;
+}
+
+.issued-code-box {
+    margin-bottom: 18px;
+    padding: 18px;
+    border-radius: 14px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    text-align: center;
+}
+
+.issued-code-box span {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #2563eb;
+    font-weight: 700;
+}
+
+.issued-code-box strong {
+    display: block;
+    font-size: 34px;
+    letter-spacing: 8px;
+    color: #1d4ed8;
+}
+
+.auth-modal-form {
+    margin: 0;
+}
+
+.auth-modal-input {
+    width: 100%;
+    height: 44px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 0 12px;
+    font-size: 16px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.auth-modal-input:focus {
+    border-color: #2563eb;
+}
+
+.auth-modal-actions {
+    margin-top: 18px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.auth-modal-close {
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px 14px;
+    background: #ffffff;
+    color: #374151;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.auth-modal-submit {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    background: #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.auth-modal-submit:hover {
+    background: #1d4ed8;
 }

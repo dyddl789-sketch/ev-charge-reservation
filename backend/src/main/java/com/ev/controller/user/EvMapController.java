@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ev.dto.map.EvSavedLocationDTO;
+import com.ev.dto.station.EvChargerDTO;
 import com.ev.dto.station.EvStationMapDTO;
 import com.ev.security.EvUserDetails;
 import com.ev.service.user.EvSavedLocationService;
@@ -142,4 +143,21 @@ public class EvMapController {
 
         return "success";
     }
+    
+    /*
+     * 특정 충전소의 충전기 목록 조회
+     *
+     * 요청 URL:
+     * GET /station/chargers?stationId=1
+     */
+    @ResponseBody
+    @GetMapping("/chargers")
+    public List<EvChargerDTO> chargerList(@RequestParam("stationId") Long stationId) {
+        log.info("@# EvMapController.chargerList()");
+        log.info("@# stationId => {}", stationId);
+
+        return stationService.getChargerList(stationId);
+    }
 }
+
+
