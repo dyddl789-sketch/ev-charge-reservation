@@ -41,7 +41,7 @@ public class SecurityConfig {
                 ).permitAll()
 
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/vehicle/**", "/reservation/**").authenticated()
+                .requestMatchers("/vehicle/**", "/reservation/**", "/ai-chat/**").authenticated()
 
                 .anyRequest().permitAll()
             )

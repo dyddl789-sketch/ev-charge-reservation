@@ -1,0 +1,414 @@
+.ev-chat-widget {
+    position: fixed;
+    right: 28px;
+    bottom: 28px;
+    z-index: 9999;
+    font-family: 'Pretendard', 'Noto Sans KR', Arial, sans-serif;
+}
+
+/* 원형 플로팅 버튼 */
+.ev-chat-toggle-btn {
+    width: 64px;
+    height: 64px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5, #06b6d4, #10b981);
+    color: #fff;
+    box-shadow: 0 14px 32px rgba(79, 70, 229, 0.38);
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ev-chat-toggle-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 40px rgba(6, 182, 212, 0.42);
+}
+
+/* 코드 기반 상담 아이콘 */
+.ev-chat-icon {
+    width: 31px;
+    height: 24px;
+    border: 3px solid #fff;
+    border-radius: 16px;
+    position: relative;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+}
+
+.ev-chat-icon::after {
+    content: "";
+    position: absolute;
+    right: 4px;
+    bottom: -8px;
+    width: 9px;
+    height: 9px;
+    border-left: 3px solid #fff;
+    border-bottom: 3px solid #fff;
+    transform: rotate(-25deg);
+}
+
+.ev-chat-icon-dot {
+    width: 4px;
+    height: 4px;
+    background: #fff;
+    border-radius: 50%;
+}
+
+/* 채팅창 */
+.ev-chat-box {
+    display: none;
+    position: absolute;
+    right: 0;
+    bottom: 78px;
+
+    width: 380px;
+    height: 540px;
+
+    min-width: 340px;
+    min-height: 440px;
+    max-width: 720px;
+    max-height: 82vh;
+
+    background: #fff;
+    border-radius: 24px;
+    border: 1px solid #e9edf3;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+}
+
+/* 열림 상태 */
+.ev-chat-box.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 확대 상태 */
+.ev-chat-box.expanded {
+    width: 620px;
+    height: 720px;
+}
+
+/* 왼쪽 상단 리사이즈 핸들 */
+.ev-chat-resize-handle.top-left {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 22px;
+    height: 22px;
+    z-index: 60;
+    cursor: nw-resize;
+}
+
+/* 헤더 */
+.ev-chat-header {
+    height: 78px;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, #4f46e5, #06b6d4, #10b981);
+    color: #fff;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    flex-shrink: 0;
+    position: relative;
+    z-index: 20;
+}
+
+.ev-chat-title {
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.ev-chat-subtitle {
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.92;
+}
+
+/* 헤더 버튼 */
+.ev-chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ev-chat-header-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: background 0.2s ease;
+}
+
+.ev-chat-header-btn:hover {
+    background: rgba(255, 255, 255, 0.32);
+}
+
+/* 메시지 영역 */
+.ev-chat-messages {
+    flex: 1;
+    padding: 18px;
+    overflow-y: auto;
+    background: #f6f8fb;
+}
+
+.ev-chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.ev-chat-messages::-webkit-scrollbar-thumb {
+    background: #cfd8e3;
+    border-radius: 999px;
+}
+
+/* 메시지 */
+.ev-chat-message {
+    display: flex;
+    margin-bottom: 14px;
+}
+
+.ev-chat-message.user {
+    justify-content: flex-end;
+}
+
+/* AI 메시지 */
+.ev-chat-message.ai {
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+/* AI 아바타 */
+.ev-chat-avatar {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+
+    border-radius: 50%;
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border: 2px solid #e0e7ff;
+
+    box-shadow:
+        0 4px 10px rgba(37, 99, 235, 0.15);
+
+    flex-shrink: 0;
+}
+
+/* AI 아바타 이미지 */
+.ev-chat-avatar img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    display: block;
+}
+
+/* AI 말풍선 */
+.ev-chat-message.ai .ev-chat-bubble {
+    max-width: calc(100% - 52px);
+}
+
+/* 말풍선 */
+.ev-chat-bubble {
+    max-width: 78%;
+    padding: 12px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.65;
+
+    white-space: pre-line;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+}
+
+.ev-chat-message.ai .ev-chat-bubble {
+    background: #fff;
+    color: #222;
+    border: 1px solid #e5e9f0;
+    border-top-left-radius: 4px;
+}
+
+.ev-chat-message.user .ev-chat-bubble {
+    background: linear-gradient(135deg, #4f46e5, #06b6d4);
+    color: #fff;
+    border-top-right-radius: 4px;
+}
+
+/* 대표 기능 버튼 영역: 기본은 1열 */
+.ev-chat-quick-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+/* 확대 모드에서는 2열 */
+.ev-chat-box.expanded .ev-chat-quick-actions {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* 대표 기능 버튼 */
+.ev-chat-quick-btn {
+    position: relative;
+
+    border: 1px solid #dbeafe;
+    background: #fff;
+    color: #2563eb;
+
+    border-radius: 14px;
+
+    padding: 12px 14px 12px 42px;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.ev-chat-quick-btn:hover {
+    background: #eff6ff;
+    transform: translateY(-1px);
+}
+
+/* 공통 아이콘 */
+.ev-chat-quick-btn::before {
+    content: "";
+
+    position: absolute;
+
+    left: 14px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    width: 14px;
+    height: 14px;
+
+    border-radius: 50%;
+}
+
+/* 충전소 찾기 */
+.station-btn::before {
+    background: #3b82f6;
+
+    box-shadow:
+        0 0 0 4px rgba(59, 130, 246, 0.16);
+}
+
+/* 예약 */
+.reservation-btn::before {
+    background: #8b5cf6;
+
+    box-shadow:
+        0 0 0 4px rgba(139, 92, 246, 0.16);
+}
+
+/* 시간 계산 */
+.time-btn::before {
+    background: #10b981;
+
+    box-shadow:
+        0 0 0 4px rgba(16, 185, 129, 0.16);
+}
+
+/* 비용 계산 */
+.cost-btn::before {
+    background: #f59e0b;
+
+    box-shadow:
+        0 0 0 4px rgba(245, 158, 11, 0.16);
+}
+
+.ev-chat-quick-btn:hover {
+    background: #eff6ff;
+    transform: translateY(-1px);
+}
+
+/* 입력 영역 */
+.ev-chat-input-area {
+    display: flex;
+    gap: 8px;
+    padding: 14px;
+    border-top: 1px solid #e9edf3;
+    background: #fff;
+    flex-shrink: 0;
+}
+
+.ev-chat-input {
+    flex: 1;
+    height: 44px;
+    border: 1px solid #d9e0ea;
+    border-radius: 12px;
+    padding: 0 14px;
+    font-size: 14px;
+    outline: none;
+
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ev-chat-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+}
+
+.ev-chat-send-btn {
+    width: 64px;
+    height: 44px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #4f46e5, #06b6d4);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.ev-chat-send-btn:hover {
+    transform: translateY(-1px);
+}
+
+.ev-chat-send-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* 로딩 */
+.ev-chat-loading .ev-chat-bubble {
+    color: #777;
+}
+
+/* 채팅창이 충분히 넓어졌을 때 2열 유지 */
+.ev-chat-box.wide .ev-chat-quick-actions {
+    grid-template-columns: repeat(2, 1fr);
+}

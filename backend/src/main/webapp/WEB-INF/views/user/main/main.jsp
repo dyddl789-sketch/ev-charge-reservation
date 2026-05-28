@@ -318,5 +318,6 @@
     }
 </script>
 
+<jsp:include page="/WEB-INF/views/common/chat_widget.jsp" />
 </body>
 </html>
