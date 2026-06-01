@@ -36,4 +36,5 @@ application-secret.yml
 bin/
 
 # Secret properties
-application-secret.properties 
+application-secret.properties
+
