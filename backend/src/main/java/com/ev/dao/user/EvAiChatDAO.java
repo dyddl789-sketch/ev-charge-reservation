@@ -4,8 +4,10 @@ import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 
+import com.ev.dto.chat.EvAiChargeInfoDTO;
 import com.ev.dto.chat.EvAiChatMessageDTO;
 import com.ev.dto.chat.EvAiChatRoomDTO;
+import com.ev.dto.chat.EvAiStationRecommendDTO;
 
 @Mapper
 public interface EvAiChatDAO {
@@ -24,5 +26,10 @@ public interface EvAiChatDAO {
     
  // 최근 채팅 메시지 조회
     List<EvAiChatMessageDTO> findRecentMessagesByRoomId(Long roomId);
-
+    
+ // AI 챗봇용 주변 충전소 추천 조회
+    List<EvAiStationRecommendDTO> findRecommendStations(Long memberId);
+  
+ // AI 챗봇용 충전 시간/비용 계산 정보 조회
+    EvAiChargeInfoDTO findChargeCalculationInfo(Long memberId);
 }
