@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <!DOCTYPE html>
 <html>
@@ -13,6 +14,9 @@
 <script type="text/javascript"
         src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJavascriptKey}&libraries=services&autoload=false">
 </script>
+
+<!-- Daum/Kakao 주소 검색 API -->
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
 <body>
 
@@ -90,6 +94,12 @@
 
 </div>
 
+<c:if test="${not empty errorMsg}">
+    <script>
+        alert("${errorMsg}");
+    </script>
+</c:if>
+
 <!-- 위치 추가 모달 -->
 <div id="locationModal" class="location-modal">
     <div class="location-modal-content">
@@ -116,8 +126,33 @@
 
         <div class="location-form-group">
             <label for="locationAddressInput">주소</label>
-            <input type="text" id="locationAddressInput" placeholder="예: 부산 부산진구 중앙대로 627">
+
+            <div class="address-search-row">
+                <input type="text"
+                       id="locationAddressInput"
+                       placeholder="주소 검색 버튼을 눌러주세요"
+                       readonly>
+
+                <button type="button"
+                        id="addressSearchBtn"
+                        class="address-search-btn">
+                    주소 검색
+                </button>
+            </div>
         </div>
+
+        <div class="location-form-group">
+            <label for="locationDetailAddressInput">상세주소</label>
+            <input type="text"
+                   id="locationDetailAddressInput"
+                   placeholder="예: 101동 1201호">
+        </div>
+
+        <input type="hidden" id="locationPostcodeInput">
+        <input type="hidden" id="locationRoadAddressInput">
+        <input type="hidden" id="locationJibunAddressInput">
+        <input type="hidden" id="locationLatitudeInput">
+        <input type="hidden" id="locationLongitudeInput">
 
         <label class="default-check">
             <input type="checkbox" id="locationDefaultInput">
@@ -418,11 +453,6 @@
 
     /*
      * 저장 위치 목록 렌더링
-     *
-     * 1. 좌측 주소 등록 목록 출력
-     * 2. 저장 위치 클릭 이벤트 연결
-     * 3. 삭제 버튼 이벤트 연결
-     * 4. 지도 위에 저장 위치 마커 표시
      */
     function renderSavedLocations(locations) {
         var list = document.getElementById("savedLocationList");
@@ -466,16 +496,9 @@
 
         list.innerHTML = html;
 
-        /*
-         * innerHTML로 새로 그렸기 때문에 이벤트를 다시 연결해야 한다.
-         */
         bindSavedLocationEvents();
         bindDeleteLocationEvents();
 
-        /*
-         * 기본 위치가 있으면 기본 위치를 출발지로 설정.
-         * 없으면 첫 번째 위치를 출발지로 설정.
-         */
         var defaultLocation = locations[0];
 
         for (var j = 0; j < locations.length; j++) {
@@ -496,9 +519,6 @@
 
         console.log("selectedStartLocation => ", selectedStartLocation);
 
-        /*
-         * 지도 위에 저장 위치 마커 표시
-         */
         drawSavedLocationMarkers(locations);
     }
 
@@ -515,8 +535,6 @@
 
     /*
      * 지도 위에 저장 위치 마커 표시
-     *
-     * 충전소 마커와 구분되도록 CustomOverlay를 사용한다.
      */
     function drawSavedLocationMarkers(locations) {
         clearLocationMarkers();
@@ -538,9 +556,6 @@
                     "<span class='saved-location-dot'></span>" +
                     "<span class='saved-location-label'>" + location.locationName + "</span>";
 
-                /*
-                 * 저장 위치 마커 클릭 시 해당 위치를 출발지로 선택
-                 */
                 markerContent.addEventListener("click", function() {
                     selectSavedLocation(location);
                 });
@@ -559,8 +574,6 @@
 
     /*
      * 저장 위치 선택
-     *
-     * 좌측 목록 클릭 또는 지도 위 저장 위치 마커 클릭 시 실행된다.
      */
     function selectSavedLocation(location) {
         selectedStartLocation = {
@@ -574,9 +587,6 @@
 
         console.log("selectedStartLocation => ", selectedStartLocation);
 
-        /*
-         * 좌측 목록 active 처리
-         */
         var savedPlaces = document.querySelectorAll(".saved-place");
 
         savedPlaces.forEach(function(place) {
@@ -589,9 +599,6 @@
 
         moveToStartLocation();
 
-        /*
-         * 충전소 상세 패널이 이미 열려 있으면 출발지 문구 갱신
-         */
         if (currentStation) {
             renderStationDetail(currentStation);
         }
@@ -627,10 +634,6 @@
 
         deleteButtons.forEach(function(button) {
             button.addEventListener("click", function(e) {
-                /*
-                 * 삭제 버튼을 눌렀을 때 부모 saved-place 클릭 이벤트가
-                 * 같이 실행되지 않도록 막는다.
-                 */
                 e.stopPropagation();
 
                 var locationId = button.dataset.locationId;
@@ -646,11 +649,6 @@
 
     /*
      * 저장 위치 삭제
-     *
-     * 삭제 버튼 클릭
-     * → /station/saved-locations/delete POST 요청
-     * → DB 삭제
-     * → 좌측 위치 목록 다시 조회
      */
     function deleteSavedLocation(locationId) {
         var formData = new URLSearchParams();
@@ -672,9 +670,11 @@
 
                 clearRouteLine();
                 loadSavedLocations();
+
             } else if (resultText === "login_required") {
                 alert("로그인 후 이용할 수 있습니다.");
                 location.href = contextPath + "/login";
+
             } else {
                 alert("위치 삭제에 실패했습니다.");
             }
@@ -720,8 +720,65 @@
             closeLocationModal();
         });
 
+        document.getElementById("addressSearchBtn").addEventListener("click", function() {
+            openDaumAddressSearch();
+        });
+
         document.getElementById("saveLocationBtn").addEventListener("click", function() {
             saveSavedLocation();
+        });
+    }
+
+    /*
+     * Daum/Kakao 주소 검색
+     */
+    function openDaumAddressSearch() {
+        if (typeof daum === "undefined" || !daum.Postcode) {
+            alert("주소 검색 API를 불러오지 못했습니다.");
+            return;
+        }
+
+        new daum.Postcode({
+            oncomplete: function(data) {
+                var selectedAddress = "";
+
+                if (data.userSelectedType === "R") {
+                    selectedAddress = data.roadAddress;
+                } else {
+                    selectedAddress = data.jibunAddress;
+                }
+
+                document.getElementById("locationAddressInput").value = selectedAddress;
+                document.getElementById("locationPostcodeInput").value = data.zonecode || "";
+                document.getElementById("locationRoadAddressInput").value = data.roadAddress || "";
+                document.getElementById("locationJibunAddressInput").value = data.jibunAddress || "";
+
+                document.getElementById("locationLatitudeInput").value = "";
+                document.getElementById("locationLongitudeInput").value = "";
+
+                setLocationCoordinateByAddress(selectedAddress);
+
+                document.getElementById("locationDetailAddressInput").focus();
+            }
+        }).open();
+    }
+
+    /*
+     * 선택한 주소를 위도/경도로 변환
+     */
+    function setLocationCoordinateByAddress(address) {
+        if (!geocoder || !address) {
+            return;
+        }
+
+        geocoder.addressSearch(address, function(result, status) {
+            if (status !== kakao.maps.services.Status.OK || !result || result.length === 0) {
+                console.log("주소 좌표 변환 실패 => ", address);
+                return;
+            }
+
+            document.getElementById("locationLatitudeInput").value = result[0].y;
+            document.getElementById("locationLongitudeInput").value = result[0].x;
         });
     }
 
@@ -734,21 +791,25 @@
         document.getElementById("locationNameInput").value = "";
         document.getElementById("locationTypeInput").value = "HOME";
         document.getElementById("locationAddressInput").value = "";
+        document.getElementById("locationDetailAddressInput").value = "";
+        document.getElementById("locationPostcodeInput").value = "";
+        document.getElementById("locationRoadAddressInput").value = "";
+        document.getElementById("locationJibunAddressInput").value = "";
+        document.getElementById("locationLatitudeInput").value = "";
+        document.getElementById("locationLongitudeInput").value = "";
         document.getElementById("locationDefaultInput").checked = false;
     }
 
     /*
      * 위치 등록
-     *
-     * 1. 주소 입력
-     * 2. 카카오 Geocoder로 주소 → 좌표 변환
-     * 3. /station/saved-locations POST
-     * 4. DB 저장 성공 시 좌측 위치 목록 다시 조회
      */
     function saveSavedLocation() {
         var locationName = document.getElementById("locationNameInput").value.trim();
         var locationType = document.getElementById("locationTypeInput").value;
         var address = document.getElementById("locationAddressInput").value.trim();
+        var detailAddress = document.getElementById("locationDetailAddressInput").value.trim();
+        var latitudeValue = document.getElementById("locationLatitudeInput").value;
+        var longitudeValue = document.getElementById("locationLongitudeInput").value;
         var isDefault = document.getElementById("locationDefaultInput").checked;
 
         if (locationName === "") {
@@ -757,58 +818,90 @@
         }
 
         if (address === "") {
-            alert("주소를 입력하세요.");
+            alert("주소 검색 버튼을 눌러 주소를 선택하세요.");
+            return;
+        }
+
+        var fullAddress = address;
+
+        if (detailAddress !== "") {
+            fullAddress += " " + detailAddress;
+        }
+
+        if (latitudeValue !== "" && longitudeValue !== "") {
+            requestSaveLocation(
+                locationName,
+                locationType,
+                fullAddress,
+                parseFloat(latitudeValue),
+                parseFloat(longitudeValue),
+                isDefault
+            );
+
             return;
         }
 
         geocoder.addressSearch(address, function(result, status) {
-            if (status !== kakao.maps.services.Status.OK) {
-                alert("주소를 찾을 수 없습니다. 정확한 주소를 입력하세요.");
+            if (status !== kakao.maps.services.Status.OK || !result || result.length === 0) {
+                alert("주소를 찾을 수 없습니다. 주소 검색으로 다시 선택해 주세요.");
                 return;
             }
 
-            var latitude = parseFloat(result[0].y);
-            var longitude = parseFloat(result[0].x);
+            requestSaveLocation(
+                locationName,
+                locationType,
+                fullAddress,
+                parseFloat(result[0].y),
+                parseFloat(result[0].x),
+                isDefault
+            );
+        });
+    }
 
-            var formData = new URLSearchParams();
-            formData.append("locationName", locationName);
-            formData.append("locationType", locationType);
-            formData.append("address", address);
-            formData.append("latitude", latitude);
-            formData.append("longitude", longitude);
-            formData.append("isDefault", isDefault);
+    /*
+     * 저장 위치 등록 요청
+     */
+    function requestSaveLocation(locationName, locationType, address, latitude, longitude, isDefault) {
+        var formData = new URLSearchParams();
+        formData.append("locationName", locationName);
+        formData.append("locationType", locationType);
+        formData.append("address", address);
+        formData.append("latitude", latitude);
+        formData.append("longitude", longitude);
+        formData.append("isDefault", isDefault);
 
-            fetch(contextPath + "/station/saved-locations", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: formData.toString()
-            })
-            .then(function(response) {
-                return response.text();
-            })
-            .then(function(resultText) {
-                if (resultText === "success") {
-                    alert("위치가 추가되었습니다.");
+        fetch(contextPath + "/station/saved-locations", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData.toString()
+        })
+        .then(function(response) {
+            return response.text();
+        })
+        .then(function(resultText) {
+            if (resultText === "success") {
+                alert("위치가 추가되었습니다.");
 
-                    closeLocationModal();
-                    loadSavedLocations();
+                closeLocationModal();
+                loadSavedLocations();
 
-                    var position = new kakao.maps.LatLng(latitude, longitude);
-                    map.setLevel(5);
-                    map.panTo(position);
-                } else if (resultText === "login_required") {
-                    alert("로그인 후 위치를 추가할 수 있습니다.");
-                    location.href = contextPath + "/login";
-                } else {
-                    alert("위치 추가에 실패했습니다. 응답값: " + resultText);
-                }
-            })
-            .catch(function(error) {
-                console.log("save location error => ", error);
-                alert("위치 추가 중 오류가 발생했습니다.");
-            });
+                var position = new kakao.maps.LatLng(latitude, longitude);
+                map.setLevel(5);
+                map.panTo(position);
+
+            } else if (resultText === "login_required") {
+                alert("로그인 후 위치를 추가할 수 있습니다.");
+                location.href = contextPath + "/login";
+
+            } else {
+                alert("위치 추가에 실패했습니다. 응답값: " + resultText);
+            }
+        })
+        .catch(function(error) {
+            console.log("save location error => ", error);
+            alert("위치 추가 중 오류가 발생했습니다.");
         });
     }
 
@@ -862,7 +955,6 @@
 
         html += "<div class='detail-tabs'>";
         html += "   <button type='button' class='active'>충전기 정보</button>";
-        html += "   <button type='button'>이용 안내</button>";
         html += "</div>";
 
         html += "<div class='charger-list'>";
@@ -872,7 +964,13 @@
         html += "           <strong>충전기 정보</strong>";
         html += "           <p>등록된 충전기 " + chargerCount + "대 / 사용 가능 " + availableCount + "대</p>";
         html += "       </div>";
-        html += "       <em>사용 가능</em>";
+
+        if (availableCount > 0) {
+            html += "       <em>사용 가능</em>";
+        } else {
+            html += "       <em>사용 불가</em>";
+        }
+
         html += "   </div>";
         html += "</div>";
 
@@ -884,12 +982,6 @@
 
     /*
      * 길찾기 요청
-     *
-     * 출발지:
-     * 좌측 주소 등록에서 선택한 위치
-     *
-     * 도착지:
-     * 현재 오른쪽 상세 패널에 표시 중인 충전소
      */
     function requestRouteSimulation() {
         if (!selectedStartLocation) {
@@ -974,7 +1066,7 @@
             routeLine = null;
         }
     }
-    
+
     /*
      * 길찾기 결과 전체 제거
      *
@@ -994,85 +1086,52 @@
     /*
      * 오른쪽 상세 패널에 길찾기 결과 표시
      */
-     /*
-      * 오른쪽 상세 패널에 길찾기 결과 표시
-      */
-     function renderRouteSummary(route) {
-         var panel = document.getElementById("stationDetailPanel");
+    function renderRouteSummary(route) {
+        var panel = document.getElementById("stationDetailPanel");
 
-         /*
-          * 기존 길찾기 결과가 있으면 제거
-          * 같은 충전소에서 길찾기를 여러 번 눌렀을 때 중복 방지
-          */
-         var oldSummary = document.querySelector(".route-summary-box");
+        var oldSummary = document.querySelector(".route-summary-box");
 
-         if (oldSummary) {
-             oldSummary.remove();
-         }
+        if (oldSummary) {
+            oldSummary.remove();
+        }
 
-         var summaryHtml = "";
+        var summaryHtml = "";
 
-         summaryHtml += "<div class='route-summary-box'>";
-         summaryHtml += "   <div class='route-summary-header'>";
-         summaryHtml += "       <strong>길찾기 결과</strong>";
-         summaryHtml += "       <button type='button' onclick='clearRouteResult()'>경로 지우기</button>";
-         summaryHtml += "   </div>";
+        summaryHtml += "<div class='route-summary-box'>";
+        summaryHtml += "   <div class='route-summary-header'>";
+        summaryHtml += "       <strong>길찾기 결과</strong>";
+        summaryHtml += "       <button type='button' onclick='clearRouteResult()'>경로 지우기</button>";
+        summaryHtml += "   </div>";
 
-         summaryHtml += "   <p>출발지: " + selectedStartLocation.name + "</p>";
-         summaryHtml += "   <p>도착지: " + currentStation.stationName + "</p>";
+        summaryHtml += "   <p>출발지: " + selectedStartLocation.name + "</p>";
+        summaryHtml += "   <p>도착지: " + currentStation.stationName + "</p>";
 
-         summaryHtml += "   <div class='route-summary-info'>";
-         summaryHtml += "       <span>거리 " + route.distanceText + "</span>";
-         summaryHtml += "       <span>예상 " + route.durationText + "</span>";
-         summaryHtml += "   </div>";
+        summaryHtml += "   <div class='route-summary-info'>";
+        summaryHtml += "       <span>거리 " + route.distanceText + "</span>";
+        summaryHtml += "       <span>예상 " + route.durationText + "</span>";
+        summaryHtml += "   </div>";
 
-         summaryHtml += "</div>";
+        summaryHtml += "</div>";
 
-         panel.insertAdjacentHTML("afterbegin", summaryHtml);
-     }
-    
-     /*
-      * 예약하기
-      *
-      * 1. 선택한 충전소의 충전기 목록 조회
-      * 2. 사용 가능한 충전기 선택
-      * 3. 예약 폼으로 이동
-      */
-     function goReservation(stationId) {
-         fetch(contextPath + "/station/chargers?stationId=" + stationId)
-             .then(function(response) {
-                 return response.json();
-             })
-             .then(function(chargers) {
-                 console.log("chargers => ", chargers);
+        panel.insertAdjacentHTML("afterbegin", summaryHtml);
+    }
 
-                 if (!chargers || chargers.length === 0) {
-                     alert("등록된 충전기가 없습니다.");
-                     return;
-                 }
-
-                 var selectedCharger = null;
-
-                 for (var i = 0; i < chargers.length; i++) {
-                     if (chargers[i].status === "사용가능") {
-                         selectedCharger = chargers[i];
-                         break;
-                     }
-                 }
-
-                 if (!selectedCharger) {
-                     alert("사용 가능한 충전기가 없습니다.");
-                     return;
-                 }
-
-                 location.href = contextPath + "/reservation/form?chargerId="
-                     + selectedCharger.chargerId;
-             })
-             .catch(function(error) {
-                 console.log("charger list error => ", error);
-                 alert("충전기 정보를 불러오지 못했습니다.");
-             });
-     }
+    /*
+     * 예약하기
+     *
+     * 기존 방식:
+     * - /station/chargers 조회
+     * - 첫 번째 사용가능 충전기 선택
+     *
+     * 변경 방식:
+     * - 충전소 ID만 서버로 전달
+     * - 서버에서 사용가능 + Redis Lock 가능한 충전기를 찾음
+     * - 예약 가능한 충전기가 있으면 /reservation/form?chargerId=... 로 이동
+     * - 없으면 /station/map으로 돌아오며 errorMsg 표시
+     */
+    function goReservation(stationId) {
+        location.href = contextPath + "/reservation/form/station?stationId=" + stationId;
+    }
 </script>
 
 </body>

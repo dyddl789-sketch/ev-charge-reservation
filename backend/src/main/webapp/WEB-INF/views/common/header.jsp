@@ -10,13 +10,26 @@
     </div>
 
     <nav class="top-nav">
-        <a href="${pageContext.request.contextPath}/main" data-menu="main">홈</a>
+        <a href="${pageContext.request.contextPath}/main" data-menu="main">
+            홈
+        </a>
 
         <!-- 충전소 검색은 지도 기반 탐색 화면으로 이동 -->
-        <a href="${pageContext.request.contextPath}/station/map" data-menu="station">충전소 검색</a>
+        <a href="${pageContext.request.contextPath}/station/map" data-menu="station">
+            충전소 검색
+        </a>
 
-        <a href="${pageContext.request.contextPath}/reservation/my" data-menu="reservation">내 예약</a>
-        <a href="${pageContext.request.contextPath}/vehicle/list" data-menu="vehicle">내 차량</a>
+        <a href="${pageContext.request.contextPath}/reservation/my" data-menu="reservation">
+            내 예약
+        </a>
+
+        <a href="${pageContext.request.contextPath}/reservation/history" data-menu="history">
+            충전 내역
+        </a>
+
+        <a href="${pageContext.request.contextPath}/vehicle/list" data-menu="vehicle">
+            내 차량
+        </a>
 
         <sec:authorize access="isAnonymous()">
             <a href="${pageContext.request.contextPath}/login" data-menu="login">
@@ -68,7 +81,28 @@
             link.classList.add("active");
         }
 
-        if (menu === "reservation" && currentPath.startsWith("/reservation")) {
+        /*
+         * 내 예약
+         *
+         * /reservation/my
+         * /reservation/complete
+         * /reservation/form
+         *
+         * 충전 내역인 /reservation/history는 제외한다.
+         */
+        if (menu === "reservation"
+                && currentPath.startsWith("/reservation")
+                && !currentPath.startsWith("/reservation/history")) {
+            link.classList.add("active");
+        }
+
+        /*
+         * 충전 내역
+         *
+         * /reservation/history
+         * /reservation/history/detail
+         */
+        if (menu === "history" && currentPath.startsWith("/reservation/history")) {
             link.classList.add("active");
         }
 

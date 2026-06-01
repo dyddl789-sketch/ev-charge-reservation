@@ -113,21 +113,27 @@
                 <button type="button" class="filter-tab active" data-status="전체">
                     전체
                 </button>
+
                 <button type="button" class="filter-tab" data-status="예약완료">
                     예약완료
                 </button>
+
                 <button type="button" class="filter-tab" data-status="인증완료">
                     인증완료
                 </button>
+
                 <button type="button" class="filter-tab" data-status="충전중">
                     충전중
                 </button>
+
                 <button type="button" class="filter-tab" data-status="완료">
                     완료
                 </button>
+
                 <button type="button" class="filter-tab" data-status="취소">
                     취소
                 </button>
+
                 <button type="button" class="filter-tab" data-status="노쇼">
                     노쇼
                 </button>
@@ -157,9 +163,7 @@
                 <c:otherwise>
                     <c:forEach var="reservation" items="${reservationList}">
 
-                        <!--
-                            예약 상태에 따라 배지 CSS 클래스 결정
-                        -->
+                        <!-- 예약 상태에 따라 배지 CSS 클래스 결정 -->
                         <c:set var="statusClass" value="reserved" />
 
                         <c:choose>
@@ -188,9 +192,7 @@
                             </c:when>
                         </c:choose>
 
-                        <!--
-                            상태별 카드 클래스 결정
-                        -->
+                        <!-- 상태별 카드 클래스 결정 -->
                         <c:set var="cardClass" value="my-reservation-card" />
 
                         <c:if test="${reservation.status == '충전중'}">
@@ -232,6 +234,7 @@
                                             <c:when test="${not empty reservation.vehicleNickname}">
                                                 ${reservation.vehicleNickname} / ${reservation.modelName}
                                             </c:when>
+
                                             <c:otherwise>
                                                 ${reservation.modelName}
                                             </c:otherwise>
@@ -299,7 +302,10 @@
                                 예약 카드 하단 버튼 영역
 
                                 예약 내역 보기:
-                                - 모든 예약 상태에서 볼 수 있다.
+                                - 완료 상태가 아닌 예약에서 표시한다.
+
+                                충전 내역 보기:
+                                - 완료 상태에서 표시한다.
 
                                 도착 인증:
                                 - 예약완료 상태이고 예약 시작 10분 전부터 가능하다.
@@ -311,11 +317,24 @@
                             -->
                             <div class="reservation-card-actions">
 
-                                <a href="${pageContext.request.contextPath}/reservation/complete?reservationId=${reservation.reservationId}"
-                                   class="outline-action">
-                                    예약 내역 보기
-                                </a>
+                                <!-- 상세 보기 버튼 -->
+                                <c:choose>
+                                    <c:when test="${reservation.status == '완료'}">
+                                            <a href="${pageContext.request.contextPath}/reservation/history"
+                                           	   class="outline-action">
+                                            충전 내역 보기
+                                        </a>
+                                    </c:when>
 
+                                    <c:otherwise>
+                                        <a href="${pageContext.request.contextPath}/reservation/complete?reservationId=${reservation.reservationId}"
+                                           class="outline-action">
+                                            예약 내역 보기
+                                        </a>
+                                    </c:otherwise>
+                                </c:choose>
+
+                                <!-- 상태별 액션 버튼 -->
                                 <c:choose>
                                     <c:when test="${reservation.status == '예약완료'}">
 
@@ -324,12 +343,7 @@
                                             <c:choose>
                                                 <c:when test="${reservation.verifyAvailable}">
 
-                                                    <!--
-                                                        도착 인증
-
-                                                        예약 시작 10분 전부터 활성화된다.
-                                                        버튼을 누르면 Redis에 충전기별 인증코드를 발급한다.
-                                                    -->
+                                                    <!-- 도착 인증 -->
                                                     <form action="${pageContext.request.contextPath}/reservation/auth-code/issue"
                                                           method="post"
                                                           class="inline-action-form"
@@ -452,7 +466,7 @@
             <h2>현장 인증</h2>
 
             <p class="auth-modal-desc">
-                Redis에 인증코드가 발급되었습니다.<br>
+                인증코드가 발급되었습니다.<br>
                 5분 안에 아래 코드를 입력해서 예약 인증을 완료해주세요.
             </p>
 

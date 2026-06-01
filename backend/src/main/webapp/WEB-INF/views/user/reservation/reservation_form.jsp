@@ -46,12 +46,18 @@
                       id="reservationForm">
 
                     <!-- 예약 저장에 필요한 값 -->
-                    <input type="hidden" name="chargerId" value="${charger.chargerId}">
+                    <input type="hidden" name="chargerId" id="chargerIdInput" value="${charger.chargerId}">
                     <input type="hidden" name="startTime" id="startTimeInput">
                     <input type="hidden" name="endTime" id="endTimeInput">
                     <input type="hidden" name="requiredKwh" id="requiredKwhInput">
                     <input type="hidden" name="estimatedMinutes" id="estimatedMinutesInput">
                     <input type="hidden" name="estimatedCost" id="estimatedCostInput">
+
+                    <c:if test="${not empty _csrf}">
+                        <input type="hidden"
+                               name="${_csrf.parameterName}"
+                               value="${_csrf.token}">
+                    </c:if>
 
                     <!-- 충전소 정보 -->
                     <div class="form-section">
@@ -105,26 +111,57 @@
                         <h3>충전기 정보</h3>
 
                         <div class="charger-list">
-                            <label class="charger-option">
-                                <input type="radio"
-                                       name="selectedCharger"
-                                       value="${charger.chargerId}"
-                                       data-name="${charger.chargerName}"
-                                       data-connector="${charger.connectorType}"
-                                       data-speed="${charger.chargingSpeedKw}"
-                                       data-price="${charger.pricePerKwh}"
-                                       checked>
 
-                                <div class="charger-content">
-                                    <strong>${charger.chargerName}</strong>
-                                    <p>
-                                        ${charger.connectorType}
-                                        · ${charger.chargingSpeedKw}kW
-                                        · ${charger.pricePerKwh}원/kWh
-                                    </p>
-                                    <span class="available">${charger.chargerStatus}</span>
-                                </div>
-                            </label>
+                            <c:forEach var="item" items="${chargerList}">
+                                <c:set var="isSelectable" value="${item.selectable}" />
+                                <c:set var="isSelected" value="${item.chargerId == charger.chargerId}" />
+
+                                <label class="charger-option ${isSelectable ? '' : 'charger-disabled'}">
+
+                                    <input type="radio"
+                                           name="selectedCharger"
+                                           value="${item.chargerId}"
+                                           data-name="${item.chargerName}"
+                                           data-connector="${item.connectorType}"
+                                           data-speed="${item.chargingSpeedKw}"
+                                           data-price="${item.pricePerKwh}"
+                                           data-status="${item.chargerStatus}"
+                                           <c:if test="${isSelected}">checked</c:if>
+                                           <c:if test="${not isSelectable}">disabled</c:if>>
+
+                                    <div class="charger-content">
+                                        <strong>${item.chargerName}</strong>
+
+                                        <p>
+                                            ${item.connectorType}
+                                            · ${item.chargingSpeedKw}kW
+                                            · ${item.pricePerKwh}원/kWh
+                                        </p>
+
+                                        <c:choose>
+                                            <c:when test="${item.selectedByOther}">
+                                                <span class="unavailable">
+                                                    선택중
+                                                </span>
+                                            </c:when>
+
+                                            <c:when test="${item.chargerStatus == '사용가능'}">
+                                                <span class="available">
+                                                    ${item.chargerStatus}
+                                                </span>
+                                            </c:when>
+
+                                            <c:otherwise>
+                                                <span class="unavailable">
+                                                    ${item.chargerStatus}
+                                                </span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </div>
+
+                                </label>
+                            </c:forEach>
+
                         </div>
                     </div>
 
@@ -142,28 +179,28 @@
                                 <label for="startTimeValue">시작 시간</label>
 
                                 <select id="startTimeValue" name="startTimeValue">
-								    <c:forEach var="hour" begin="0" end="23">
-								        <fmt:formatNumber value="${hour}" pattern="00" var="hourText" />
-								
-								        <c:forEach var="minute" begin="0" end="55" step="5">
-								            <fmt:formatNumber value="${minute}" pattern="00" var="minuteText" />
-								
-								            <c:choose>
-								                <c:when test="${hour == 18 and minute == 0}">
-								                    <option value="${hourText}:${minuteText}" selected="selected">
-								                        ${hourText}:${minuteText}
-								                    </option>
-								                </c:when>
-								
-								                <c:otherwise>
-								                    <option value="${hourText}:${minuteText}">
-								                        ${hourText}:${minuteText}
-								                    </option>
-								                </c:otherwise>
-								            </c:choose>
-								        </c:forEach>
-								    </c:forEach>
-								</select>
+                                    <c:forEach var="hour" begin="0" end="23">
+                                        <fmt:formatNumber value="${hour}" pattern="00" var="hourText" />
+
+                                        <c:forEach var="minute" begin="0" end="55" step="5">
+                                            <fmt:formatNumber value="${minute}" pattern="00" var="minuteText" />
+
+                                            <c:choose>
+                                                <c:when test="${hour == 18 and minute == 0}">
+                                                    <option value="${hourText}:${minuteText}" selected="selected">
+                                                        ${hourText}:${minuteText}
+                                                    </option>
+                                                </c:when>
+
+                                                <c:otherwise>
+                                                    <option value="${hourText}:${minuteText}">
+                                                        ${hourText}:${minuteText}
+                                                    </option>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </c:forEach>
+                                    </c:forEach>
+                                </select>
 
                                 <p class="help-text">예약을 시작할 시간을 선택하세요.</p>
                             </div>
@@ -308,6 +345,34 @@
     const startTimeValueInput = document.getElementById("startTimeValue");
     const reservationDateInput = document.getElementById("reservationDate");
     const form = document.getElementById("reservationForm");
+    const chargerIdInput = document.getElementById("chargerIdInput");
+
+    /*
+     * 현재 Redis에서 내가 선점 중인 충전기 ID
+     *
+     * 처음 예약폼에 들어왔을 때 선택된 chargerId로 시작한다.
+     * 사용자가 다른 충전기를 선택하면 /reservation/lock/change 성공 후 값이 변경된다.
+     */
+    let currentHeldChargerId = "${charger.chargerId}";
+
+    /*
+     * CSRF 정보
+     *
+     * Spring Security에서 CSRF가 켜져 있으면 POST Ajax 요청에도 토큰을 보내야 한다.
+     */
+    const csrfParameterName = "${not empty _csrf ? _csrf.parameterName : ''}";
+    const csrfToken = "${not empty _csrf ? _csrf.token : ''}";
+
+    /*
+     * 예약 등록 submit 여부
+     *
+     * true:
+     * - 예약 검증을 통과해서 실제 예약 등록 요청이 서버로 전송되는 상태
+     *
+     * false:
+     * - 사용자가 예약 폼에서 그냥 나가는 상태
+     */
+    let reservationSubmitting = false;
 
     const startTimeInput = document.getElementById("startTimeInput");
     const endTimeInput = document.getElementById("endTimeInput");
@@ -405,13 +470,6 @@
         const chargingSpeed = Number(selectedCharger.dataset.speed);
         const pricePerKwh = Number(selectedCharger.dataset.price);
 
-        /*
-         * input 값이 비어 있는 상태를 먼저 검사한다.
-         *
-         * 숫자를 입력하는 도중에는 값이 잠깐 비거나,
-         * 현재 배터리보다 낮은 값이 될 수 있다.
-         * 이때는 alert를 띄우지 않고 계산만 중단한다.
-         */
         if (currentSocInput.value === "" || targetSocInput.value === "") {
             if (showAlert) {
                 alert("배터리 잔량을 입력해주세요.");
@@ -475,19 +533,9 @@
             const startDateTime = new Date(reservationDateInput.value + "T" + startTimeValue);
             const endDateTime = new Date(startDateTime.getTime() + estimatedMinutes * 60 * 1000);
 
-            /*
-             * 서버 전송용 hidden 값
-             *
-             * 예:
-             * startTime = 2026-05-28T23:50
-             * endTime   = 2026-05-29T00:30
-             */
             startTimeInput.value = formatDateTimeLocal(startDateTime);
             endTimeInput.value = formatDateTimeLocal(endDateTime);
 
-            /*
-             * 화면 표시용 값
-             */
             endTimeText = formatDateTimeText(endDateTime);
         }
 
@@ -506,6 +554,80 @@
         estimatedCostInput.value = estimatedCost;
 
         return true;
+    }
+
+    /*
+     * 충전기 변경 시 Redis 임시 선점 변경
+     *
+     * 기존 선점 충전기:
+     * - currentHeldChargerId
+     *
+     * 새로 선택한 충전기:
+     * - newChargerId
+     *
+     * 요청 URL:
+     * POST /reservation/lock/change
+     */
+    function changeReservationLock(newChargerId) {
+        console.log("@# changeReservationLock()");
+        console.log("@# oldChargerId =>", currentHeldChargerId);
+        console.log("@# newChargerId =>", newChargerId);
+
+        const params = new URLSearchParams();
+        params.append("oldChargerId", currentHeldChargerId);
+        params.append("newChargerId", newChargerId);
+
+        if (csrfParameterName && csrfToken) {
+            params.append(csrfParameterName, csrfToken);
+        }
+
+        return fetch("${pageContext.request.contextPath}/reservation/lock/change", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: params.toString()
+        })
+        .then(function(response) {
+            console.log("@# lock change response status =>", response.status);
+
+            if (!response.ok) {
+                throw new Error("lock change request failed. status=" + response.status);
+            }
+
+            return response.json();
+        })
+        .then(function(data) {
+            console.log("@# lock change result =>", data);
+
+            if (data.success) {
+                /*
+                 * Redis 선점 변경 성공
+                 *
+                 * 이제 내가 선점 중인 충전기 ID를 새 충전기로 갱신한다.
+                 * 예약 등록 시 서버로 보내는 hidden chargerId도 같이 갱신한다.
+                 */
+                currentHeldChargerId = newChargerId;
+                chargerIdInput.value = newChargerId;
+
+                console.log("@# currentHeldChargerId changed =>", currentHeldChargerId);
+                console.log("@# chargerIdInput changed =>", chargerIdInput.value);
+
+                return true;
+            }
+
+            alert("다른 사용자가 선택 중인 충전기입니다.");
+            location.reload();
+
+            return false;
+        })
+        .catch(function(error) {
+            console.error("@# lock change error =>", error);
+            alert("충전기 선택 변경 중 오류가 발생했습니다.");
+            location.reload();
+
+            return false;
+        });
     }
 
     /*
@@ -533,14 +655,38 @@
         calculateReservation(false);
     });
 
+    /*
+     * 충전기 radio 변경 이벤트
+     *
+     * 기존 코드에서는 calculateReservation(false)만 실행했다.
+     * 그래서 화면 계산은 바뀌지만 Redis lock/change 요청은 서버로 가지 않았다.
+     *
+     * 이제는:
+     * 1. 새 충전기 ID 확인
+     * 2. /reservation/lock/change 요청
+     * 3. 성공하면 hidden chargerId 갱신
+     * 4. 오른쪽 예상 결과 다시 계산
+     */
     document.querySelectorAll("input[name='selectedCharger']").forEach(function(radio) {
         radio.addEventListener("change", function() {
-            calculateReservation(false);
+            const newChargerId = this.value;
+
+            console.log("@# charger radio changed");
+            console.log("@# selected newChargerId =>", newChargerId);
+
+            changeReservationLock(newChargerId).then(function(success) {
+                if (success) {
+                    calculateReservation(false);
+                }
+            });
         });
     });
 
     /*
      * 예약 버튼을 눌렀을 때만 alert를 띄운다.
+     *
+     * 검증에 성공해서 실제 submit이 진행될 때만
+     * reservationSubmitting = true로 변경한다.
      */
     form.addEventListener("submit", function(e) {
         if (!vehicleSelect || vehicleSelect.disabled) {
@@ -567,11 +713,48 @@
 
         if (!calculated) {
             e.preventDefault();
+            return;
         }
+
+        /*
+         * 실제 예약 등록 요청이 서버로 전송된다.
+         *
+         * 이 경우 pagehide에서 lock을 해제하지 않는다.
+         * 예약 성공 후 Service에서 lock을 해제한다.
+         */
+        reservationSubmitting = true;
     });
 
     setTodayDefault();
     calculateReservation(false);
+
+    /*
+     * 예약 폼 이탈 시 Redis 임시 점유 해제
+     *
+     * 주의:
+     * 기존 코드는 "${charger.chargerId}"만 해제했다.
+     * 사용자가 1번에서 4번으로 바꾼 경우, 현재 선점 중인 충전기는 4번이다.
+     *
+     * 그래서 currentHeldChargerId를 해제해야 한다.
+     */
+    window.addEventListener("pagehide", function() {
+        if (reservationSubmitting) {
+            return;
+        }
+
+        const formData = new FormData();
+
+        formData.append("chargerId", currentHeldChargerId);
+
+        <c:if test="${not empty _csrf}">
+            formData.append("${_csrf.parameterName}", "${_csrf.token}");
+        </c:if>
+
+        navigator.sendBeacon(
+            "${pageContext.request.contextPath}/reservation/lock/release",
+            formData
+        );
+    });
 </script>
 
 </body>

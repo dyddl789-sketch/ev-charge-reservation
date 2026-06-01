@@ -7,6 +7,7 @@ package com.ev.service.user;
  * 1. 충전기별 임시 인증코드
  * 2. 충전기 현재 상태
  * 3. 예약 인증 실패 횟수
+ * 4. 예약 입력 중 충전기 임시 점유
  */
 public interface EvChargerRedisService {
 
@@ -72,4 +73,44 @@ public interface EvChargerRedisService {
      * 인증 성공 시 삭제한다.
      */
     void clearVerifyAttempt(Long memberId, Long reservationId);
+
+    /*
+     * 예약 입력 중 충전기 임시 점유 시도
+     *
+     * true:
+     * - 아무도 점유하지 않은 충전기
+     * - 또는 같은 사용자가 이미 점유 중인 충전기
+     *
+     * false:
+     * - 다른 사용자가 이미 점유 중인 충전기
+     */
+    boolean holdChargerForReservation(Long chargerId, Long memberId);
+
+    /*
+     * 예약 입력 중 충전기 임시 점유 소유자 확인
+     *
+     * 예약 등록 시
+     * 현재 사용자가 해당 충전기의 임시 점유자인지 확인한다.
+     */
+    boolean isReservationHoldOwner(Long chargerId, Long memberId);
+
+    /*
+     * 예약 입력 중 충전기 임시 점유 해제
+     *
+     * 예약 성공, 예약 화면 이탈 시 사용한다.
+     */
+    void releaseChargerReservationHold(Long chargerId, Long memberId);
+    
+    /*
+     * 다른 사용자가 해당 충전기를 예약 폼에서 선택 중인지 확인
+     */
+    boolean isReservationSelectedByOther(Long chargerId, Long memberId);
+    
+    /*
+     * 예약폼에서 충전기 선택 변경
+     *
+     * 기존 선점 충전기 key를 해제하고,
+     * 새 충전기 key를 Redis에 선점한다.
+     */
+    boolean changeReservationHold(Long oldChargerId, Long newChargerId, Long memberId);
 }

@@ -142,28 +142,26 @@ select {
     max-width: 1500px;
     margin: 0 auto;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
 }
 
-.footer p {
-    margin: 0;
-    color: #777777;
-    font-size: 13px;
-}
-
-.footer-links {
+.footer-links,
+.footer-nav {
     display: flex;
+    align-items: center;
     gap: 20px;
 }
 
-.footer-links a {
+.footer-links a,
+.footer-nav a {
     color: #555555;
     font-size: 13px;
     font-weight: 500;
 }
 
-.footer-links a:hover {
+.footer-links a:hover,
+.footer-nav a:hover {
     color: #f05a00;
 }
 

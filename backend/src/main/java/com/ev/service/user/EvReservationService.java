@@ -66,4 +66,51 @@ public interface EvReservationService {
      * 예약 상태 자동 변경
      */
     int updateReservationStatusAutomatically();
+    
+    /*
+     * 충전 내역 목록 조회
+     *
+     * 로그인한 회원의 예약 중
+     * 충전이 완료된 예약만 조회한다.
+     */
+    List<EvReservationDTO> getChargingHistoryList(Long memberId);
+    
+    /*
+     * 충전 영수증 이메일 발송
+     *
+     * 로그인한 회원 본인의 완료된 충전 내역만 발송한다.
+     */
+    /*
+     * 충전 영수증 이메일 발송
+     *
+     * 로그인한 회원 본인의 완료된 충전 내역만 발송한다.
+     */
+    void sendReceiptEmail(Long reservationId, Long memberId);
+    
+    /*
+     * 예약 화면 진입 시 충전기 임시 점유
+     *
+     * 다른 사용자가 같은 충전기 예약 정보를 입력 중이면 false 반환
+     */
+    boolean holdChargerForReservation(Long chargerId, Long memberId);
+
+    /*
+     * 예약 화면 이탈 또는 예약 완료 시 충전기 임시 점유 해제
+     */
+    void releaseChargerReservationHold(Long chargerId, Long memberId);
+    
+    /*
+     * 같은 충전소의 충전기 목록 조회
+     */
+    List<EvReservationChargerDTO> getReservationChargerList(Long stationId, Long memberId);
+
+    /*
+     * 예약 폼에서 선택 충전기 변경 시 Redis 임시 점유 변경
+     */
+    boolean changeChargerReservationHold(Long beforeChargerId,
+                                         Long nextChargerId,
+                                         Long memberId);
+    
+    boolean changeReservationHold(Long oldChargerId, Long newChargerId, Long memberId);
+    
 }

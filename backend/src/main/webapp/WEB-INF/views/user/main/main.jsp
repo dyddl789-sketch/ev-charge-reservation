@@ -63,15 +63,15 @@
                 </div>
             </section>
 
-            <section class="side-card notice-card">
-                <h2>이용 안내</h2>
+<%--             <section class="side-card notice-card"> --%>
+                
 
-                <ul>
-                    <li>현재 위치 기준으로 가까운 충전소를 추천합니다.</li>
-                    <li>차량 정보 등록 시 충전 타입이 자동 반영됩니다.</li>
-                    <li>예약 전 예상 충전 비용을 확인할 수 있습니다.</li>
-                </ul>
-            </section>
+<!--                 <ul> -->
+<!--                     <li>현재 위치 기준으로 가까운 충전소를 추천합니다.</li> -->
+<!--                     <li>차량 정보 등록 시 충전 타입이 자동 반영됩니다.</li> -->
+<!--                     <li>예약 전 예상 충전 비용을 확인할 수 있습니다.</li> -->
+<!--                 </ul> -->
+<%--             </section> --%>
 
         </aside>
 

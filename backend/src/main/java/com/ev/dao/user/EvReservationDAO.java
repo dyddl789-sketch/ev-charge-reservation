@@ -69,15 +69,17 @@ public interface EvReservationDAO {
     /*
      * 내 예약 목록 조회
      */
-    List<EvReservationDTO> findReservationListByMemberId(
+    List<EvReservationDTO> getMyReservationList(
             @Param("memberId") Long memberId
     );
 
     /*
      * 예약 취소
      */
-    int cancelReservation(@Param("reservationId") Long reservationId,
-                          @Param("memberId") Long memberId);
+    int cancelReservation(
+            @Param("reservationId") Long reservationId,
+            @Param("memberId") Long memberId
+    );
 
     /*
      * 인증 가능한 예약 조회
@@ -87,24 +89,23 @@ public interface EvReservationDAO {
      * - 예약완료 상태
      * - 예약 시작 10분 전부터 종료 시간 사이
      */
-    EvReservationDTO findVerifiableReservation(@Param("reservationId") Long reservationId,
-                                               @Param("memberId") Long memberId);
+    EvReservationDTO findVerifiableReservation(
+            @Param("reservationId") Long reservationId,
+            @Param("memberId") Long memberId
+    );
 
     /*
      * 예약 상태를 인증완료로 변경
      */
-    int updateReservationStatusToVerified(@Param("reservationId") Long reservationId,
-                                          @Param("memberId") Long memberId);
-    
+    int updateReservationStatusToVerified(
+            @Param("reservationId") Long reservationId,
+            @Param("memberId") Long memberId
+    );
+
     /*
      * 예약완료 → 노쇼
      */
     int updateReservationCompleteToNoShow();
-
-    /*
-     * 인증완료 → 완료
-     */
-    int updateAuthenticatedToComplete();
 
     /*
      * 인증완료 → 충전중
@@ -112,7 +113,46 @@ public interface EvReservationDAO {
     int updateAuthenticatedToCharging();
 
     /*
+     * 충전중 상태가 된 예약에 대해 charging_session 생성
+     */
+    int insertChargingSessionForChargingReservations();
+
+    /*
      * 충전중 → 완료
      */
     int updateChargingToComplete();
+
+    /*
+     * 충전중 charging_session → 완료 처리
+     */
+    int updateChargingSessionToComplete();
+
+    /*
+     * 인증완료 상태였지만 바로 완료 처리된 예약에 대해
+     * charging_session 보정 생성
+     */
+    int insertChargingSessionForCompletedReservations();
+
+    /*
+     * 인증완료 → 완료
+     *
+     * 서버가 늦게 실행되어 이미 예약 종료 시간이 지난 경우 처리
+     */
+    int updateAuthenticatedToComplete();
+
+    /*
+     * 회원 이메일 조회
+     *
+     * 영수증 발급 시 로그인한 회원의 최신 이메일을 조회한다.
+     */
+    String findMemberEmailByMemberId(
+            @Param("memberId") Long memberId
+    );
+
+    /*
+     * 같은 충전소의 충전기 목록 조회
+     */
+    List<EvReservationChargerDTO> findReservationChargerListByStationId(
+            @Param("stationId") Long stationId
+    );
 }
