@@ -1,7 +1,10 @@
 package com.ev.service.user;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +26,8 @@ public class EvReservationServiceImpl implements EvReservationService {
 
     private final EvReservationDAO reservationDAO;
     private final EvChargerRedisService evChargerRedisService;
-
+    private final JavaMailSender mailSender;
+    
     /*
      * 인증 실패 허용 횟수
      */
@@ -238,7 +242,7 @@ public class EvReservationServiceImpl implements EvReservationService {
         log.info("@# ReservationServiceImpl.getMyReservationList()");
         log.info("@# memberId => {}", memberId);
 
-        return reservationDAO.findReservationListByMemberId(memberId);
+        return reservationDAO.getMyReservationList(memberId);
     }
 
     /*
@@ -385,22 +389,304 @@ public class EvReservationServiceImpl implements EvReservationService {
     public int updateReservationStatusAutomatically() {
         log.info("@# EvReservationServiceImpl.updateReservationStatusAutomatically()");
 
+        /*
+         * 예약완료 → 노쇼
+         */
         int noShowCount = reservationDAO.updateReservationCompleteToNoShow();
-
-        int authenticatedCompleteCount = reservationDAO.updateAuthenticatedToComplete();
-
-        int chargingCount = reservationDAO.updateAuthenticatedToCharging();
-
-        int completeCount = reservationDAO.updateChargingToComplete();
-
-        int totalCount = noShowCount + authenticatedCompleteCount + chargingCount + completeCount;
-
         log.info("@# noShowCount => {}", noShowCount);
-        log.info("@# authenticatedCompleteCount => {}", authenticatedCompleteCount);
+
+        /*
+         * 인증완료 → 충전중
+         */
+        int chargingCount = reservationDAO.updateAuthenticatedToCharging();
         log.info("@# chargingCount => {}", chargingCount);
+
+        /*
+         * 충전중 상태가 된 예약에 대해 charging_session 생성
+         */
+        int sessionInsertCount =
+                reservationDAO.insertChargingSessionForChargingReservations();
+        log.info("@# sessionInsertCount => {}", sessionInsertCount);
+
+        /*
+         * 충전중 → 완료
+         */
+        int completeCount = reservationDAO.updateChargingToComplete();
         log.info("@# completeCount => {}", completeCount);
-        log.info("@# total reservation status update count => {}", totalCount);
+
+        /*
+         * 인증완료 상태였지만 이미 종료 시간이 지난 예약 → 완료
+         */
+        int authenticatedCompleteCount = reservationDAO.updateAuthenticatedToComplete();
+        log.info("@# authenticatedCompleteCount => {}", authenticatedCompleteCount);
+
+        /*
+         * 충전중 charging_session → 완료 처리
+         */
+        int sessionCompleteCount =
+                reservationDAO.updateChargingSessionToComplete();
+        log.info("@# sessionCompleteCount => {}", sessionCompleteCount);
+
+        /*
+         * 완료 상태인데 charging_session이 없는 예약 보정 생성
+         */
+        int completedSessionInsertCount =
+                reservationDAO.insertChargingSessionForCompletedReservations();
+        log.info("@# completedSessionInsertCount => {}", completedSessionInsertCount);
+
+        int totalCount =
+                noShowCount
+                + chargingCount
+                + sessionInsertCount
+                + completeCount
+                + authenticatedCompleteCount
+                + sessionCompleteCount
+                + completedSessionInsertCount;
+
+        log.info("@# total reservation/session update count => {}", totalCount);
 
         return totalCount;
+    }
+    
+    /*
+     * 충전 내역 목록 조회
+     *
+     * 현재는 별도 충전 내역 테이블을 만들지 않고
+     * 기존 내 예약 목록에서 status가 '완료'인 예약만 필터링한다.
+     */
+    @Override
+    public List<EvReservationDTO> getChargingHistoryList(Long memberId) {
+        log.info("@# EvReservationServiceImpl.getChargingHistoryList()");
+        log.info("@# memberId => {}", memberId);
+
+        /*
+         * 기존 내 예약 목록 조회 메서드를 재사용한다.
+         *
+         * 메서드명이 다르면 네 프로젝트에서
+         * 내 예약 목록 조회에 쓰고 있는 DAO 메서드명으로 변경하면 된다.
+         */
+        List<EvReservationDTO> reservationList = reservationDAO.getMyReservationList(memberId);
+
+        return reservationList.stream()
+                .filter(reservation -> "완료".equals(reservation.getStatus()))
+                .collect(Collectors.toList());
+    }
+    
+    
+    /*
+     * 충전 영수증 이메일 발송
+     *
+     * 조건:
+     * 1. 로그인한 회원 본인의 예약이어야 한다.
+     * 2. 충전 상태가 완료여야 한다.
+     * 3. DB에 회원 이메일이 있어야 한다.
+     */
+    @Override
+    public void sendReceiptEmail(Long reservationId, Long memberId) {
+        log.info("@# EvReservationServiceImpl.sendReceiptEmail()");
+        log.info("@# reservationId => {}", reservationId);
+        log.info("@# memberId => {}", memberId);
+
+        /*
+         * 로그인 회원의 최신 이메일 조회
+         *
+         * EvUserDetails에 email이 없어도
+         * DB에서 memberId 기준으로 이메일을 가져온다.
+         */
+        String receiverEmail = reservationDAO.findMemberEmailByMemberId(memberId);
+
+        log.info("@# receiverEmail => {}", receiverEmail);
+
+        if (receiverEmail == null || receiverEmail.trim().isEmpty()) {
+            throw new IllegalArgumentException("회원 이메일 정보가 없습니다.");
+        }
+
+        if (!receiverEmail.contains("@")) {
+            throw new IllegalArgumentException("회원 이메일 정보가 올바르지 않습니다.");
+        }
+
+        /*
+         * reservationId + memberId로 조회하므로
+         * 다른 회원의 충전 내역은 조회되지 않는다.
+         */
+        EvReservationDTO receipt = reservationDAO.findReservationById(reservationId, memberId);
+
+        if (receipt == null) {
+            throw new IllegalArgumentException("충전 내역을 찾을 수 없습니다.");
+        }
+
+        if (!"완료".equals(receipt.getStatus())) {
+            throw new IllegalArgumentException("완료된 충전 내역만 영수증을 발급할 수 있습니다.");
+        }
+
+        /*
+         * null 방지
+         */
+        String stationName = receipt.getStationName() == null ? "-" : receipt.getStationName();
+        String stationAddress = receipt.getStationAddress() == null ? "-" : receipt.getStationAddress();
+        String chargerName = receipt.getChargerName() == null ? "-" : receipt.getChargerName();
+        String connectorType = receipt.getConnectorType() == null ? "-" : receipt.getConnectorType();
+        String vehicleNickname = receipt.getVehicleNickname() == null ? "" : receipt.getVehicleNickname();
+        String modelName = receipt.getModelName() == null ? "-" : receipt.getModelName();
+
+        String vehicleText;
+
+        if (!vehicleNickname.isBlank()) {
+            vehicleText = vehicleNickname + " / " + modelName;
+        } else {
+            vehicleText = modelName;
+        }
+
+        String subject = "[EV Charge] 충전 영수증이 발급되었습니다.";
+
+        String body = ""
+                + "안녕하세요.\n\n"
+                + "EV Charge 충전 이용 영수증입니다.\n\n"
+                + "===========================\n"
+                + "           충전 영수증\n"
+                + "===========================\n"
+                + "예약번호: " + receipt.getReservationId() + "\n"
+                + "충전상태: " + receipt.getStatus() + "\n"
+                + "충전소: " + stationName + "\n"
+                + "주소: " + stationAddress + "\n"
+                + "충전기: " + chargerName + " · " + connectorType + "\n"
+                + "이용 차량: " + vehicleText + "\n"
+                + "충전일: " + receipt.getReservationDate() + "\n"
+                + "충전시간: " + receipt.getStartTime() + " ~ " + receipt.getEndTime() + "\n"
+                + "배터리: " + receipt.getCurrentSoc() + "% → " + receipt.getTargetSoc() + "%\n"
+                + "충전량: " + receipt.getRequiredKwh() + "kWh\n"
+                + "충전 시간: " + receipt.getEstimatedMinutes() + "분\n"
+                + "이용 금액: " + receipt.getEstimatedCost() + "원\n\n"
+                + "================================\n\n"
+                + "이용해주셔서 감사합니다.\n"
+                + "EV Charge";
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(receiverEmail);
+        message.setSubject(subject);
+        message.setText(body);
+
+        mailSender.send(message);
+
+        log.info("@# receipt email sent");
+    }
+    
+    /*
+     * 예약 화면 진입 시 충전기 임시 점유
+     */
+    @Override
+    public boolean holdChargerForReservation(Long chargerId, Long memberId) {
+        log.info("@# EvReservationServiceImpl.holdChargerForReservation()");
+        log.info("@# chargerId => {}", chargerId);
+        log.info("@# memberId => {}", memberId);
+
+        return evChargerRedisService.holdChargerForReservation(chargerId, memberId);
+    }
+
+    /*
+     * 예약 화면 이탈 또는 예약 완료 시 충전기 임시 점유 해제
+     */
+    @Override
+    public void releaseChargerReservationHold(Long chargerId, Long memberId) {
+        log.info("@# EvReservationServiceImpl.releaseChargerReservationHold()");
+        log.info("@# chargerId => {}", chargerId);
+        log.info("@# memberId => {}", memberId);
+
+        evChargerRedisService.releaseChargerReservationHold(chargerId, memberId);
+    }
+    
+    /*
+     * 같은 충전소의 충전기 목록 조회
+     */
+    @Override
+    public List<EvReservationChargerDTO> getReservationChargerList(Long stationId, Long memberId) {
+        log.info("@# EvReservationServiceImpl.getReservationChargerList()");
+        log.info("@# stationId => {}", stationId);
+        log.info("@# memberId => {}", memberId);
+
+        List<EvReservationChargerDTO> chargerList =
+                reservationDAO.findReservationChargerListByStationId(stationId);
+
+        for (EvReservationChargerDTO charger : chargerList) {
+            boolean statusAvailable =
+                    "사용가능".equals(charger.getChargerStatus());
+
+            boolean selectedByOther =
+                    evChargerRedisService.isReservationSelectedByOther(
+                            charger.getChargerId(),
+                            memberId
+                    );
+
+            boolean selectable =
+                    statusAvailable && !selectedByOther;
+
+            charger.setSelectedByOther(selectedByOther);
+            charger.setSelectable(selectable);
+
+            log.info("@# chargerId => {}", charger.getChargerId());
+            log.info("@# chargerStatus => {}", charger.getChargerStatus());
+            log.info("@# selectedByOther => {}", selectedByOther);
+            log.info("@# selectable => {}", selectable);
+        }
+
+        return chargerList;
+    }
+
+    /*
+     * 예약 폼에서 선택 충전기 변경 시 Redis 임시 점유 변경
+     *
+     * 처리 순서:
+     * 1. 새 충전기가 사용가능인지 확인
+     * 2. 새 충전기 lock 시도
+     * 3. 새 lock 성공 시 기존 lock 해제
+     */
+    @Override
+    public boolean changeChargerReservationHold(Long beforeChargerId,
+                                                Long nextChargerId,
+                                                Long memberId) {
+        log.info("@# EvReservationServiceImpl.changeChargerReservationHold()");
+        log.info("@# beforeChargerId => {}", beforeChargerId);
+        log.info("@# nextChargerId => {}", nextChargerId);
+        log.info("@# memberId => {}", memberId);
+
+        if (beforeChargerId.equals(nextChargerId)) {
+            return true;
+        }
+
+        EvReservationChargerDTO nextCharger =
+                reservationDAO.findReservationChargerById(nextChargerId);
+
+        if (nextCharger == null) {
+            throw new IllegalArgumentException("존재하지 않는 충전기입니다.");
+        }
+
+        if (!"사용가능".equals(nextCharger.getChargerStatus())) {
+            throw new IllegalArgumentException("현재 선택할 수 없는 충전기입니다.");
+        }
+
+        boolean holdSuccess =
+                evChargerRedisService.holdChargerForReservation(nextChargerId, memberId);
+
+        if (!holdSuccess) {
+            return false;
+        }
+
+        evChargerRedisService.releaseChargerReservationHold(beforeChargerId, memberId);
+
+        return true;
+    }
+    
+    @Override
+    public boolean changeReservationHold(Long oldChargerId, Long newChargerId, Long memberId) {
+        log.info("@# EvReservationServiceImpl.changeReservationHold()");
+        log.info("@# oldChargerId => {}", oldChargerId);
+        log.info("@# newChargerId => {}", newChargerId);
+        log.info("@# memberId => {}", memberId);
+
+        return evChargerRedisService.changeReservationHold(
+                oldChargerId,
+                newChargerId,
+                memberId
+        );
     }
 }

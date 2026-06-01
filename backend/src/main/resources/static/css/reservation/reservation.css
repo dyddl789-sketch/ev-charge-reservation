@@ -1109,3 +1109,29 @@
 .auth-modal-submit:hover {
     background: #1d4ed8;
 }
+
+.charger-option.charger-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #f3f4f6;
+}
+
+.charger-option.charger-disabled .charger-content {
+    cursor: not-allowed;
+}
+
+.charger-option input:disabled {
+    cursor: not-allowed;
+}
+
+.unavailable {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #fee2e2;
+    color: #b91c1c;
+    font-size: 12px;
+    font-weight: 700;
+}

@@ -34,4 +34,14 @@ public class EvReservationChargerDTO {
     private String address;
     private String operatorName;
     private String stationStatus;
+    
+    /*
+     * 다른 사용자가 예약 폼에서 선택 중인지 여부
+     */
+    private boolean selectedByOther;
+
+    /*
+     * 현재 사용자가 선택 가능한 충전기인지 여부
+     */
+    private boolean selectable;
 }

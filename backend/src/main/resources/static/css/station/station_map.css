@@ -774,3 +774,38 @@ body {
     gap: 8px;
     margin-top: 10px;
 }
+
+
+/* 주소 검색 영역 */
+.address-search-row {
+    display: flex;
+    gap: 8px;
+}
+
+.address-search-row input {
+    flex: 1;
+    min-width: 0;
+}
+
+.address-search-row input[readonly] {
+    background: #f9fafb;
+    cursor: pointer;
+}
+
+.address-search-btn {
+    width: 96px;
+    height: 42px;
+    flex: 0 0 96px;
+    border: 1px solid #f05a00;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #f05a00;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.address-search-btn:hover {
+    background: #fff7ed;
+}
+
