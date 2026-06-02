@@ -28,4 +28,23 @@ public interface EvStationDAO {
     
     // 카카오맵에 표시할 충전소 목록 조회
     List<EvStationMapDTO> findStationMapList(@Param("keyword") String keyword);
+
+    /*
+     * 기본 출발지 주변 운영중 충전소 수 조회
+     */
+    int countNearbyStationByDefaultLocation(@Param("memberId") Long memberId,
+                                            @Param("radiusMeter") int radiusMeter);
+
+    /*
+     * 기본 출발지 주변 사용 가능한 충전기 수 조회
+     */
+    int countAvailableChargerByDefaultLocation(@Param("memberId") Long memberId,
+                                               @Param("radiusMeter") int radiusMeter);
+
+    /*
+     * 기본 출발지 주변 추천 충전소 목록 조회
+     */
+    List<EvStationMapDTO> findNearbyStationListByDefaultLocation(@Param("memberId") Long memberId,
+                                                                 @Param("radiusMeter") int radiusMeter,
+                                                                 @Param("limit") int limit);
 }

@@ -1,5 +1,6 @@
 package com.ev.service.user;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -238,11 +239,15 @@ public class EvReservationServiceImpl implements EvReservationService {
      * 내 예약 목록 조회
      */
     @Override
-    public List<EvReservationDTO> getMyReservationList(Long memberId) {
-        log.info("@# ReservationServiceImpl.getMyReservationList()");
+    public List<EvReservationDTO> getMyReservationList(Long memberId,
+                                                       LocalDateTime startDate,
+                                                       LocalDateTime endDate) {
+        log.info("@# EvReservationServiceImpl.getMyReservationList()");
         log.info("@# memberId => {}", memberId);
+        log.info("@# startDate => {}", startDate);
+        log.info("@# endDate => {}", endDate);
 
-        return reservationDAO.getMyReservationList(memberId);
+        return reservationDAO.getMyReservationList(memberId, startDate, endDate);
     }
 
     /*
@@ -455,21 +460,17 @@ public class EvReservationServiceImpl implements EvReservationService {
      * 기존 내 예약 목록에서 status가 '완료'인 예약만 필터링한다.
      */
     @Override
-    public List<EvReservationDTO> getChargingHistoryList(Long memberId) {
+    public List<EvReservationDTO> getChargingHistoryList(Long memberId, LocalDateTime startDate, LocalDateTime endDate) {
         log.info("@# EvReservationServiceImpl.getChargingHistoryList()");
         log.info("@# memberId => {}", memberId);
 
-        /*
-         * 기존 내 예약 목록 조회 메서드를 재사용한다.
-         *
-         * 메서드명이 다르면 네 프로젝트에서
-         * 내 예약 목록 조회에 쓰고 있는 DAO 메서드명으로 변경하면 된다.
-         */
-        List<EvReservationDTO> reservationList = reservationDAO.getMyReservationList(memberId);
+        log.info("@# EvReservationServiceImpl.getChargingHistoryList()");
+        log.info("@# memberId => {}", memberId);
+        log.info("@# startDate => {}", startDate);
+        log.info("@# endDate => {}", endDate);
 
-        return reservationList.stream()
-                .filter(reservation -> "완료".equals(reservation.getStatus()))
-                .collect(Collectors.toList());
+        return reservationDAO.getChargingHistoryList(memberId, startDate, endDate);
+
     }
     
     
@@ -689,4 +690,33 @@ public class EvReservationServiceImpl implements EvReservationService {
                 memberId
         );
     }
+
+    /*
+     * 메인페이지 다음 예약 1건 조회
+     */
+    @Override
+    public EvReservationDTO getNextReservation(Long memberId) {
+        log.info("@# EvReservationServiceImpl.getNextReservation()");
+        log.info("@# memberId => {}", memberId);
+
+        return reservationDAO.findNextReservation(memberId);
+    }
+
+    /*
+     * 메인페이지 이번 달 충전 비용 합계 조회
+     */
+    @Override
+    public Integer getThisMonthChargingCost(Long memberId) {
+        log.info("@# EvReservationServiceImpl.getThisMonthChargingCost()");
+        log.info("@# memberId => {}", memberId);
+
+        Integer cost = reservationDAO.findThisMonthChargingCost(memberId);
+
+        if (cost == null) {
+            return 0;
+        }
+
+        return cost;
+    }
+
 }

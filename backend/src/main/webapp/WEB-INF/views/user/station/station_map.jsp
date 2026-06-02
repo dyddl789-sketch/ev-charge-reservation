@@ -445,7 +445,6 @@
 
         for (var i = 0; i < locations.length; i++) {
             var location = locations[i];
-
             var activeClass = location.isDefault ? " active" : "";
 
             html += "<div class='saved-place" + activeClass + "' ";
@@ -461,10 +460,22 @@
             html += "       <p>" + location.address + "</p>";
             html += "   </div>";
 
-            html += "   <button type='button' class='delete-location-btn' ";
+            html += "   <div class='saved-place-actions'>";
+
+            if (location.isDefault) {
+                html += "       <span class='default-location-badge'>기본 위치</span>";
+            } else {
+                html += "       <button type='button' class='default-location-btn' ";
+                html += "data-location-id='" + location.locationId + "'>";
+                html += "기본 설정";
+                html += "       </button>";
+            }
+
+            html += "       <button type='button' class='delete-location-btn' ";
             html += "data-location-id='" + location.locationId + "'>";
             html += "삭제";
-            html += "   </button>";
+            html += "       </button>";
+            html += "   </div>";
 
             html += "</div>";
         }
@@ -472,6 +483,7 @@
         list.innerHTML = html;
 
         bindSavedLocationEvents();
+        bindDefaultLocationEvents();
         bindDeleteLocationEvents();
 
         var defaultLocation = locations[0];
@@ -495,6 +507,61 @@
         console.log("selectedStartLocation => ", selectedStartLocation);
 
         drawSavedLocationMarkers(locations);
+    }
+
+    /*
+     * 기본 위치 설정 버튼 이벤트
+     */
+    function bindDefaultLocationEvents() {
+        var defaultButtons = document.querySelectorAll(".default-location-btn");
+
+        defaultButtons.forEach(function(button) {
+            button.addEventListener("click", function(e) {
+                e.stopPropagation();
+
+                var locationId = button.dataset.locationId;
+
+                setDefaultLocation(locationId);
+            });
+        });
+    }
+
+    /*
+     * 기본 위치 설정 요청
+     */
+    function setDefaultLocation(locationId) {
+        var formData = new URLSearchParams();
+        formData.append("locationId", locationId);
+
+        fetch(contextPath + "/station/saved-locations/default", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData.toString()
+        })
+        .then(function(response) {
+            return response.text();
+        })
+        .then(function(resultText) {
+            if (resultText === "success") {
+                alert("기본 출발 위치가 변경되었습니다.");
+
+                clearRouteLine();
+                loadSavedLocations();
+
+            } else if (resultText === "login_required") {
+                alert("로그인 후 이용할 수 있습니다.");
+                location.href = contextPath + "/login";
+
+            } else {
+                alert("기본 위치 설정에 실패했습니다.");
+            }
+        })
+        .catch(function(error) {
+            console.log("set default location error => ", error);
+            alert("기본 위치 설정 중 오류가 발생했습니다.");
+        });
     }
 
     /*
@@ -934,7 +1001,6 @@
 
         html += "<div class='charger-list'>";
         html += "   <div class='charger-row'>";
-        html += "       <span class='charger-no'>1</span>";
         html += "       <div>";
         html += "           <strong>충전기 정보</strong>";
         html += "           <p>등록된 충전기 " + chargerCount + "대 / 사용 가능 " + availableCount + "대</p>";
@@ -948,7 +1014,7 @@
 
         html += "   </div>";
         html += "</div>";
-
+        
         html += "<a class='detail-link' href='" + contextPath + "/station/detail?stationId="
             + station.stationId + "'>상세보기</a>";
 

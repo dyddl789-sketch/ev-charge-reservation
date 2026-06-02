@@ -320,7 +320,7 @@ body {
 
 .detail-tabs {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     border-bottom: 1px solid #e5e7eb;
     margin-bottom: 12px;
 }
@@ -331,6 +331,7 @@ body {
     background: #ffffff;
     font-weight: 900;
     cursor: pointer;
+    text-align: center;
 }
 
 .detail-tabs button.active {
@@ -345,23 +346,11 @@ body {
 
 .charger-row {
     display: grid;
-    grid-template-columns: 34px 1fr auto;
+    grid-template-columns: 1fr auto;
     gap: 12px;
     align-items: center;
     padding: 16px 0;
     border-bottom: 1px solid #f0f1f3;
-}
-
-.charger-no {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: #138a43;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 900;
 }
 
 .charger-row strong {
@@ -809,3 +798,45 @@ body {
     background: #fff7ed;
 }
 
+
+/* =========================
+   Saved Location Default Button Patch
+========================= */
+
+.saved-place-actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.default-location-badge {
+    height: 26px;
+    padding: 0 8px;
+    border-radius: 8px;
+    background: #eaf7ee;
+    color: #138a43;
+    font-size: 11px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.default-location-btn {
+    flex: 0 0 auto;
+    border: 0;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.default-location-btn:hover {
+    background: #dbeafe;
+}

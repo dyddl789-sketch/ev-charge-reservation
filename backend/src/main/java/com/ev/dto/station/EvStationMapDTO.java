@@ -19,4 +19,8 @@ public class EvStationMapDTO {
 
     private Integer chargerCount;
     private Integer availableChargerCount;
+    
+    private Double distanceKm;
+    
+    private String imageUrl;
 }

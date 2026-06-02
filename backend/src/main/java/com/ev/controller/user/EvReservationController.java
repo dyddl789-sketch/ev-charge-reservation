@@ -1,6 +1,8 @@
 package com.ev.controller.user;
 
 import java.util.List;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -217,9 +219,11 @@ public class EvReservationController {
      */
     @GetMapping("/my")
     public String myReservationList(@AuthenticationPrincipal EvUserDetails userDetails,
+    								@RequestParam(value = "month", required = false) String month,
                                     Model model,
                                     RedirectAttributes rttr) {
         log.info("@# EvReservationController.myReservationList()");
+        log.info("@# month =>" + month);
 
         if (userDetails == null) {
             rttr.addFlashAttribute("errorMsg", "로그인이 필요합니다.");
@@ -229,11 +233,23 @@ public class EvReservationController {
         Long memberId = userDetails.getMemberId();
 
         log.info("@# memberId => {}", memberId);
+        
+        LocalDateTime startDate = null;
+        LocalDateTime endDate = null;
+        
+        if(month != null && !month.isEmpty()) {
+        	YearMonth yearMonth = YearMonth.parse(month);
+        	
+        	startDate = yearMonth.atDay(1).atStartOfDay();
+        	endDate = yearMonth.plusMonths(1).atDay(1).atStartOfDay();
+        }
+        
 
         List<EvReservationDTO> reservationList =
-                evReservationService.getMyReservationList(memberId);
+                evReservationService.getMyReservationList(memberId, startDate, endDate);
 
         model.addAttribute("reservationList", reservationList);
+        model.addAttribute("selectedMonth", month);
 
         return "user/reservation/my_reservation";
     }
@@ -379,9 +395,12 @@ public class EvReservationController {
      */
     @GetMapping("/history")
     public String chargingHistory(@AuthenticationPrincipal EvUserDetails userDetails,
+    							  @RequestParam(value = "month", required = false) String month,
                                   Model model,
                                   RedirectAttributes rttr) {
         log.info("@# EvReservationController.chargingHistory()");
+        log.info("@# month => {}", month);
+
 
         if (userDetails == null) {
             rttr.addFlashAttribute("errorMsg", "로그인이 필요합니다.");
@@ -390,11 +409,23 @@ public class EvReservationController {
 
         Long memberId = userDetails.getMemberId();
         log.info("@# memberId => {}", memberId);
+        
+        LocalDateTime startDate = null;
+        LocalDateTime endDate = null;
+        
+        if (month != null && !month.isEmpty()) {
+            YearMonth yearMonth = YearMonth.parse(month);
 
+            startDate = yearMonth.atDay(1).atStartOfDay();
+            endDate = yearMonth.plusMonths(1).atDay(1).atStartOfDay();
+        }
+        
         List<EvReservationDTO> chargingHistoryList =
-                evReservationService.getChargingHistoryList(memberId);
+                evReservationService.getChargingHistoryList(memberId, startDate, endDate);
 
         model.addAttribute("chargingHistoryList", chargingHistoryList);
+        model.addAttribute("historyList", chargingHistoryList);
+        model.addAttribute("selectedMonth", month);
 
         return "user/reservation/charging_history";
     }
