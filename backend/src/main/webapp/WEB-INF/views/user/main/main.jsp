@@ -31,7 +31,6 @@
 				<sec:authorize access="isAnonymous()">
 				    <h2>비회원 님, 안녕하세요!</h2>
 				</sec:authorize>
-                <p>내 주변 최적의 충전소와 예약 정보를 확인해 보세요.</p>
 
                 <div class="welcome-buttons">
                     <a href="/station/list" class="primary-btn">충전소 탐색하기</a>
@@ -82,7 +81,6 @@
             <section class="summary-grid">
 
                 <article class="summary-card">
-                    <div class="summary-icon green">📍</div>
                     <div>
                         <span>내 주변 충전소</span>
                         <strong>24 곳</strong>
@@ -91,7 +89,6 @@
                 </article>
 
                 <article class="summary-card">
-                    <div class="summary-icon blue">🔌</div>
                     <div>
                         <span>사용 가능한 충전기</span>
                         <strong>32 대</strong>
@@ -100,7 +97,6 @@
                 </article>
 
                 <article class="summary-card">
-                    <div class="summary-icon purple">📅</div>
                     <div>
                         <span>다음 예약</span>
                         <strong>오늘 18:00</strong>
@@ -109,7 +105,6 @@
                 </article>
 
                 <article class="summary-card">
-                    <div class="summary-icon orange">₩</div>
                     <div>
                         <span>이번 달 충전 비용</span>
                         <strong>42,500 원</strong>

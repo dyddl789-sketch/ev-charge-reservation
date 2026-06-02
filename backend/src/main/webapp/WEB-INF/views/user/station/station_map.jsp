@@ -38,31 +38,6 @@
             </div>
         </section>
 
-        <section class="panel-section">
-            <div class="panel-title-row">
-                <h3>즐겨찾기</h3>
-                <button type="button">전체 보기</button>
-            </div>
-
-            <div id="favoriteList" class="favorite-list">
-                <div class="favorite-item">
-                    <span>⚡</span>
-                    <div>
-                        <strong>부산 사상 EV 충전소</strong>
-                        <p>1.2km</p>
-                    </div>
-                </div>
-
-                <div class="favorite-item">
-                    <span>⚡</span>
-                    <div>
-                        <strong>서면 EV 스테이션</strong>
-                        <p>2.3km</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
     </aside>
 
     <!-- 가운데 지도 영역 -->
