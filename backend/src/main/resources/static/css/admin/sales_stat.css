@@ -27,7 +27,7 @@
    Search
 ========================= */
 
-.stat-filter-section {
+.sales-filter-section {
     background: #ffffff;
     border: 1px solid #e5e7eb;
     padding: 20px;
@@ -35,28 +35,27 @@
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
 }
 
-.stat-filter-form {
+.sales-filter-form {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 10px;
 }
 
-.stat-filter-form label {
+.sales-filter-form label {
     margin-right: auto;
     font-size: 14px;
     font-weight: 700;
     color: #374151;
 }
 
-.stat-filter-form input[type="date"] {
+.sales-filter-form input[type="date"] {
     height: 40px;
     border: 1px solid #dcdfe6;
     padding: 0 12px;
-    background: #ffffff;
 }
 
-.stat-filter-form button {
+.sales-filter-form button {
     height: 40px;
     padding: 0 18px;
     border: none;
@@ -66,7 +65,7 @@
     cursor: pointer;
 }
 
-.stat-filter-form button:hover {
+.sales-filter-form button:hover {
     background: #d94f00;
 }
 
@@ -74,14 +73,14 @@
    Summary
 ========================= */
 
-.stat-summary-grid {
+.sales-summary-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 18px;
     margin-bottom: 20px;
 }
 
-.stat-card {
+.sales-card {
     background: #ffffff;
     border: 1px solid #e5e7eb;
     padding: 24px;
@@ -89,14 +88,14 @@
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
 }
 
-.stat-label {
+.sales-label {
     margin: 0 0 10px;
     color: #6b7280;
     font-size: 14px;
     font-weight: 700;
 }
 
-.stat-value {
+.sales-value {
     display: block;
     color: #f05a00;
     font-size: 34px;
@@ -108,14 +107,14 @@
    Chart
 ========================= */
 
-.stat-chart-grid {
+.sales-chart-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 18px;
     margin-bottom: 20px;
 }
 
-.stat-panel {
+.sales-panel {
     background: #ffffff;
     border: 1px solid #e5e7eb;
     padding: 22px;
@@ -123,24 +122,24 @@
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
 }
 
-.stat-panel-header {
+.sales-panel-header {
     margin-bottom: 16px;
 }
 
-.stat-panel-header h2 {
+.sales-panel-header h2 {
     margin: 0 0 6px;
     color: #111827;
     font-size: 20px;
     font-weight: 800;
 }
 
-.stat-panel-header p {
+.sales-panel-header p {
     margin: 0;
     color: #6b7280;
     font-size: 13px;
 }
 
-.stat-panel canvas {
+.sales-panel canvas {
     width: 100%;
     height: 320px !important;
 }
@@ -149,12 +148,12 @@
    Table
 ========================= */
 
-.stat-table {
+.sales-table {
     width: 100%;
     border-collapse: collapse;
 }
 
-.stat-table th {
+.sales-table th {
     height: 46px;
     background: #f9fafb;
     border: 1px solid #e5e7eb;
@@ -163,7 +162,7 @@
     font-weight: 700;
 }
 
-.stat-table td {
+.sales-table td {
     height: 48px;
     border: 1px solid #e5e7eb;
     text-align: center;
@@ -172,8 +171,13 @@
     font-size: 14px;
 }
 
-.stat-table tbody tr:hover {
+.sales-table tbody tr:hover {
     background: #fff7f2;
+}
+
+.sales-table td:nth-child(2) {
+    text-align: left;
+    padding-left: 16px;
 }
 
 .empty-cell {
@@ -182,21 +186,16 @@
 }
 
 /* =========================
-   Rank Style
+   Amount
 ========================= */
 
-.stat-table td:first-child {
-    font-weight: 700;
-}
-
-.stat-table td:nth-child(2) {
-    text-align: left;
-    padding-left: 16px;
-}
-
-.point-text {
+.amount-text {
     color: #f05a00;
     font-weight: 800;
+}
+
+.rank-text {
+    font-weight: 700;
 }
 
 /* =========================
@@ -205,31 +204,31 @@
 
 @media (max-width: 1400px) {
 
-    .stat-summary-grid {
+    .sales-summary-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .stat-chart-grid {
+    .sales-chart-grid {
         grid-template-columns: 1fr;
     }
 }
 
 @media (max-width: 900px) {
 
-    .stat-summary-grid {
+    .sales-summary-grid {
         grid-template-columns: 1fr;
     }
 
-    .stat-filter-form {
+    .sales-filter-form {
         flex-wrap: wrap;
         justify-content: flex-start;
     }
 
-    .stat-panel {
+    .sales-panel {
         overflow-x: auto;
     }
 
-    .stat-table {
-        min-width: 800px;
+    .sales-table {
+        min-width: 900px;
     }
 }

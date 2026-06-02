@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.admin.EvAdminUsageDAO">
+
+    <!-- 이용 통계 요약 -->
+    <select id="findUsageSummary"
+            resultType="com.ev.dto.admin.usage.EvAdminUsageSummaryDTO">
+
+        select
+              count(*) as totalUsageCount
+            , count(*) filter (
+                where cs.actual_start_time::date = current_date
+              ) as todayUsageCount
+            , coalesce(round(avg(cs.actual_minutes)), 0) as avgChargingMinutes
+            , coalesce(sum(cs.actual_kwh), 0) as totalKwh
+            , (
+                count(*) filter (
+                    where cs.actual_start_time::date = current_date
+                )
+                -
+                count(*) filter (
+                    where cs.actual_start_time::date = current_date - interval '1 day'
+                )
+              ) as diffUsageCount
+        from charging_session cs
+        where cs.status = '완료'
+          and cs.actual_start_time::date between #{startDate}::date and #{endDate}::date
+
+    </select>
+
+    <!-- 일별 이용 현황 -->
+    <select id="findDailyUsageList"
+            resultType="com.ev.dto.admin.usage.EvAdminUsageDailyDTO">
+
+        select
+              to_char(cs.actual_start_time::date, 'YYYY-MM-DD') as usageDate
+            , count(*) as usageCount
+        from charging_session cs
+        where cs.status = '완료'
+          and cs.actual_start_time::date between #{startDate}::date and #{endDate}::date
+        group by cs.actual_start_time::date
+        order by cs.actual_start_time::date
+
+    </select>
+
+    <!-- 시간대별 이용 현황 -->
+    <select id="findHourlyUsageList"
+            resultType="com.ev.dto.admin.usage.EvAdminUsageHourlyDTO">
+
+        select
+              to_char(cs.actual_start_time, 'HH24') as usageHour
+            , count(*) as usageCount
+        from charging_session cs
+        where cs.status = '완료'
+          and cs.actual_start_time::date between #{startDate}::date and #{endDate}::date
+        group by to_char(cs.actual_start_time, 'HH24')
+        order by usageHour
+
+    </select>
+
+    <!-- 충전 타입별 이용 현황 -->
+    <select id="findUsageTypeList"
+            resultType="com.ev.dto.admin.usage.EvAdminUsageTypeDTO">
+
+        select
+              c.charger_type as chargerType
+            , count(*) as usageCount
+            , round(
+                count(*) * 100.0 / nullif(sum(count(*)) over(), 0),
+                1
+              ) as usageRate
+            , coalesce(round(avg(cs.actual_minutes)), 0) as avgMinutes
+        from charging_session cs
+        join charger c
+          on cs.charger_id = c.charger_id
+        where cs.status = '완료'
+          and cs.actual_start_time::date between #{startDate}::date and #{endDate}::date
+        group by c.charger_type
+        order by usageCount desc
+
+    </select>
+
+    <!-- 충전소별 이용 순위 -->
+    <select id="findStationUsageRankList"
+            resultType="com.ev.dto.admin.usage.EvAdminUsageStationRankDTO">
+
+        select
+              row_number() over(order by count(*) desc) as rankNo
+            , st.station_id as stationId
+            , st.station_name as stationName
+            , count(*) as usageCount
+            , coalesce(round(avg(cs.actual_minutes)), 0) as avgMinutes
+            , round(
+                count(*) * 100.0 / nullif(sum(count(*)) over(), 0),
+                1
+              ) as operationRate
+        from charging_session cs
+        join charger c
+          on cs.charger_id = c.charger_id
+        join charging_station st
+          on c.station_id = st.station_id
+        where cs.status = '완료'
+          and cs.actual_start_time::date between #{startDate}::date and #{endDate}::date
+        group by st.station_id, st.station_name
+        order by usageCount desc
+        limit 10
+
+    </select>
+
+</mapper>

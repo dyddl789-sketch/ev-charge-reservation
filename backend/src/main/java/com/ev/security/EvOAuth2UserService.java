@@ -47,7 +47,16 @@ public class EvOAuth2UserService extends DefaultOAuth2UserService {
         String nickname = String.valueOf(profile.get("nickname"));
 
         String userId = "kakao_" + kakaoId;
-        String email = userId + "@kakao.oauth.local";
+
+        // 카카오 동의항목에서 account_email을 수집하도록 설정한 경우 실제 이메일 조회
+        String email = (String) kakaoAccount.get("email");
+
+        // 이메일이 없는 경우를 대비한 fallback
+        if (email == null || email.isBlank()) {
+            email = userId + "@kakao.oauth.local";
+        }
+
+        log.info("@# kakao email => {}", email);
 
         EvMemberDTO evMemberDTO = evMemberDAO.findByUserId(userId);
 

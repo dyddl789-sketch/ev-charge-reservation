@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.ev.dto.admin.EvAdminNoticeDTO;
 import com.ev.dto.admin.EvAdminReservationRowDTO;
 import com.ev.dto.admin.EvAdminStationRowDTO;
 
@@ -41,4 +42,7 @@ public interface EvAdminDashboardDAO {
     List<EvAdminReservationRowDTO> findTodayReservations(@Param("date") LocalDate date);
 
     List<EvAdminStationRowDTO> findStationStatusList();
+    
+    // 최근 운영 알림 조회
+    List<EvAdminNoticeDTO> findRecentNotices();
 }

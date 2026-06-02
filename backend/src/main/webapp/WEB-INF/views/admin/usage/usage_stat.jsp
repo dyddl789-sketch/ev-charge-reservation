@@ -1,14 +1,17 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>EV Charge 이용 통계</title>
+    <meta charset="UTF-8">
+    <title>관리자 - 이용 통계</title>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/admin/admin.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/admin/usage.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/admin/admin.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/admin/usage_stat.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -22,289 +25,266 @@
 
         <main class="admin-content">
 
-            <section class="admin-title-row">
-                <div>
-                    <h1>이용 통계</h1>
-                    <p>충전 서비스 이용 건수와 충전소별 이용 현황을 확인할 수 있습니다.</p>
+        <div class="admin-page-header">
+            <div>
+                <h1>이용 통계</h1>
+                <p>실제 충전 완료 데이터를 기준으로 이용 현황을 조회합니다.</p>
+            </div>
+        </div>
+
+        <!-- 검색 기간 -->
+        <section class="stat-filter-section">
+            <form method="get"
+                  action="${pageContext.request.contextPath}/admin/usage"
+                  class="stat-filter-form">
+
+                <label>조회 기간</label>
+
+                <input type="date" name="startDate" value="${startDate}">
+                <span>~</span>
+                <input type="date" name="endDate" value="${endDate}">
+
+                <button type="submit">조회</button>
+            </form>
+        </section>
+
+        <!-- 요약 카드 -->
+        <section class="stat-summary-grid">
+
+            <div class="stat-card">
+                <p class="stat-label">총 이용 건수</p>
+                <strong class="stat-value">
+                    <fmt:formatNumber value="${usageStat.summary.totalUsageCount}" pattern="#,###" />건
+                </strong>
+            </div>
+
+            <div class="stat-card">
+                <p class="stat-label">오늘 이용 건수</p>
+                <strong class="stat-value">
+                    <fmt:formatNumber value="${usageStat.summary.todayUsageCount}" pattern="#,###" />건
+                </strong>
+            </div>
+
+            <div class="stat-card">
+                <p class="stat-label">평균 충전 시간</p>
+                <strong class="stat-value">
+                    <fmt:formatNumber value="${usageStat.summary.avgChargingMinutes}" pattern="#,###" />분
+                </strong>
+            </div>
+
+            <div class="stat-card">
+                <p class="stat-label">총 충전량</p>
+                <strong class="stat-value">
+                    <fmt:formatNumber value="${usageStat.summary.totalKwh}" pattern="#,##0.0" />kWh
+                </strong>
+            </div>
+
+        </section>
+
+        <!-- 차트 영역 -->
+        <section class="stat-chart-grid">
+
+            <div class="stat-panel">
+                <div class="stat-panel-header">
+                    <h2>일별 이용 현황</h2>
+                    <p>선택 기간 내 일자별 충전 완료 건수</p>
                 </div>
+                <canvas id="dailyUsageChart"></canvas>
+            </div>
 
-                <form action="/admin/stat/usage" method="get" class="date-box">
-                    <label>기간</label>
-                    <input type="date" name="startDate" value="2026-05-01">
-                    <span>~</span>
-                    <input type="date" name="endDate" value="2026-05-31">
-                </form>
-            </section>
-
-            <!-- 상단 요약 카드 -->
-            <section class="usage-summary">
-
-                <article class="usage-summary-card">
-                    <span>전체 이용 건수</span>
-                    <strong>8,962건</strong>
-                    <p>전월 대비 +12.1%</p>
-                </article>
-
-                <article class="usage-summary-card">
-                    <span>오늘 이용 건수</span>
-                    <strong>342건</strong>
-                    <p>전일 대비 +27건</p>
-                </article>
-
-                <article class="usage-summary-card">
-                    <span>평균 충전 시간</span>
-                    <strong>27분</strong>
-                    <p>건당 평균 이용 시간</p>
-                </article>
-
-                <article class="usage-summary-card">
-                    <span>총 충전량</span>
-                    <strong>18,420kWh</strong>
-                    <p>완료된 충전 기준</p>
-                </article>
-
-            </section>
-
-            <!-- 차트 영역 -->
-            <section class="usage-chart-grid">
-
-                <article class="usage-card">
-                    <div class="usage-card-header">
-                        <h2>일별 이용 현황</h2>
-                        <span>단위: 건</span>
-                    </div>
-
-                    <div class="chart-box">
-                        <svg viewBox="0 0 640 220" class="usage-svg-chart">
-
-                            <line x1="40" y1="30" x2="610" y2="30" class="grid-line" />
-                            <line x1="40" y1="75" x2="610" y2="75" class="grid-line" />
-                            <line x1="40" y1="120" x2="610" y2="120" class="grid-line" />
-                            <line x1="40" y1="165" x2="610" y2="165" class="grid-line" />
-
-                            <rect x="75"  y="96"  width="34" height="69" class="bar" />
-                            <rect x="155" y="72"  width="34" height="93" class="bar" />
-                            <rect x="235" y="110" width="34" height="55" class="bar" />
-                            <rect x="315" y="86"  width="34" height="79" class="bar" />
-                            <rect x="395" y="64"  width="34" height="101" class="bar" />
-                            <rect x="475" y="42"  width="34" height="123" class="bar" />
-                            <rect x="555" y="78"  width="34" height="87" class="bar" />
-
-                            <text x="92"  y="198" class="x-label">5/25</text>
-                            <text x="172" y="198" class="x-label">5/26</text>
-                            <text x="252" y="198" class="x-label">5/27</text>
-                            <text x="332" y="198" class="x-label">5/28</text>
-                            <text x="412" y="198" class="x-label">5/29</text>
-                            <text x="492" y="198" class="x-label">5/30</text>
-                            <text x="572" y="198" class="x-label">5/31</text>
-
-                        </svg>
-                    </div>
-                </article>
-
-                <article class="usage-card">
-                    <div class="usage-card-header">
-                        <h2>시간대별 이용 현황</h2>
-                        <span>단위: 건</span>
-                    </div>
-
-                    <div class="chart-box">
-                        <svg viewBox="0 0 700 220" class="usage-svg-chart">
-
-                            <line x1="45" y1="30" x2="670" y2="30" class="grid-line" />
-                            <line x1="45" y1="75" x2="670" y2="75" class="grid-line" />
-                            <line x1="45" y1="120" x2="670" y2="120" class="grid-line" />
-                            <line x1="45" y1="165" x2="670" y2="165" class="grid-line" />
-
-                            <polyline
-                                points="70,152 140,138 210,114 280,92 350,74 420,60 490,84 560,118 630,142"
-                                class="usage-line"
-                                fill="none"
-                            />
-
-                            <circle cx="70"  cy="152" r="5" class="line-dot" />
-                            <circle cx="140" cy="138" r="5" class="line-dot" />
-                            <circle cx="210" cy="114" r="5" class="line-dot" />
-                            <circle cx="280" cy="92"  r="5" class="line-dot" />
-                            <circle cx="350" cy="74"  r="5" class="line-dot" />
-                            <circle cx="420" cy="60"  r="5" class="line-dot" />
-                            <circle cx="490" cy="84"  r="5" class="line-dot" />
-                            <circle cx="560" cy="118" r="5" class="line-dot" />
-                            <circle cx="630" cy="142" r="5" class="line-dot" />
-
-                            <text x="70"  y="198" class="x-label">06시</text>
-                            <text x="140" y="198" class="x-label">08시</text>
-                            <text x="210" y="198" class="x-label">10시</text>
-                            <text x="280" y="198" class="x-label">12시</text>
-                            <text x="350" y="198" class="x-label">14시</text>
-                            <text x="420" y="198" class="x-label">16시</text>
-                            <text x="490" y="198" class="x-label">18시</text>
-                            <text x="560" y="198" class="x-label">20시</text>
-                            <text x="630" y="198" class="x-label">22시</text>
-
-                        </svg>
-                    </div>
-                </article>
-
-            </section>
-
-            <!-- 하단 테이블 영역 -->
-            <section class="usage-table-grid">
-
-                <article class="usage-card">
-                    <div class="usage-card-header">
-                        <h2>충전 타입별 이용 현황</h2>
-                    </div>
-
-                    <table class="usage-table">
-                        <thead>
-                            <tr>
-                                <th>충전 타입</th>
-                                <th>이용 건수</th>
-                                <th>비율</th>
-                                <th>평균 시간</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>급속</td>
-                                <td>4,658건</td>
-                                <td class="point-text">52%</td>
-                                <td>24분</td>
-                            </tr>
-                            <tr>
-                                <td>완속</td>
-                                <td>2,777건</td>
-                                <td class="point-text">31%</td>
-                                <td>62분</td>
-                            </tr>
-                            <tr>
-                                <td>초급속</td>
-                                <td>1,527건</td>
-                                <td class="point-text">17%</td>
-                                <td>18분</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </article>
-
-                <article class="usage-card">
-                    <div class="usage-card-header">
-                        <h2>충전소별 이용 순위</h2>
-                        <a href="${pageContext.request.contextPath}/admin/stat/usage/station">전체 보기</a>
-                    </div>
-
-                    <table class="usage-table">
-                        <thead>
-                            <tr>
-                                <th>순위</th>
-                                <th>충전소명</th>
-                                <th>이용 건수</th>
-                                <th>평균 시간</th>
-                                <th>가동률</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="rank-badge top">1</span></td>
-                                <td>부산 사상 EV 충전소</td>
-                                <td>1,284건</td>
-                                <td>26분</td>
-                                <td class="point-text">82%</td>
-                            </tr>
-                            <tr>
-                                <td><span class="rank-badge top">2</span></td>
-                                <td>서면 EV 스테이션</td>
-                                <td>1,106건</td>
-                                <td>28분</td>
-                                <td class="point-text">78%</td>
-                            </tr>
-                            <tr>
-                                <td><span class="rank-badge top">3</span></td>
-                                <td>부산역 환승센터</td>
-                                <td>986건</td>
-                                <td>30분</td>
-                                <td class="point-text">74%</td>
-                            </tr>
-                            <tr>
-                                <td><span class="rank-badge">4</span></td>
-                                <td>해운대 센텀 충전소</td>
-                                <td>852건</td>
-                                <td>27분</td>
-                                <td>69%</td>
-                            </tr>
-                            <tr>
-                                <td><span class="rank-badge">5</span></td>
-                                <td>수영강변 공영 충전소</td>
-                                <td>774건</td>
-                                <td>29분</td>
-                                <td>66%</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </article>
-
-            </section>
-
-            <section class="usage-card recent-usage-card">
-                <div class="usage-card-header">
-                    <h2>최근 이용 내역</h2>
-                    <a href="${pageContext.request.contextPath}/admin/stat/usage/history">전체 보기</a>
+            <div class="stat-panel">
+                <div class="stat-panel-header">
+                    <h2>시간대별 이용 현황</h2>
+                    <p>선택 기간 내 시간대별 충전 완료 건수</p>
                 </div>
+                <canvas id="hourlyUsageChart"></canvas>
+            </div>
 
-                <table class="recent-usage-table">
-                    <thead>
-                        <tr>
-                            <th>이용일시</th>
-                            <th>회원명</th>
-                            <th>차량</th>
-                            <th>충전소명</th>
-                            <th>충전기</th>
-                            <th>충전 타입</th>
-                            <th>충전 시간</th>
-                            <th>상태</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>2026-05-31 18:20</td>
-                            <td>김민수</td>
-                            <td>아이오닉 5</td>
-                            <td>부산 사상 EV 충전소</td>
-                            <td>급속 1번</td>
-                            <td>급속</td>
-                            <td>24분</td>
-                            <td><span class="status-badge">완료</span></td>
-                        </tr>
-                        <tr>
-                            <td>2026-05-31 17:40</td>
-                            <td>이소연</td>
-                            <td>EV6</td>
-                            <td>서면 EV 스테이션</td>
-                            <td>급속 2번</td>
-                            <td>급속</td>
-                            <td>28분</td>
-                            <td><span class="status-badge">완료</span></td>
-                        </tr>
-                        <tr>
-                            <td>2026-05-31 16:10</td>
-                            <td>박정훈</td>
-                            <td>테슬라 모델 3</td>
-                            <td>해운대 센텀 충전소</td>
-                            <td>초급속 1번</td>
-                            <td>초급속</td>
-                            <td>18분</td>
-                            <td><span class="status-badge">완료</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </section>
+        </section>
 
-        </main>
+        <!-- 충전 타입별 이용 현황 -->
+        <section class="stat-panel">
+            <div class="stat-panel-header">
+                <h2>충전 타입별 이용 현황</h2>
+                <p>완속 / 급속 / 초급속 기준 이용 비율</p>
+            </div>
 
+            <table class="stat-table">
+                <thead>
+                    <tr>
+                        <th>충전 타입</th>
+                        <th>이용 건수</th>
+                        <th>비율</th>
+                        <th>평균 시간</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:forEach var="type" items="${usageStat.typeList}">
+                        <tr>
+                            <td>${type.chargerType}</td>
+                            <td>
+                                <fmt:formatNumber value="${type.usageCount}" pattern="#,###" />건
+                            </td>
+                            <td>${type.usageRate}%</td>
+                            <td>${type.avgMinutes}분</td>
+                        </tr>
+                    </c:forEach>
+
+                    <c:if test="${empty usageStat.typeList}">
+                        <tr>
+                            <td colspan="4" class="empty-cell">
+                                조회된 이용 데이터가 없습니다.
+                            </td>
+                        </tr>
+                    </c:if>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 충전소별 이용 순위 -->
+        <section class="stat-panel">
+            <div class="stat-panel-header">
+                <h2>충전소별 이용 순위</h2>
+                <p>충전 완료 건수 기준 상위 충전소</p>
+            </div>
+
+            <table class="stat-table">
+                <thead>
+                    <tr>
+                        <th>순위</th>
+                        <th>충전소명</th>
+                        <th>이용 건수</th>
+                        <th>평균 시간</th>
+                        <th>이용 비율</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:forEach var="station" items="${usageStat.stationRankList}">
+                        <tr>
+                            <td>${station.rankNo}</td>
+                            <td>${station.stationName}</td>
+                            <td>
+                                <fmt:formatNumber value="${station.usageCount}" pattern="#,###" />건
+                            </td>
+                            <td>${station.avgMinutes}분</td>
+                            <td>${station.operationRate}%</td>
+                        </tr>
+                    </c:forEach>
+
+                    <c:if test="${empty usageStat.stationRankList}">
+                        <tr>
+                            <td colspan="5" class="empty-cell">
+                                조회된 충전소 이용 데이터가 없습니다.
+                            </td>
+                        </tr>
+                    </c:if>
+                </tbody>
+            </table>
+        </section>
+
+    	</main>
     </div>
-
 </div>
+
+<script>
+    // ==============================
+    // 일별 이용 현황 차트 데이터
+    // ==============================
+    const dailyUsageLabels = [
+        <c:forEach var="daily" items="${usageStat.dailyList}" varStatus="status">
+            "${daily.usageDate}"<c:if test="${!status.last}">,</c:if>
+        </c:forEach>
+    ];
+
+    const dailyUsageData = [
+        <c:forEach var="daily" items="${usageStat.dailyList}" varStatus="status">
+            ${daily.usageCount}<c:if test="${!status.last}">,</c:if>
+        </c:forEach>
+    ];
+
+    // ==============================
+    // 시간대별 이용 현황 차트 데이터
+    // ==============================
+    const hourlyUsageLabels = [
+        <c:forEach var="hourly" items="${usageStat.hourlyList}" varStatus="status">
+            "${hourly.usageHour}시"<c:if test="${!status.last}">,</c:if>
+        </c:forEach>
+    ];
+
+    const hourlyUsageData = [
+        <c:forEach var="hourly" items="${usageStat.hourlyList}" varStatus="status">
+            ${hourly.usageCount}<c:if test="${!status.last}">,</c:if>
+        </c:forEach>
+    ];
+
+    // ==============================
+    // 공통 차트 옵션
+    // ==============================
+    const commonChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true
+            },
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        return context.dataset.label + ': ' + context.raw + '건';
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                }
+            }
+        }
+    };
+
+    // ==============================
+    // 일별 이용 현황 차트
+    // ==============================
+    const dailyUsageCanvas = document.getElementById('dailyUsageChart');
+
+    if (dailyUsageCanvas) {
+        new Chart(dailyUsageCanvas, {
+            type: 'line',
+            data: {
+                labels: dailyUsageLabels,
+                datasets: [{
+                    label: '일별 이용 건수',
+                    data: dailyUsageData,
+                    tension: 0.35,
+                    fill: true
+                }]
+            },
+            options: commonChartOptions
+        });
+    }
+
+    // ==============================
+    // 시간대별 이용 현황 차트
+    // ==============================
+    const hourlyUsageCanvas = document.getElementById('hourlyUsageChart');
+
+    if (hourlyUsageCanvas) {
+        new Chart(hourlyUsageCanvas, {
+            type: 'bar',
+            data: {
+                labels: hourlyUsageLabels,
+                datasets: [{
+                    label: '시간대별 이용 건수',
+                    data: hourlyUsageData
+                }]
+            },
+            options: commonChartOptions
+        });
+    }
+</script>
 
 </body>
 </html>

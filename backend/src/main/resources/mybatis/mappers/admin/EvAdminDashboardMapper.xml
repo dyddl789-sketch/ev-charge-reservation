@@ -146,5 +146,69 @@
         order by cs.station_id desc
         limit 5
     </select>
+    
+    <!-- 최근 운영 알림 조회 -->
+	<select id="findRecentNotices"
+	        resultType="com.ev.dto.admin.EvAdminNoticeDTO">
+	
+	    select
+	          message
+	        , created_at as createdAt
+	    from (
+	        select
+	              '[노쇼] 예약 #' || r.reservation_id || '번이 노쇼 처리되었습니다.' as message
+	            , r.no_show_at as created_at
+	        from reservation r
+	        where r.status = '노쇼'
+	          and r.no_show_at is not null
+	
+	        union all
+	
+	        select
+	              '[예약 취소] 예약 #' || r.reservation_id || '번이 취소되었습니다.' as message
+	            , r.canceled_at as created_at
+	        from reservation r
+	        where r.status = '취소'
+	          and r.canceled_at is not null
+	
+	        union all
+	
+	        select
+	              '[충전 완료] ' || cs.session_id || '번 충전이 완료되었습니다.' as message
+	            , cs.actual_end_time as created_at
+	        from charging_session cs
+	        where cs.status = '완료'
+	          and cs.actual_end_time is not null
+	
+	        union all
+	
+	        select
+	              '[충전기 상태] ' || c.charger_name || ' 상태가 ' || c.status || '입니다.' as message
+	            , coalesce(c.updated_at, c.created_at) as created_at
+	        from charger c
+	        where c.status in ('점검중', '고장')
+	
+	        union all
+	
+	        select
+	              '[신규 예약] 예약 #' || r.reservation_id || '번이 등록되었습니다.' as message
+	            , r.created_at as created_at
+	        from reservation r
+	        where r.status = '예약완료'
+	        
+	        union all
+
+			select
+			      '[신규 회원] ' || m.member_name || '님이 가입했습니다.' as message
+			    , m.created_at as created_at
+			from app_member m
+			where m.created_at is not null
+	
+	    ) notice
+	    where created_at is not null
+	    order by created_at desc
+	    limit 5
+	
+	</select>
 
 </mapper>

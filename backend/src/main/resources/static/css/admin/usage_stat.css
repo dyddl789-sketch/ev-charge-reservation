@@ -3,7 +3,10 @@
 ========================= */
 
 .admin-content {
-    padding: 24px;
+    flex: 1;
+    padding: 32px;
+    background: #f7f8fa;
+    min-height: calc(100vh - 64px);
 }
 
 .admin-page-header {
@@ -11,26 +14,27 @@
 }
 
 .admin-page-header h1 {
-    margin: 0 0 8px;
+    margin: 0 0 10px;
     font-size: 34px;
     font-weight: 800;
     color: #111827;
+    letter-spacing: -0.8px;
 }
 
 .admin-page-header p {
     margin: 0;
-    color: #6b7280;
+    color: #64748b;
     font-size: 14px;
 }
 
 /* =========================
-   Search
+   Filter
 ========================= */
 
 .stat-filter-section {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    padding: 20px;
+    padding: 22px;
     margin-bottom: 20px;
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
 }
@@ -44,25 +48,29 @@
 
 .stat-filter-form label {
     margin-right: auto;
-    font-size: 14px;
-    font-weight: 700;
     color: #374151;
+    font-size: 14px;
+    font-weight: 800;
 }
 
 .stat-filter-form input[type="date"] {
-    height: 40px;
+    width: 150px;
+    height: 42px;
     border: 1px solid #dcdfe6;
     padding: 0 12px;
     background: #ffffff;
+    color: #111827;
+    font-size: 14px;
 }
 
 .stat-filter-form button {
-    height: 40px;
+    height: 42px;
     padding: 0 18px;
-    border: none;
+    border: 1px solid #f05a00;
     background: #f05a00;
     color: #ffffff;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 800;
     cursor: pointer;
 }
 
@@ -90,17 +98,17 @@
 }
 
 .stat-label {
-    margin: 0 0 10px;
-    color: #6b7280;
+    margin: 0 0 14px;
+    color: #64748b;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .stat-value {
     display: block;
     color: #f05a00;
     font-size: 34px;
-    font-weight: 800;
+    font-weight: 900;
     letter-spacing: -1px;
 }
 
@@ -131,17 +139,17 @@
     margin: 0 0 6px;
     color: #111827;
     font-size: 20px;
-    font-weight: 800;
+    font-weight: 900;
 }
 
 .stat-panel-header p {
     margin: 0;
-    color: #6b7280;
+    color: #64748b;
     font-size: 13px;
 }
 
 .stat-panel canvas {
-    width: 100%;
+    width: 100% !important;
     height: 320px !important;
 }
 
@@ -152,6 +160,7 @@
 .stat-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 14px;
 }
 
 .stat-table th {
@@ -159,8 +168,7 @@
     background: #f9fafb;
     border: 1px solid #e5e7eb;
     color: #4b5563;
-    font-size: 14px;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .stat-table td {
@@ -169,34 +177,22 @@
     text-align: center;
     padding: 0 10px;
     color: #374151;
-    font-size: 14px;
 }
 
 .stat-table tbody tr:hover {
     background: #fff7f2;
 }
 
-.empty-cell {
-    padding: 40px !important;
-    color: #9ca3af !important;
-}
-
-/* =========================
-   Rank Style
-========================= */
-
-.stat-table td:first-child {
-    font-weight: 700;
-}
-
 .stat-table td:nth-child(2) {
     text-align: left;
     padding-left: 16px;
+    font-weight: 700;
 }
 
-.point-text {
-    color: #f05a00;
-    font-weight: 800;
+.empty-cell {
+    padding: 40px !important;
+    color: #9ca3af !important;
+    text-align: center !important;
 }
 
 /* =========================
@@ -204,7 +200,6 @@
 ========================= */
 
 @media (max-width: 1400px) {
-
     .stat-summary-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -215,6 +210,9 @@
 }
 
 @media (max-width: 900px) {
+    .admin-content {
+        padding: 20px;
+    }
 
     .stat-summary-grid {
         grid-template-columns: 1fr;
@@ -230,6 +228,6 @@
     }
 
     .stat-table {
-        min-width: 800px;
+        min-width: 850px;
     }
 }
