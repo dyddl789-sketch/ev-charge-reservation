@@ -166,6 +166,12 @@
      * 길찾기 경로선
      */
     var routeLine = null;
+    
+    /*
+     * 길찾기 차량 이동 시뮬레이션용 마커
+     */
+    var carOverlay = null;
+    var carMoveTimer = null;
 
     var infoWindow = null;
     var geocoder = null;
@@ -1057,6 +1063,7 @@
 
                 drawRouteLine(route);
                 renderRouteSummary(route);
+                startCarMoveSimulation(route);
             })
             .catch(function(error) {
                 console.log("route simulation error => ", error);
@@ -1097,15 +1104,139 @@
 
         map.setBounds(bounds);
     }
+    
+    /*
+     * 경로를 따라 차량이 이동하는 시뮬레이션
+     *
+     * route.path 배열을 기준으로 차량 마커를 순서대로 이동시킨다.
+     */
+    function startCarMoveSimulation(route) {
+        clearCarSimulation();
+
+        if (!route.path || route.path.length === 0) {
+            return;
+        }
+
+        /*
+         * route.path 점 간격이 넓으면 차량이 툭툭 끊겨 보이므로
+         * 중간 좌표를 만들어 부드럽게 이동시킨다.
+         */
+        var smoothPath = buildSmoothPath(route.path, 12);
+
+        if (smoothPath.length === 0) {
+            return;
+        }
+
+        var firstPosition = new kakao.maps.LatLng(
+            smoothPath[0].lat,
+            smoothPath[0].lng
+        );
+
+        carOverlay = new kakao.maps.CustomOverlay({
+            position: firstPosition,
+            content: "<div class='car-simulation-marker'></div>",
+            xAnchor: 0.5,
+            yAnchor: 0.5,
+            zIndex: 999
+        });
+
+        carOverlay.setMap(map);
+
+        var index = 0;
+
+        carMoveTimer = setInterval(function() {
+            index++;
+
+            if (index >= smoothPath.length) {
+                clearInterval(carMoveTimer);
+                carMoveTimer = null;
+
+                showCarArrivedMarker(smoothPath[smoothPath.length - 1]);
+                return;
+            }
+
+            var nextPosition = new kakao.maps.LatLng(
+                smoothPath[index].lat,
+                smoothPath[index].lng
+            );
+
+            carOverlay.setPosition(nextPosition);
+
+        }, 70);
+    }
+    
+    /*
+     * 경로 좌표 사이를 잘게 나눠서 부드러운 이동 경로를 만든다.
+     *
+     * path:
+     * - 서버에서 받은 route.path
+     *
+     * divideCount:
+     * - 두 좌표 사이를 몇 등분할지
+     */
+    function buildSmoothPath(path, divideCount) {
+        var smoothPath = [];
+
+        for (var i = 0; i < path.length - 1; i++) {
+            var start = path[i];
+            var end = path[i + 1];
+
+            for (var j = 0; j < divideCount; j++) {
+                var ratio = j / divideCount;
+
+                smoothPath.push({
+                    lat: start.lat + (end.lat - start.lat) * ratio,
+                    lng: start.lng + (end.lng - start.lng) * ratio
+                });
+            }
+        }
+
+        smoothPath.push(path[path.length - 1]);
+
+        return smoothPath;
+    }
+    
+    /*
+     * 차량이 도착했을 때 마커 모양 변경
+     */
+    function showCarArrivedMarker(position) {
+        if (!carOverlay) {
+            return;
+        }
+
+        carOverlay.setContent("<div class='car-simulation-marker arrived'>도착</div>");
+
+        carOverlay.setPosition(new kakao.maps.LatLng(
+            position.lat,
+            position.lng
+        ));
+    }
+    
+    /*
+     * 기존 차량 이동 시뮬레이션 제거
+     */
+    function clearCarSimulation() {
+        if (carMoveTimer) {
+            clearInterval(carMoveTimer);
+            carMoveTimer = null;
+        }
+
+        if (carOverlay) {
+            carOverlay.setMap(null);
+            carOverlay = null;
+        }
+    }
 
     /*
      * 기존 길찾기 경로선 제거
      */
-    function clearRouteLine() {
-        if (routeLine) {
-            routeLine.setMap(null);
-            routeLine = null;
-        }
+     function clearRouteLine() {
+    	    clearCarSimulation();
+
+    	    if (routeLine) {
+    	        routeLine.setMap(null);
+    	        routeLine = null;
+    	    }
     }
 
     /*
