@@ -1,5 +1,6 @@
 package com.ev.service.user;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.ev.dto.reservation.EvReservationChargerDTO;
@@ -34,7 +35,7 @@ public interface EvReservationService {
     /*
      * 내 예약 목록 조회
      */
-    List<EvReservationDTO> getMyReservationList(Long memberId);
+    List<EvReservationDTO> getMyReservationList(Long memberId, LocalDateTime startDate, LocalDateTime endDate);
 
     /*
      * 예약 취소
@@ -73,7 +74,7 @@ public interface EvReservationService {
      * 로그인한 회원의 예약 중
      * 충전이 완료된 예약만 조회한다.
      */
-    List<EvReservationDTO> getChargingHistoryList(Long memberId);
+    List<EvReservationDTO> getChargingHistoryList(Long memberId, LocalDateTime startDate, LocalDateTime endDate);
     
     /*
      * 충전 영수증 이메일 발송
@@ -112,5 +113,15 @@ public interface EvReservationService {
                                          Long memberId);
     
     boolean changeReservationHold(Long oldChargerId, Long newChargerId, Long memberId);
+
+    /*
+     * 메인페이지 다음 예약 1건 조회
+     */
+    EvReservationDTO getNextReservation(Long memberId);
+
+    /*
+     * 메인페이지 이번 달 충전 비용 합계 조회
+     */
+    Integer getThisMonthChargingCost(Long memberId);
     
 }

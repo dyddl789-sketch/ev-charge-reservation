@@ -148,4 +148,130 @@
 	     order by cs.station_id desc
 	</select>
 
+
+    <!--
+        기본 출발지 주변 운영중 충전소 수 조회
+
+        기준:
+        - saved_location.is_default = true
+        - 반경 radiusMeter 미터 이내
+        - charging_station.station_status = '운영중'
+
+        charging_station 테이블에 geography location 컬럼이 없어도 동작하도록
+        latitude / longitude 값으로 Point를 만들어 거리 계산한다.
+    -->
+    <select id="countNearbyStationByDefaultLocation" resultType="int">
+        select count(*)
+          from charging_station cs
+          join saved_location sl
+            on sl.member_id = #{memberId}
+           and sl.is_default = true
+         where cs.station_status = '운영중'
+           and ST_DWithin(
+                   ST_SetSRID(
+                       ST_MakePoint(cs.longitude::double precision, cs.latitude::double precision),
+                       4326
+                   )::geography,
+                   sl.location,
+                   #{radiusMeter}
+               )
+    </select>
+
+
+    <!--
+        기본 출발지 주변 사용 가능한 충전기 수 조회
+    -->
+    <select id="countAvailableChargerByDefaultLocation" resultType="int">
+        select count(c.charger_id)
+          from charging_station cs
+          join saved_location sl
+            on sl.member_id = #{memberId}
+           and sl.is_default = true
+          join charger c
+            on cs.station_id = c.station_id
+           and c.status = '사용가능'
+         where cs.station_status = '운영중'
+           and ST_DWithin(
+                   ST_SetSRID(
+                       ST_MakePoint(cs.longitude::double precision, cs.latitude::double precision),
+                       4326
+                   )::geography,
+                   sl.location,
+                   #{radiusMeter}
+               )
+    </select>
+
+
+    <!--
+        기본 출발지 주변 추천 충전소 목록 조회
+
+        정렬:
+        1. 가까운 순
+        2. 사용 가능한 충전기 많은 순
+        3. 충전소 ID 순
+    -->
+    <select id="findNearbyStationListByDefaultLocation"
+        resultType="com.ev.dto.station.EvStationMapDTO">
+    select
+          cs.station_id
+        , cs.station_name
+        , cs.address
+        , cs.operator_name
+        , cs.station_status
+        , cs.image_url
+        , cs.latitude
+        , cs.longitude
+        , count(c.charger_id) as charger_count
+        , coalesce(
+            sum(
+                case
+                    when c.status = '사용가능' then 1
+                    else 0
+                end
+            ), 0
+          ) as available_charger_count
+        , round(
+            (
+                ST_Distance(
+                    ST_SetSRID(
+                        ST_MakePoint(cs.longitude::double precision, cs.latitude::double precision),
+                        4326
+                    )::geography,
+                    sl.location
+                ) / 1000
+            )::numeric,
+            1
+          )::double precision as distance_km
+      from charging_station cs
+      join saved_location sl
+        on sl.member_id = #{memberId}
+       and sl.is_default = true
+      left join charger c
+        on cs.station_id = c.station_id
+     where cs.station_status = '운영중'
+       and ST_DWithin(
+               ST_SetSRID(
+                   ST_MakePoint(cs.longitude::double precision, cs.latitude::double precision),
+                   4326
+               )::geography,
+               sl.location,
+               #{radiusMeter}
+           )
+     group by
+          cs.station_id
+        , cs.station_name
+        , cs.address
+        , cs.operator_name
+        , cs.station_status
+        , cs.image_url
+        , cs.latitude
+        , cs.longitude
+        , sl.location
+     order by
+          distance_km asc
+        , available_charger_count desc
+        , cs.station_id asc
+     limit #{limit}
+	</select>
+
 </mapper>

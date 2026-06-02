@@ -140,7 +140,16 @@
             </div>
 
             <div class="filter-right">
-                <input type="month" id="monthFilter">
+                <form action="${pageContext.request.contextPath}/reservation/my"
+				      method="get"
+				      class="reservation-month-form">
+				
+				    <input type="month"
+				           id="monthFilter"
+				           name="month"
+				           value="${selectedMonth}"
+				           onchange="this.form.submit()">
+				</form>
             </div>
         </section>
 

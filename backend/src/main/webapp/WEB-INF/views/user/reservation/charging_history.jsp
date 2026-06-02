@@ -92,21 +92,31 @@
         <section class="charging-filter-card">
 
             <div class="charging-filter-left">
-                <button type="button" class="charging-filter-tab active" data-period="all">
-                    전체
-                </button>
-
-                <button type="button" class="charging-filter-tab" data-period="month">
-                    이번 달
-                </button>
-
-                <button type="button" class="charging-filter-tab" data-period="three-months">
-                    최근 3개월
-                </button>
+                <a href="${pageContext.request.contextPath}/reservation/history?period=all"
+				   class="charging-filter-tab ${empty selectedMonth and (empty selectedPeriod or selectedPeriod == 'all') ? 'active' : ''}">
+				    전체
+				</a>
+				
             </div>
 
             <div class="charging-filter-right">
-                <input type="month" id="chargingMonthFilter">
+
+                <!--
+                    월 선택 필터
+
+                    month 값을 서버로 보내기 위해 form + name="month"가 필요하다.
+                    월을 선택하면 /reservation/history?month=yyyy-MM 형태로 요청된다.
+                -->
+                <form action="${pageContext.request.contextPath}/reservation/history"
+                      method="get"
+                      class="charging-month-form">
+
+                    <input type="month"
+                           id="chargingMonthFilter"
+                           name="month"
+                           value="${selectedMonth}"
+                           onchange="this.form.submit()">
+                </form>
 
                 <select id="chargingSort">
                     <option value="latest">최신순</option>
@@ -138,6 +148,7 @@
 
                         <article class="charging-history-card"
                                  data-date="${history.reservationDate}"
+                                 data-time="${history.startTime}"
                                  data-cost="${history.estimatedCost}"
                                  data-kwh="${history.requiredKwh}">
 
@@ -278,9 +289,6 @@
 <script>
     /*
      * 충전 내역 정렬
-     *
-     * 현재 화면에 렌더링된 충전 내역 카드를
-     * 프론트에서 정렬한다.
      */
     const chargingSort = document.getElementById("chargingSort");
     const chargingHistoryList = document.querySelector(".charging-history-list");
@@ -291,23 +299,44 @@
             const sortType = chargingSort.value;
 
             cards.sort(function(a, b) {
+
+                /*
+                 * 금액 높은순
+                 */
                 if (sortType === "cost") {
-                    return Number(b.dataset.cost || 0) - Number(a.dataset.cost || 0);
+                    const costA = Number(a.dataset.cost || 0);
+                    const costB = Number(b.dataset.cost || 0);
+
+                    return costB - costA;
                 }
 
+                /*
+                 * 충전량 높은순
+                 */
                 if (sortType === "kwh") {
-                    return Number(b.dataset.kwh || 0) - Number(a.dataset.kwh || 0);
+                    const kwhA = Number(a.dataset.kwh || 0);
+                    const kwhB = Number(b.dataset.kwh || 0);
+
+                    return kwhB - kwhA;
                 }
 
-                return String(b.dataset.date || "").localeCompare(String(a.dataset.date || ""));
+                /*
+                 * 최신순
+                 */
+                const dateA = String(a.dataset.time || a.dataset.date || "");
+                const dateB = String(b.dataset.time || b.dataset.date || "");
+
+                return dateB.localeCompare(dateA);
             });
 
+            /*
+             * 정렬된 순서대로 다시 화면에 붙인다.
+             */
             cards.forEach(function(card) {
                 chargingHistoryList.appendChild(card);
             });
         });
     }
 </script>
-
 </body>
 </html>

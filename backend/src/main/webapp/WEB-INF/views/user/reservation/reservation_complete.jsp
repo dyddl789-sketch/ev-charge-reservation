@@ -41,11 +41,6 @@
                     </div>
                 </div>
 
-                <div class="auth-code-box">
-                    <span>예약 인증 코드</span>
-                    <strong>${reservation.authCode}</strong>
-                    <p>충전소 도착 후 인증 코드 입력 시 충전이 가능합니다.</p>
-                </div>
 
                 <div class="complete-summary">
 

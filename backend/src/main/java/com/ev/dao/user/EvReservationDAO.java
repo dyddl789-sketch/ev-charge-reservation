@@ -69,10 +69,19 @@ public interface EvReservationDAO {
     /*
      * 내 예약 목록 조회
      */
-    List<EvReservationDTO> getMyReservationList(
-            @Param("memberId") Long memberId
+    List<EvReservationDTO> getMyReservationList(@Param("memberId") Long memberId,
+            									@Param("startDate") LocalDateTime startDate,
+            									@Param("endDate") LocalDateTime endDate
     );
-
+ 
+    /*
+     * 충전 내역 목록 조회
+     */
+    List<EvReservationDTO> getChargingHistoryList(@Param("memberId") Long memberId,
+                                                  @Param("startDate") LocalDateTime startDate,
+                                                  @Param("endDate") LocalDateTime endDate);
+    
+    
     /*
      * 예약 취소
      */
@@ -155,4 +164,14 @@ public interface EvReservationDAO {
     List<EvReservationChargerDTO> findReservationChargerListByStationId(
             @Param("stationId") Long stationId
     );
+
+    /*
+     * 메인페이지 다음 예약 1건 조회
+     */
+    EvReservationDTO findNextReservation(@Param("memberId") Long memberId);
+
+    /*
+     * 메인페이지 이번 달 충전 비용 합계 조회
+     */
+    Integer findThisMonthChargingCost(@Param("memberId") Long memberId);
 }
