@@ -86,7 +86,7 @@ input {
 
 .login-header {
     text-align: center;
-    margin-bottom: 34px;
+    margin-bottom: 38px;
 }
 
 .login-header h2 {
@@ -102,27 +102,19 @@ input {
     color: #6b7280;
 }
 
-/* 회원 / 관리자 탭 */
-.login-tab {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    margin-bottom: 34px;
-    border: 1px solid #d9dde3;
-}
-
-.tab-btn {
-    height: 52px;
-    border: none;
-    background: #ffffff;
-    color: #333333;
-    font-size: 16px;
+/* 알림 메시지 */
+.error-message {
+    margin-top: 16px;
+    color: #dc2626;
+    font-size: 14px;
     font-weight: 600;
-    cursor: pointer;
 }
 
-.tab-btn.active {
-    background: #f05a00;
-    color: #ffffff;
+.success-message {
+    margin-top: 16px;
+    color: #16a34a;
+    font-size: 14px;
+    font-weight: 600;
 }
 
 /* 폼 */
@@ -246,5 +238,3 @@ input {
         padding: 50px;
     }
 }
-
-

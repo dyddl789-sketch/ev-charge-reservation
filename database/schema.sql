@@ -439,3 +439,7 @@ create table ai_chat_message (
     constraint chk_ai_chat_sender
         check (sender_type in ('USER', 'AI'))
 );
+
+alter table charging_station
+add column if not exists image_url varchar(255)
+default '/images/station/station-default.jpg';

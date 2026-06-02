@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <!DOCTYPE html>
 <html>
@@ -9,221 +11,353 @@
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/admin/admin.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/admin/station_manage.css">
+
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJavascriptKey}&libraries=services&autoload=false"></script>
 </head>
 <body>
 
 <div class="admin-page">
+
     <%@ include file="/WEB-INF/views/common/admin_header.jsp" %>
+
     <div class="admin-layout">
+
         <%@ include file="/WEB-INF/views/common/admin_sidebar.jsp" %>
 
-        <!-- 본문 -->
         <main class="admin-content">
 
+            <!-- 제목 영역: 등록/수정 모드 분리 -->
             <section class="admin-title-row">
                 <div>
-                    <h1>충전소 등록/관리</h1>
-                    <p>충전소 기본 정보와 충전기 정보를 등록하고 운영 상태를 관리합니다.</p>
+                    <c:choose>
+                        <c:when test="${station.editMode}">
+                            <h1>충전소 수정</h1>
+                            <p>기존 충전소 정보와 충전기 목록을 수정합니다.</p>
+                        </c:when>
+
+                        <c:otherwise>
+                            <h1>충전소 등록</h1>
+                            <p>다음 주소검색과 카카오 좌표 변환으로 충전소를 등록합니다.</p>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
 
-                <a href="/admin/station/list" class="list-btn">충전소 목록</a>
+                <a href="${pageContext.request.contextPath}/admin/station/list"
+                   class="detail-btn">
+                    목록으로
+                </a>
             </section>
 
-            <section class="manage-layout">
+            <!-- 수정 화면에서만 요약 표시 -->
+            <c:if test="${station.editMode}">
+                <section class="station-info-summary">
 
-                <!-- 충전소 등록 폼 -->
-                <form action="/admin/station/save" method="post" class="station-form">
+                    <article>
+                        <span>충전소 ID</span>
+                        <strong>${station.stationId}</strong>
+                    </article>
 
-                    <section class="form-section">
-                        <h2>충전소 기본 정보</h2>
+                    <article>
+                        <span>등록 충전기</span>
+                        <strong>
+                            <fmt:formatNumber value="${station.chargerCount}" pattern="#,###"/>대
+                        </strong>
+                    </article>
 
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="stationName">충전소명</label>
-                                <input type="text" id="stationName" name="stationName" placeholder="예: 부산 사상 EV 충전소">
-                            </div>
+                    <article>
+                        <span>사용 가능</span>
+                        <strong>
+                            <fmt:formatNumber value="${station.availableChargerCount}" pattern="#,###"/>대
+                        </strong>
+                    </article>
 
-                            <div class="form-group full">
-                                <label for="address">주소</label>
-                                <div class="address-row">
-                                    <input type="text" id="address" name="address" placeholder="주소를 입력하세요.">
-                                    <button type="button" class="address-btn">주소 검색</button>
-                                </div>
-                            </div>
+                    <article>
+                        <span>화면 모드</span>
+                        <strong>수정</strong>
+                    </article>
 
-                            <div class="form-group">
-                                <label for="latitude">위도</label>
-                                <input type="text" id="latitude" name="latitude" placeholder="예: 35.1627">
-                            </div>
+                </section>
+            </c:if>
 
-                            <div class="form-group">
-                                <label for="longitude">경도</label>
-                                <input type="text" id="longitude" name="longitude" placeholder="예: 129.0520">
-                            </div>
+            <form action="${pageContext.request.contextPath}/admin/station/${station.editMode ? 'update' : 'register'}"
+                  method="post"
+                  id="stationForm">
 
-                            <div class="form-group">
-                                <label for="openTime">운영 시작 시간</label>
-                                <input type="time" id="openTime" name="openTime" value="00:00">
-                            </div>
+                <input type="hidden"
+                       name="stationId"
+                       value="${station.stationId}">
 
-                            <div class="form-group">
-                                <label for="closeTime">운영 종료 시간</label>
-                                <input type="time" id="closeTime" name="closeTime" value="23:59">
-                            </div>
+                <div id="deleteChargerArea"></div>
 
-                            <div class="form-group">
-                                <label for="stationStatus">운영 상태</label>
-                                <select id="stationStatus" name="stationStatus">
-                                    <option value="운영중">운영중</option>
-                                    <option value="점검중">점검중</option>
-                                    <option value="운영중지">운영중지</option>
-                                </select>
-                            </div>
+                <!-- 충전소 기본 정보 -->
+                <section class="station-form-card">
 
-                            <div class="form-group">
-                                <label for="parkingYn">주차 가능 여부</label>
-                                <select id="parkingYn" name="parkingYn">
-                                    <option value="Y">가능</option>
-                                    <option value="N">불가능</option>
-                                </select>
-                            </div>
-                        </div>
-                    </section>
+                    <div class="form-section-title">
+                        <h2>
+                            <c:choose>
+                                <c:when test="${station.editMode}">
+                                    충전소 기본 정보 수정
+                                </c:when>
+                                <c:otherwise>
+                                    충전소 기본 정보 등록
+                                </c:otherwise>
+                            </c:choose>
+                        </h2>
 
-                    <section class="form-section">
-                        <h2>충전기 정보</h2>
-
-                        <div class="charger-form-box">
-
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="chargerName">충전기명</label>
-                                    <input type="text" id="chargerName" name="chargerName" placeholder="예: 급속 1번">
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="chargerType">충전 타입</label>
-                                    <select id="chargerType" name="chargerType">
-                                        <option value="">충전 타입 선택</option>
-                                        <option value="급속">급속</option>
-                                        <option value="완속">완속</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="connectorType">커넥터 타입</label>
-                                    <select id="connectorType" name="connectorType">
-                                        <option value="">커넥터 타입 선택</option>
-                                        <option value="DC콤보">DC콤보</option>
-                                        <option value="AC완속">AC완속</option>
-                                        <option value="차데모">차데모</option>
-                                        <option value="테슬라">테슬라</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="speedKw">충전 속도</label>
-                                    <input type="number" id="speedKw" name="speedKw" placeholder="예: 200">
-                                    <p class="help-text">단위: kW</p>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="pricePerKwh">충전 요금</label>
-                                    <input type="number" id="pricePerKwh" name="pricePerKwh" placeholder="예: 250">
-                                    <p class="help-text">단위: 원/kWh</p>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="chargerStatus">충전기 상태</label>
-                                    <select id="chargerStatus" name="chargerStatus">
-                                        <option value="사용가능">사용가능</option>
-                                        <option value="사용중">사용중</option>
-                                        <option value="예약됨">예약됨</option>
-                                        <option value="점검중">점검중</option>
-                                        <option value="고장">고장</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="charger-add-area">
-                                <button type="button" class="add-charger-btn">+ 충전기 추가</button>
-                            </div>
-
-                        </div>
-
-                        <div class="charger-list-preview">
-                            <h3>등록 예정 충전기</h3>
-
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>충전기명</th>
-                                        <th>충전 타입</th>
-                                        <th>커넥터</th>
-                                        <th>속도</th>
-                                        <th>요금</th>
-                                        <th>상태</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="chargerPreviewBody">
-								    <tr>
-								        <td>급속 1번</td>
-								        <td>급속</td>
-								        <td>DC콤보</td>
-								        <td>200kW</td>
-								        <td>250원/kWh</td>
-								        <td><span class="status-badge active">사용가능</span></td>
-								        <td>
-								            <button type="button" class="delete-charger-btn">삭제</button>
-								        </td>
-								    </tr>
-								    <tr>
-								        <td>완속 1번</td>
-								        <td>완속</td>
-								        <td>AC완속</td>
-								        <td>7kW</td>
-								        <td>200원/kWh</td>
-								        <td><span class="status-badge active">사용가능</span></td>
-								        <td>
-								            <button type="button" class="delete-charger-btn">삭제</button>
-								        </td>
-								    </tr>
-								</tbody>
-                            </table>
-                        </div>
-
-                    </section>
-
-                    <div class="form-notice">
-                        <p>※ 충전소 등록 후 충전소 목록 화면에서 운영 상태와 충전기 정보를 수정할 수 있습니다.</p>
-                        <p>※ 실제 DB 연결 시 충전소 정보는 charging_station 테이블, 충전기 정보는 charger 테이블에 저장됩니다.</p>
+                        <p>
+                            주소 검색 버튼을 통해 주소를 선택하면 위도/경도가 자동 입력됩니다.
+                        </p>
                     </div>
 
-                    <div class="form-buttons">
-                        <button type="submit" class="submit-btn">충전소 등록</button>
-                        <button type="reset" class="reset-form-btn">초기화</button>
+                    <div class="station-form-grid">
+
+                        <div class="form-field">
+                            <label>충전소명</label>
+                            <input type="text"
+                                   name="stationName"
+                                   value="${station.stationName}"
+                                   placeholder="예: 부산역 EV 충전소"
+                                   required>
+                        </div>
+
+                        <div class="form-field">
+                            <label>운영기관</label>
+                            <input type="text"
+                                   name="operatorName"
+                                   value="${station.operatorName}"
+                                   placeholder="예: EV Charge">
+                        </div>
+
+                        <div class="form-field full address-field">
+                            <label>주소</label>
+
+                            <div class="address-input-row">
+                                <input type="text"
+                                       id="address"
+                                       name="address"
+                                       value="${station.address}"
+                                       placeholder="주소 검색 버튼을 눌러 주소를 선택하세요."
+                                       readonly
+                                       required>
+
+                                <button type="button"
+                                        class="address-btn"
+                                        id="addressSearchBtn">
+                                    주소 검색
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label>위도</label>
+                            <input type="number"
+                                   step="0.000001"
+                                   id="latitude"
+                                   name="latitude"
+                                   value="${station.latitude}"
+                                   placeholder="주소 선택 시 자동 입력"
+                                   readonly
+                                   required>
+                        </div>
+
+                        <div class="form-field">
+                            <label>경도</label>
+                            <input type="number"
+                                   step="0.000001"
+                                   id="longitude"
+                                   name="longitude"
+                                   value="${station.longitude}"
+                                   placeholder="주소 선택 시 자동 입력"
+                                   readonly
+                                   required>
+                        </div>
+
+                        <div class="form-field">
+                            <label>운영 시작 시간</label>
+                            <input type="time"
+                                   name="openTime"
+                                   value="${empty station.openTime ? '00:00' : station.openTime}"
+                                   required>
+                        </div>
+
+                        <div class="form-field">
+                            <label>운영 종료 시간</label>
+                            <input type="time"
+                                   name="closeTime"
+                                   value="${empty station.closeTime ? '23:59' : station.closeTime}"
+                                   required>
+                        </div>
+
+                        <div class="form-field">
+                            <label>운영 상태</label>
+                            <select name="stationStatus"
+                                    required>
+                                <option value="운영중" ${station.stationStatus == '운영중' ? 'selected' : ''}>운영중</option>
+                                <option value="점검중" ${station.stationStatus == '점검중' ? 'selected' : ''}>점검중</option>
+                                <option value="운영중지" ${station.stationStatus == '운영중지' ? 'selected' : ''}>운영중지</option>
+                            </select>
+                        </div>
+
                     </div>
 
-                </form>
+                </section>
 
-                <!-- 우측 안내 패널 -->
-                <aside class="manage-guide">
-                    <h2>등록 안내</h2>
+                <!-- 충전기 정보 -->
+                <section class="charger-form-card">
 
-                    <ul>
-                        <li>충전소명, 주소, 위치 좌표는 충전소 탐색 화면에서 사용됩니다.</li>
-                        <li>운영 시간은 예약 가능한 시간 계산에 활용됩니다.</li>
-                        <li>충전기 속도와 요금은 예상 충전 시간과 비용 계산에 사용됩니다.</li>
-                        <li>충전기 상태가 점검중 또는 고장인 경우 예약 대상에서 제외됩니다.</li>
-                    </ul>
+                    <div class="form-section-title row">
+                        <div>
+                            <h2>
+                                <c:choose>
+                                    <c:when test="${station.editMode}">
+                                        충전기 목록 수정
+                                    </c:when>
+                                    <c:otherwise>
+                                        충전기 등록
+                                    </c:otherwise>
+                                </c:choose>
+                            </h2>
 
-                    <div class="guide-box">
-                        <strong>추천 입력 순서</strong>
-                        <p>충전소 기본 정보 입력 → 충전기 정보 입력 → 등록 예정 충전기 확인 → 충전소 등록</p>
+                            <p>
+                                기존 충전기는 ID를 유지한 채 수정하고, 새 충전기는 추가 등록됩니다.
+                            </p>
+                        </div>
+
+                        <button type="button"
+                                class="add-charger-btn"
+                                id="addChargerBtn">
+                            + 충전기 추가
+                        </button>
                     </div>
-                </aside>
 
-            </section>
+                    <div class="charger-table-wrap">
+
+                        <table class="charger-table">
+
+                            <thead>
+                            <tr>
+                                <th>충전기 ID</th>
+                                <th>충전기명</th>
+                                <th>충전 타입</th>
+                                <th>커넥터 타입</th>
+                                <th>출력(kW)</th>
+                                <th>요금(원/kWh)</th>
+                                <th>상태</th>
+                                <th>삭제</th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="chargerTableBody">
+
+                            <c:forEach var="charger"
+                                       items="${station.chargerList}"
+                                       varStatus="status">
+
+                                <tr>
+                                    <td>
+                                        <input type="hidden"
+                                               name="chargerList[${status.index}].chargerId"
+                                               value="${charger.chargerId}">
+
+                                        <span class="charger-id-text">
+                                            ${charger.chargerId}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <input type="text"
+                                               name="chargerList[${status.index}].chargerName"
+                                               value="${charger.chargerName}"
+                                               required>
+                                    </td>
+
+                                    <td>
+                                        <select name="chargerList[${status.index}].chargerType"
+                                                required>
+                                            <option value="급속" ${charger.chargerType == '급속' ? 'selected' : ''}>급속</option>
+                                            <option value="완속" ${charger.chargerType == '완속' ? 'selected' : ''}>완속</option>
+                                            <option value="초급속" ${charger.chargerType == '초급속' ? 'selected' : ''}>초급속</option>
+                                        </select>
+                                    </td>
+
+                                    <td>
+                                        <select name="chargerList[${status.index}].connectorType"
+                                                required>
+                                            <option value="DC콤보" ${charger.connectorType == 'DC콤보' ? 'selected' : ''}>DC콤보</option>
+                                            <option value="AC완속" ${charger.connectorType == 'AC완속' ? 'selected' : ''}>AC완속</option>
+                                            <option value="NACS" ${charger.connectorType == 'NACS' ? 'selected' : ''}>NACS</option>
+                                            <option value="CHAdeMO" ${charger.connectorType == 'CHAdeMO' ? 'selected' : ''}>CHAdeMO</option>
+                                        </select>
+                                    </td>
+
+                                    <td>
+                                        <input type="number"
+                                               name="chargerList[${status.index}].chargingSpeedKw"
+                                               value="${charger.chargingSpeedKw}"
+                                               min="1"
+                                               step="0.1"
+                                               required>
+                                    </td>
+
+                                    <td>
+                                        <input type="number"
+                                               name="chargerList[${status.index}].pricePerKwh"
+                                               value="${charger.pricePerKwh}"
+                                               min="0"
+                                               required>
+                                    </td>
+
+                                    <td>
+                                        <select name="chargerList[${status.index}].status"
+                                                required>
+                                            <option value="사용가능" ${charger.status == '사용가능' ? 'selected' : ''}>사용가능</option>
+                                            <option value="예약중" ${charger.status == '예약중' ? 'selected' : ''}>예약중</option>
+                                            <option value="사용중" ${charger.status == '사용중' ? 'selected' : ''}>사용중</option>
+                                            <option value="점검중" ${charger.status == '점검중' ? 'selected' : ''}>점검중</option>
+                                            <option value="고장" ${charger.status == '고장' ? 'selected' : ''}>고장</option>
+                                        </select>
+                                    </td>
+
+                                    <td>
+                                        <button type="button"
+                                                class="remove-charger-btn"
+                                                data-charger-id="${charger.chargerId}">
+                                            삭제
+                                        </button>
+                                    </td>
+                                </tr>
+
+                            </c:forEach>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    <p class="form-help-text">
+                        충전기는 최소 1개 이상 등록해야 합니다. 예약/충전 이력이 있는 충전기는 DB에서 삭제되지 않을 수 있습니다.
+                    </p>
+
+                </section>
+
+                <!-- 버튼 영역 -->
+                <section class="form-action-row">
+
+                    <a href="${pageContext.request.contextPath}/admin/station/list"
+                       class="cancel-btn">
+                        취소
+                    </a>
+
+                    <button type="submit"
+                            class="submit-btn ${station.editMode ? 'update-mode' : 'register-mode'}">
+                        ${station.editMode ? '수정 저장' : '충전소 등록'}
+                    </button>
+
+                </section>
+
+            </form>
 
         </main>
 
@@ -232,91 +366,189 @@
 </div>
 
 <script>
-    const addChargerBtn = document.querySelector(".add-charger-btn");
-    const chargerPreviewBody = document.getElementById("chargerPreviewBody");
+    const addChargerBtn = document.getElementById("addChargerBtn");
+    const chargerTableBody = document.getElementById("chargerTableBody");
+    const stationForm = document.getElementById("stationForm");
+    const deleteChargerArea = document.getElementById("deleteChargerArea");
 
-    const chargerNameInput = document.getElementById("chargerName");
-    const chargerTypeSelect = document.getElementById("chargerType");
-    const connectorTypeSelect = document.getElementById("connectorType");
-    const speedKwInput = document.getElementById("speedKw");
-    const pricePerKwhInput = document.getElementById("pricePerKwh");
-    const chargerStatusSelect = document.getElementById("chargerStatus");
+    const addressInput = document.getElementById("address");
+    const latitudeInput = document.getElementById("latitude");
+    const longitudeInput = document.getElementById("longitude");
+    const addressSearchBtn = document.getElementById("addressSearchBtn");
 
-    addChargerBtn.addEventListener("click", function() {
-        const chargerName = chargerNameInput.value.trim();
-        const chargerType = chargerTypeSelect.value;
-        const connectorType = connectorTypeSelect.value;
-        const speedKw = speedKwInput.value.trim();
-        const pricePerKwh = pricePerKwhInput.value.trim();
-        const chargerStatus = chargerStatusSelect.value;
+    let chargerIndex = chargerTableBody.querySelectorAll("tr").length;
 
-        if (chargerName === "") {
-            alert("충전기명을 입력해주세요.");
-            chargerNameInput.focus();
-            return;
-        }
+    // 카카오 주소 검색 후 좌표 자동 입력
+    addressSearchBtn.addEventListener("click", function() {
 
-        if (chargerType === "") {
-            alert("충전 타입을 선택해주세요.");
-            chargerTypeSelect.focus();
-            return;
-        }
+        new daum.Postcode({
+            oncomplete: function(data) {
 
-        if (connectorType === "") {
-            alert("커넥터 타입을 선택해주세요.");
-            connectorTypeSelect.focus();
-            return;
-        }
+                const selectedAddress = data.roadAddress || data.jibunAddress;
 
-        if (speedKw === "") {
-            alert("충전 속도를 입력해주세요.");
-            speedKwInput.focus();
-            return;
-        }
+                if (!selectedAddress) {
+                    alert("선택된 주소가 없습니다.");
+                    return;
+                }
 
-        if (pricePerKwh === "") {
-            alert("충전 요금을 입력해주세요.");
-            pricePerKwhInput.focus();
-            return;
-        }
+                addressInput.value = selectedAddress;
+
+                kakao.maps.load(function() {
+
+                    const geocoder = new kakao.maps.services.Geocoder();
+
+                    geocoder.addressSearch(selectedAddress, function(result, status) {
+
+                        if (status !== kakao.maps.services.Status.OK
+                                || !result
+                                || result.length === 0) {
+
+                            alert("주소의 좌표를 찾을 수 없습니다.");
+                            return;
+                        }
+
+                        longitudeInput.value = result[0].x;
+                        latitudeInput.value = result[0].y;
+                    });
+                });
+            }
+        }).open();
+    });
+
+    // 충전기 입력 행 추가
+    function addChargerRow() {
 
         const row = document.createElement("tr");
 
         row.innerHTML = `
-            <td>${chargerName}</td>
-            <td>${chargerType}</td>
-            <td>${connectorType}</td>
-            <td>${speedKw}kW</td>
-            <td>${pricePerKwh}원/kWh</td>
-            <td><span class="status-badge active">${chargerStatus}</span></td>
             <td>
-                <button type="button" class="delete-charger-btn">삭제</button>
+                <input type="hidden"
+                       name="chargerList[\${chargerIndex}].chargerId"
+                       value="">
+                <span class="charger-id-text new">신규</span>
+            </td>
+
+            <td>
+                <input type="text"
+                       name="chargerList[\${chargerIndex}].chargerName"
+                       placeholder="예: 급속충전기 1"
+                       required>
+            </td>
+
+            <td>
+                <select name="chargerList[\${chargerIndex}].chargerType"
+                        required>
+                    <option value="급속">급속</option>
+                    <option value="완속">완속</option>
+                    <option value="초급속">초급속</option>
+                </select>
+            </td>
+
+            <td>
+                <select name="chargerList[\${chargerIndex}].connectorType"
+                        required>
+                    <option value="DC콤보">DC콤보</option>
+                    <option value="AC완속">AC완속</option>
+                    <option value="NACS">NACS</option>
+                    <option value="CHAdeMO">CHAdeMO</option>
+                </select>
+            </td>
+
+            <td>
+                <input type="number"
+                       name="chargerList[\${chargerIndex}].chargingSpeedKw"
+                       min="1"
+                       step="0.1"
+                       placeholder="100"
+                       required>
+            </td>
+
+            <td>
+                <input type="number"
+                       name="chargerList[\${chargerIndex}].pricePerKwh"
+                       min="0"
+                       placeholder="347"
+                       required>
+            </td>
+
+            <td>
+                <select name="chargerList[\${chargerIndex}].status"
+                        required>
+                    <option value="사용가능">사용가능</option>
+                    <option value="예약중">예약중</option>
+                    <option value="사용중">사용중</option>
+                    <option value="점검중">점검중</option>
+                    <option value="고장">고장</option>
+                </select>
+            </td>
+
+            <td>
+                <button type="button"
+                        class="remove-charger-btn">
+                    삭제
+                </button>
             </td>
         `;
 
-        chargerPreviewBody.appendChild(row);
+        chargerTableBody.appendChild(row);
+        chargerIndex++;
+    }
 
-        chargerNameInput.value = "";
-        chargerTypeSelect.value = "";
-        connectorTypeSelect.value = "";
-        speedKwInput.value = "";
-        pricePerKwhInput.value = "";
-        chargerStatusSelect.value = "사용가능";
-
-        alert("충전기가 등록 예정 목록에 추가되었습니다.");
+    addChargerBtn.addEventListener("click", function() {
+        addChargerRow();
     });
 
-    chargerPreviewBody.addEventListener("click", function(e) {
-        if (e.target.classList.contains("delete-charger-btn")) {
-            const result = confirm("해당 충전기를 목록에서 삭제하시겠습니까?");
+    // 충전기 행 삭제
+    chargerTableBody.addEventListener("click", function(event) {
 
-            if (!result) {
-                return;
-            }
+        if (!event.target.classList.contains("remove-charger-btn")) {
+            return;
+        }
 
-            e.target.closest("tr").remove();
+        const row = event.target.closest("tr");
+        const chargerId = event.target.dataset.chargerId;
+
+        if (chargerId) {
+            const hidden = document.createElement("input");
+
+            hidden.type = "hidden";
+            hidden.name = "deleteChargerIds";
+            hidden.value = chargerId;
+
+            deleteChargerArea.appendChild(hidden);
+        }
+
+        row.remove();
+    });
+
+    // 등록/수정 전 검증
+    stationForm.addEventListener("submit", function(event) {
+
+        const chargerRows = chargerTableBody.querySelectorAll("tr");
+
+        if (chargerRows.length === 0) {
+            alert("충전기를 최소 1개 이상 등록해 주세요.");
+            event.preventDefault();
+            return;
+        }
+
+        if (!addressInput.value || !latitudeInput.value || !longitudeInput.value) {
+            alert("주소 검색을 통해 주소와 좌표를 입력해 주세요.");
+            event.preventDefault();
+            return;
+        }
+
+        const result = confirm("${station.editMode ? '충전소 정보를 수정하시겠습니까?' : '충전소를 등록하시겠습니까?'}");
+
+        if (!result) {
+            event.preventDefault();
         }
     });
+
+    // 신규 등록 화면에서는 기본 충전기 1개 자동 추가
+    if (chargerIndex === 0) {
+        addChargerRow();
+    }
 </script>
 
 </body>
