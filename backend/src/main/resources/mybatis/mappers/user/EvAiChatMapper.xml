@@ -103,4 +103,108 @@
 	    order by message_id asc
 	
 	</select>
+		
+	<!-- AI 챗봇용 대표 차량 기준 주변 충전소 추천 -->
+	<select id="findRecommendStations"
+	        parameterType="long"
+	        resultType="com.ev.dto.chat.EvAiStationRecommendDTO">
+	
+	    select
+	          cs.station_id as stationId
+	        , cs.station_name as stationName
+	        , cs.address as address
+	
+	        , c.charger_name as chargerName
+	        , c.charger_type as chargerType
+	        , c.connector_type as connectorType
+	        , c.charging_speed_kw as chargingSpeedKw
+	        , c.price_per_kwh as pricePerKwh
+	        , c.status as status
+	
+	        , vm.manufacturer as manufacturer
+	        , vm.model_name as modelName
+	        , v.vehicle_nickname as vehicleNickname
+	        , vm.connector_type as vehicleConnectorType
+	
+	        , round(
+	            (
+	                ST_Distance(cs.location, sl.location) / 1000
+	            )::numeric
+	          , 2
+	          ) as distanceKm
+	
+	    from vehicle v
+	    join vehicle_model vm
+	        on v.model_id = vm.model_id
+	    join saved_location sl
+	        on sl.member_id = v.member_id
+	    join charging_station cs
+	        on ST_DWithin(cs.location, sl.location, 10000)
+	    join charger c
+	        on c.station_id = cs.station_id
+	    where v.member_id = #{memberId}
+	      and v.is_default = true
+	      and v.is_deleted = false
+	      and sl.is_default = true
+	      and cs.station_status = '운영중'
+	      and c.status = '사용가능'
+	      and c.connector_type = vm.connector_type
+	    order by distanceKm asc, c.charging_speed_kw desc
+	    limit 5
+	
+	</select>
+	
+	<!-- AI 챗봇용 충전 시간/비용 계산 정보 조회 -->
+	<select id="findChargeCalculationInfo"
+	        parameterType="long"
+	        resultType="com.ev.dto.chat.EvAiChargeInfoDTO">
+	
+	    select
+	          vm.manufacturer as manufacturer
+	        , vm.model_name as modelName
+	        , v.vehicle_nickname as vehicleNickname
+	        , vm.battery_capacity_kwh as batteryCapacityKwh
+	        , vm.connector_type as vehicleConnectorType
+	
+	        , cs.station_id as stationId
+	        , cs.station_name as stationName
+	        , cs.address as stationAddress
+	
+	        , c.charger_id as chargerId
+	        , c.charger_name as chargerName
+	        , c.charger_type as chargerType
+	        , c.charging_speed_kw as chargingSpeedKw
+	        , c.price_per_kwh as pricePerKwh
+	        , c.connector_type as chargerConnectorType
+	
+	        , round(
+	            (
+	                ST_Distance(cs.location, sl.location) / 1000
+	            )::numeric
+	          , 2
+	          ) as distanceKm
+	
+	    from vehicle v
+	    join vehicle_model vm
+	        on v.model_id = vm.model_id
+	    join saved_location sl
+	        on sl.member_id = v.member_id
+	    join charging_station cs
+	        on ST_DWithin(cs.location, sl.location, 10000)
+	    join charger c
+	        on c.station_id = cs.station_id
+	    where v.member_id = #{memberId}
+	      and v.is_default = true
+	      and v.is_deleted = false
+	      and sl.is_default = true
+	      and cs.station_status = '운영중'
+	      and c.status = '사용가능'
+	      and c.connector_type = vm.connector_type
+	    order by
+	          ST_Distance(cs.location, sl.location) asc
+	        , c.charging_speed_kw desc
+	    limit 1
+	
+	</select>
+	
 </mapper>
