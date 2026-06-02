@@ -12,7 +12,7 @@
             </a>
 
             <a href="${pageContext.request.contextPath}/station/map">
-                충전소 탐색
+                충전소 검색
             </a>
 
             <sec:authorize access="isAnonymous()">

@@ -20,4 +20,15 @@ public interface EvStationService {
     
     // 카카오맵에 표시할 충전소 목록 조회
     List<EvStationMapDTO> getStationMapList(String keyword);
+
+    // 기본 출발지 주변 운영중 충전소 수 조회
+    int countNearbyStationByDefaultLocation(Long memberId, int radiusMeter);
+
+    // 기본 출발지 주변 사용 가능한 충전기 수 조회
+    int countAvailableChargerByDefaultLocation(Long memberId, int radiusMeter);
+
+    // 기본 출발지 주변 추천 충전소 목록 조회
+    List<EvStationMapDTO> getNearbyStationListByDefaultLocation(Long memberId,
+                                                                int radiusMeter,
+                                                                int limit);
 }
