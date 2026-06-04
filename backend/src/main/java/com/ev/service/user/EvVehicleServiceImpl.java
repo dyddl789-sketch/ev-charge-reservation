@@ -21,11 +21,36 @@ public class EvVehicleServiceImpl implements EvVehicleService {
     public List<EvVehicleModelDTO> getVehicleModelList() {
         return evVehicleDAO.getVehicleModelList();
     }
-//    내 차량 등록
+    //내 차량등록
     @Override
     @Transactional
     public void registerVehicle(EvVehicleDTO vehicleDTO) {
-    	evVehicleDAO.registerVehicle(vehicleDTO);
+
+        if (vehicleDTO.getModelId() == null) {
+            throw new IllegalArgumentException("차량 모델을 선택해 주세요.");
+        }
+
+        if (vehicleDTO.getPlateNumber() == null
+                || vehicleDTO.getPlateNumber().trim().isEmpty()) {
+            throw new IllegalArgumentException("차량번호를 입력해 주세요.");
+        }
+
+        String plateNumber = vehicleDTO.getPlateNumber()
+                .replaceAll("\\s+", "")
+                .trim();
+
+        vehicleDTO.setPlateNumber(plateNumber);
+
+        int count = evVehicleDAO.countByPlateNumber(
+                vehicleDTO.getMemberId(),
+                plateNumber
+        );
+
+        if (count > 0) {
+            throw new IllegalArgumentException("이미 등록된 차량번호입니다.");
+        }
+
+        evVehicleDAO.registerVehicle(vehicleDTO);
     }
 //    내 차량 목록 조회 
     @Override
@@ -52,4 +77,6 @@ public class EvVehicleServiceImpl implements EvVehicleService {
     public void deleteVehicle(Long memberId, Long vehicleId) {
         evVehicleDAO.deleteVehicle(memberId, vehicleId);
     }
+    
+    
 }

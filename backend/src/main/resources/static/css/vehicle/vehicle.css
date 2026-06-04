@@ -479,3 +479,27 @@
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+/* =========================
+   Message
+========================= */
+
+.error-message {
+    background: #fff1f0;
+    color: #d93025;
+    border: 1px solid #f5c2c7;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.success-message {
+    background: #f0fff4;
+    color: #198754;
+    border: 1px solid #badbcc;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    font-weight: 600;
+}

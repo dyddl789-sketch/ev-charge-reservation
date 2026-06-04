@@ -29,4 +29,9 @@ public interface EvVehicleDAO {
     // 차량삭제 (논리삭제 적용)
     void deleteVehicle(@Param("memberId") Long memberId,
             @Param("vehicleId") Long vehicleId);
+    
+    int countByPlateNumber(
+            @Param("memberId") Long memberId,
+            @Param("plateNumber") String plateNumber
+    );
 }
