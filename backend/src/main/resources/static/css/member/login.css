@@ -52,6 +52,15 @@ input {
     overflow: hidden;
 }
 
+/* 왼쪽 전체 영역 클릭 */
+.visual-link {
+    position: absolute;
+    inset: 0;
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
+
 .visual-overlay {
     position: absolute;
     inset: 0;
@@ -68,12 +77,19 @@ input {
     font-size: 44px;
     letter-spacing: 1px;
     font-weight: 700;
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .visual-overlay p {
     margin: 0;
     font-size: 18px;
     font-weight: 400;
+}
+
+.visual-link:hover h1 {
+    transform: scale(1.03);
+    opacity: 0.9;
 }
 
 /* 오른쪽 로그인 영역 */
