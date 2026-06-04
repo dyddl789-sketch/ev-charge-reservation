@@ -135,6 +135,49 @@ public class EvReservationController {
     }
     
     
+
+
+    /*
+     * 예약 입력 중 충전기 임시 점유 TTL 연장
+     *
+     * 요청 URL:
+     * POST /reservation/lock/keep-alive
+     *
+     * 사용 목적:
+     * - 예약 폼 화면에 오래 머물러도 Redis 임시 점유 key가 만료되지 않게 한다.
+     * - 같은 사용자가 예전에 잡아둔 다른 충전기 key도 함께 정리된다.
+     */
+    @PostMapping("/lock/keep-alive")
+    @ResponseBody
+    public Map<String, Object> keepAliveReservationLock(
+            @RequestParam("chargerId") Long chargerId,
+            @AuthenticationPrincipal EvUserDetails userDetails) {
+
+        log.info("@# EvReservationController.keepAliveReservationLock()");
+        log.info("@# chargerId => {}", chargerId);
+
+        Map<String, Object> result = new HashMap<>();
+
+        if (userDetails == null) {
+            result.put("success", false);
+            result.put("message", "로그인이 필요합니다.");
+            return result;
+        }
+
+        Long memberId = userDetails.getMemberId();
+
+        boolean success =
+                evReservationService.holdChargerForReservation(chargerId, memberId);
+
+        result.put("success", success);
+
+        if (!success) {
+            result.put("message", "다른 사용자가 선택 중인 충전기입니다.");
+        }
+
+        return result;
+    }
+
     /*
      * 예약 등록 처리
      *
@@ -598,13 +641,34 @@ public class EvReservationController {
     public List<EvChargerDTO> getChargerStatus(@RequestParam("stationId") Long stationId,
                                                 @RequestParam("reservationDate") String reservationDate,
                                                 @RequestParam("startTime") String startTime,
-                                                @RequestParam("estimatedMinutes") int estimatedMinutes) {
+                                                @RequestParam("estimatedMinutes") int estimatedMinutes,
+                                                @AuthenticationPrincipal EvUserDetails userDetails) {
         log.info("@# EvReservationController.getChargerStatus()");
         log.info("@# stationId => {}", stationId);
         log.info("@# reservationDate => {}", reservationDate);
         log.info("@# startTime => {}", startTime);
         log.info("@# estimatedMinutes => {}", estimatedMinutes);
 
-        return evReservationService.getChargerStatus(stationId, reservationDate, startTime, estimatedMinutes);
+        /*
+         * 로그인 사용자 기준으로 Redis 선점 상태를 구분해야 한다.
+         *
+         * 예:
+         * - 내가 선택 중인 충전기: 사용가능으로 유지
+         * - 다른 사용자가 선택 중인 충전기: 선택중으로 표시
+         */
+        if (userDetails == null) {
+            return List.of();
+        }
+
+        Long memberId = userDetails.getMemberId();
+        log.info("@# memberId => {}", memberId);
+
+        return evReservationService.getChargerStatus(
+                stationId,
+                reservationDate,
+                startTime,
+                estimatedMinutes,
+                memberId
+        );
     }
 }

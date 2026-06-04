@@ -131,5 +131,6 @@ public interface EvReservationService {
     List<EvChargerDTO> getChargerStatus(Long stationId,
                                         String reservationDate,
                                         String startTime,
-                                        int estimatedMinutes);
+                                        int estimatedMinutes,
+                                        Long memberId);
 }

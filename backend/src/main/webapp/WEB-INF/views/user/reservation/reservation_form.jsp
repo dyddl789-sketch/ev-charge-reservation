@@ -635,21 +635,69 @@
 
 
     /*
-     * 선택한 예약 날짜/시작 시간 기준으로 충전기 예약 상태를 다시 조회한다.
+     * 현재 내가 선택 중인 충전기의 Redis 임시 점유 TTL 연장
      *
-     * 목적:
-     * - 1번 유저가 18:00에 특정 충전기를 예약했다면
-     * - 2번 유저가 select 박스에서 18:00을 선택했을 때
-     * - 해당 충전기를 화면에서 바로 '예약중'으로 표시하고 선택을 막는다.
+     * Redis key TTL이 짧으면 예약 폼에 오래 머무는 동안
+     * 내가 선택한 충전기 key가 만료될 수 있다.
      *
-     * 주의:
-     * - 화면에서 막는 것은 사용자 편의용이다.
-     * - 실제 중복 예약 방지는 Service의 예약 등록 로직에서 한 번 더 검사해야 한다.
+     * 그래서 일정 시간마다 현재 선택 중인 충전기를 다시 hold 처리한다.
+     */
+    function keepAliveReservationLock() {
+        if (reservationSubmitting) {
+            return;
+        }
+
+        if (!currentHeldChargerId) {
+            return;
+        }
+
+        const params = new URLSearchParams();
+        params.append("chargerId", currentHeldChargerId);
+
+        if (csrfParameterName && csrfToken) {
+            params.append(csrfParameterName, csrfToken);
+        }
+
+        fetch("${pageContext.request.contextPath}/reservation/lock/keep-alive", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: params.toString()
+        })
+        .then(function(response) {
+            console.log("@# keep alive response status =>", response.status);
+
+            if (!response.ok) {
+                throw new Error("keep alive request failed. status=" + response.status);
+            }
+
+            return response.json();
+        })
+        .then(function(data) {
+            console.log("@# keep alive result =>", data);
+
+            if (!data.success) {
+                alert(data.message || "선택 중인 충전기를 유지할 수 없습니다. 다시 선택해주세요.");
+                location.reload();
+            }
+        })
+        .catch(function(error) {
+            console.error("@# keep alive error =>", error);
+        });
+    }
+
+
+    /*
+     * 선택한 예약 날짜/시작 시간 기준으로 충전기 상태를 다시 조회한다.
+     *
+     * 현재 Redis의 selectedByOther(선택중) 상태와
+     * DB 예약 상태(예약중/사용중)를 함께 반영하기 위한 Ajax 조회다.
      */
     function updateChargerStatusBySelectedTime() {
         /*
-         * 먼저 예상 충전 시간 hidden 값을 최신 상태로 만든다.
-         * 차량, 충전기, SOC 값에 따라 estimatedMinutes가 달라질 수 있기 때문이다.
+         * 먼저 예상 충전 시간을 최신으로 계산한다.
+         * estimatedMinutes 값이 있어야 서버가 종료 시간을 계산할 수 있다.
          */
         calculateReservation(false);
 
@@ -692,127 +740,142 @@
     /*
      * 서버에서 받은 충전기 상태를 화면에 반영한다.
      *
-     * 서버 응답 DTO에는 최소한 아래 값이 있어야 한다.
-     * - chargerId
-     * - reserved
+     * 처리 우선순위:
+     * 1. Redis에서 다른 사용자가 선택 중인 충전기 → 선택중
+     * 2. DB 기준 충전중 예약이 겹치는 충전기 → 사용중
+     * 3. DB 기준 예약완료/인증완료 예약이 겹치는 충전기 → 예약중
+     * 4. 충전기 자체 상태가 점검중/고장/사용중 → 선택 불가
+     * 5. 그 외 → 사용가능
      *
-     * reserved == true:
-     * - 이미 해당 시간대에 예약이 겹치는 충전기
-     * - 예약중 표시
-     * - radio disabled 처리
+     * 중요:
+     * - 기존 화면에 남아 있는 "선택중" 문구를 믿지 않는다.
+     * - 매번 /reservation/charger-status 응답을 기준으로 다시 그린다.
+     * - 그래야 user01이 선택 충전기를 바꿨을 때 user02 화면의 이전 선택중 표시가 사라진다.
      */
-     /*
-      * 서버에서 받은 충전기 상태를 화면에 반영한다.
-      *
-      * 처리 기준:
-      * - 예약완료 / 인증완료 상태로 시간 겹침 → 예약중
-      * - 충전중 상태로 시간 겹침 → 사용중
-      * - 사용가능 → 선택 가능
-      * - 점검중 / 고장 → 선택 불가
-      */
-     function applyChargerStatus(chargers) {
-         if (!Array.isArray(chargers)) {
-             return;
-         }
+    function applyChargerStatus(chargers) {
+        if (!Array.isArray(chargers)) {
+            return;
+        }
 
-         chargers.forEach(function(charger) {
-             const chargerId = String(charger.chargerId);
+        chargers.forEach(function(charger) {
+            const chargerId = String(charger.chargerId);
 
-             /*
-              * reserved:
-              * - 해당 시간대에 이미 예약/인증/충전중인 예약이 있으면 true
-              */
-             const reserved = charger.reserved === true || charger.reserved === "true";
+            /*
+             * reserved:
+             * - 선택한 시간대에 DB 예약이 겹치면 true
+             */
+            const reserved = charger.reserved === true || charger.reserved === "true";
 
-             /*
-              * 서버에서 내려준 상태값
-              *
-              * Mapper에서 status로 내려오면 charger.status
-              * Mapper에서 charger_status로 내려오면 charger.chargerStatus
-              */
-             const serverStatus = charger.status || charger.chargerStatus || "";
+            /*
+             * selectedByOther:
+             * - /reservation/charger-status API가 Redis 선점 상태까지 내려주는 경우 사용한다.
+             * - 값이 없어도 오류가 나지 않도록 false로 처리한다.
+             */
+            const selectedByOther = charger.selectedByOther === true || charger.selectedByOther === "true";
 
-             const card = document.querySelector(".charger-option[data-charger-id='" + chargerId + "']");
+            /*
+             * 서버에서 내려준 상태값
+             *
+             * Mapper에서 status로 내려오면 charger.status
+             * Mapper에서 charger_status로 내려오면 charger.chargerStatus
+             */
+            const serverStatus = charger.status || charger.chargerStatus || "";
 
-             if (!card) {
-                 return;
-             }
+            const card = document.querySelector(".charger-option[data-charger-id='" + chargerId + "']");
 
-             const radio = card.querySelector("input[name='selectedCharger']");
-             const status = card.querySelector(".charger-status");
+            if (!card) {
+                return;
+            }
 
-             if (!radio || !status) {
-                 return;
-             }
+            const radio = card.querySelector("input[name='selectedCharger']");
+            const status = card.querySelector(".charger-status");
 
-             /*
-              * 선택 불가능 상태로 변경하는 공통 함수
-              */
-             function disableCharger(statusText) {
-                 status.textContent = statusText;
+            if (!radio || !status) {
+                return;
+            }
 
-                 status.classList.remove("available");
-                 status.classList.add("unavailable");
+            /*
+             * 화면에 남아 있는 기존 "선택중" 문구는 기준으로 사용하지 않는다.
+             *
+             * 이유:
+             * - user01이 1번에서 3번으로 변경하면 Redis에서는 1번 key가 삭제된다.
+             * - 그런데 화면 문구를 기준으로 유지하면 user02 화면에는 1번이 계속 선택중으로 남는다.
+             * - 그래서 매번 서버 응답을 기준으로 다시 그린다.
+             */
 
-                 card.classList.add("charger-disabled");
+            function disableCharger(statusText) {
+                status.textContent = statusText;
+                status.classList.remove("available");
+                status.classList.add("unavailable");
 
-                 /*
-                  * 이미 체크되어 있던 충전기가 예약중/사용중으로 바뀌면 선택 해제
-                  */
-                 if (radio.checked) {
-                     radio.checked = false;
-                     chargerIdInput.value = "";
-                     calculateReservation(false);
-                 }
+                card.classList.add("charger-disabled");
 
-                 radio.disabled = true;
-             }
+                if (radio.checked) {
+                    radio.checked = false;
+                    chargerIdInput.value = "";
+                    calculateReservation(false);
+                }
 
-             /*
-              * 선택 가능 상태로 변경하는 공통 함수
-              */
-             function enableCharger() {
-                 status.textContent = "사용가능";
+                radio.disabled = true;
+            }
 
-                 status.classList.remove("unavailable");
-                 status.classList.add("available");
+            function enableCharger() {
+                status.textContent = "사용가능";
+                status.classList.remove("unavailable");
+                status.classList.add("available");
 
-                 card.classList.remove("charger-disabled");
+                card.classList.remove("charger-disabled");
+                radio.disabled = false;
+            }
 
-                 radio.disabled = false;
-             }
+            /*
+             * 1순위. Redis에서 다른 사용자가 선택 중인 상태
+             *
+             * Ajax 응답에서 selectedByOther/status=선택중이 내려온 경우만 처리한다.
+             * 화면에 이미 남아 있던 선택중 문구는 기준으로 사용하지 않는다.
+             */
+            if (selectedByOther || serverStatus === "선택중") {
+                disableCharger("선택중");
+                return;
+            }
 
-             /*
-              * 1. 해당 시간대에 겹치는 예약이 있는 경우
-              *
-              * 서버 상태가 사용중이면 사용중 표시
-              * 그 외 예약 겹침은 예약중 표시
-              */
-             if (reserved) {
-                 if (serverStatus === "사용중") {
-                     disableCharger("사용중");
-                 } else {
-                     disableCharger("예약중");
-                 }
+            /*
+             * 2순위. 해당 시간대에 DB 예약/충전 상태가 겹치는 경우
+             */
+            if (reserved) {
+                if (serverStatus === "사용중") {
+                    disableCharger("사용중");
+                } else {
+                    disableCharger("예약중");
+                }
 
-                 return;
-             }
+                return;
+            }
 
-             /*
-              * 2. 해당 시간대에 겹치는 예약은 없지만,
-              * 충전기 자체 상태가 점검중/고장/사용중이면 선택 불가
-              */
-             if (serverStatus === "점검중" || serverStatus === "고장" || serverStatus === "사용중") {
-                 disableCharger(serverStatus);
-                 return;
-             }
+            /*
+             * 3순위. 예약 시간과 상관없이 충전기 자체 상태가 선택 불가인 경우
+             */
+            if (serverStatus === "점검중" || serverStatus === "고장" || serverStatus === "사용중") {
+                disableCharger(serverStatus);
+                return;
+            }
 
-             /*
-              * 3. 사용가능 상태
-              */
-             enableCharger();
-         });
-     }
+            /*
+             * 4순위. 최초 렌더링 시점의 충전기 기본 상태 확인
+             */
+            const baseStatus = radio.dataset.status;
+
+            if (baseStatus === "점검중" || baseStatus === "고장" || baseStatus === "사용중") {
+                disableCharger(baseStatus);
+                return;
+            }
+
+            /*
+             * 5순위. 최종 사용가능
+             */
+            enableCharger();
+        });
+    }
 
     /*
      * 입력 중에는 alert 없이 조용히 계산만 시도한다.
@@ -866,6 +929,7 @@
             changeReservationLock(newChargerId).then(function(success) {
                 if (success) {
                     calculateReservation(false);
+                    updateChargerStatusBySelectedTime();
                 }
             });
         });
@@ -917,6 +981,41 @@
     setTodayDefault();
     calculateReservation(false);
     updateChargerStatusBySelectedTime();
+
+    /*
+     * 다른 사용자의 Redis 선점 상태 자동 갱신
+     *
+     * user01과 user02가 둘 다 예약 화면에 있는 상태에서
+     * 한 사용자가 충전기를 선택하면,
+     * 다른 사용자 화면에도 새로고침 없이 "선택중"으로 반영되게 한다.
+     *
+     * 핵심:
+     * - 화면에 남은 기존 문구가 아니라
+     * - 서버가 내려주는 현재 Redis 상태를 기준으로 매번 다시 그린다.
+     */
+    const chargerStatusPolling = setInterval(function() {
+        if (reservationSubmitting) {
+            clearInterval(chargerStatusPolling);
+            return;
+        }
+
+        updateChargerStatusBySelectedTime();
+    }, 2000);
+
+    /*
+     * 내가 선택 중인 충전기의 Redis TTL 연장
+     *
+     * RESERVATION_HOLD_TTL이 짧아도
+     * 예약 폼에 머무는 동안 현재 선택 상태가 유지된다.
+     */
+    const reservationLockKeepAlive = setInterval(function() {
+        if (reservationSubmitting) {
+            clearInterval(reservationLockKeepAlive);
+            return;
+        }
+
+        keepAliveReservationLock();
+    }, 10000);
 
     /*
      * 예약 폼 이탈 시 Redis 임시 점유 해제
