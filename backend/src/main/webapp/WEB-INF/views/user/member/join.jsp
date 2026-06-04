@@ -1,15 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 
-<%-- JSTL 사용을 위한 태그 라이브러리 --%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-
-<%--
-    사용자 공통 헤더 include
-
-    절대 경로로 include하면 JSP 위치가 바뀌어도 깨질 가능성이 적다.
---%>
-<%@ include file="/WEB-INF/views/common/header.jsp" %>
 
 <!DOCTYPE html>
 <html>
@@ -17,10 +9,7 @@
 <meta charset="UTF-8">
 <title>EV Charge 회원가입</title>
 
-<%-- 공통 CSS --%>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common/common.css">
-
-<%-- 회원가입/로그인 CSS --%>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/member/join.css">
 </head>
 <body>
@@ -30,105 +19,212 @@
     <section class="join-card">
 
         <h1>회원가입</h1>
-        <p>EV Charge 서비스를 이용하기 위한 계정을 생성합니다.</p>
 
-        <%--
-            회원가입 실패 메시지 출력 영역
-
-            Controller에서
-            rttr.addFlashAttribute("errorMsg", e.getMessage());
-            로 전달한 값을 출력한다.
-        --%>
         <c:if test="${not empty errorMsg}">
             <div class="error-message">${errorMsg}</div>
         </c:if>
 
-        <%--
-            회원가입 form
+        <form action="${pageContext.request.contextPath}/member/join"
+              method="post"
+              enctype="multipart/form-data"
+              id="joinForm">
 
-            action:
-            POST /member/join 요청을 보낸다.
-
-            중요:
-            input의 name 값은 MemberDTO의 필드명과 같아야 한다.
-        --%>
-        <form action="${pageContext.request.contextPath}/member/join" method="post">
-
-            <%--
-                MemberDTO.userId로 자동 매핑
-                DB 컬럼: user_id
-            --%>
             <div class="form-group">
                 <label>아이디</label>
-                <input type="text" name="userId" placeholder="아이디를 입력하세요." required>
+
+                <div class="input-with-btn">
+                    <input type="text"
+                           name="userId"
+                           id="userId"
+                           placeholder="아이디를 입력하세요."
+                           required>
+
+                    <button type="button"
+                            id="checkUserIdBtn">
+                        중복확인
+                    </button>
+                </div>
+
+                <small id="userIdCheckText"></small>
             </div>
 
-            <%--
-                MemberDTO.password로 자동 매핑
-                DB 컬럼: password
-            --%>
-            <div class="form-group">
-                <label>비밀번호</label>
-                <input type="password" name="password" placeholder="비밀번호를 입력하세요." required>
-            </div>
+			<div class="form-group">
+			    <label>비밀번호</label>
+			    <input type="password"
+			           name="password"
+			           id="password"
+			           placeholder="영문자+숫자+특수문자 8~20자"
+			           required>
+			
+			    <small id="passwordRuleText"></small>
+			</div>
 
-            <%--
-                MemberDTO.memberName으로 자동 매핑
-                DB 컬럼: member_name
-            --%>
+			<div class="form-group">
+			    <label>비밀번호 확인</label>
+			    <input type="password"
+			           id="passwordConfirm"
+			           placeholder="비밀번호를 다시 입력하세요."
+			           required>
+			
+			    <small id="passwordConfirmText"></small>
+			</div>
+
             <div class="form-group">
                 <label>이름</label>
-                <input type="text" name="memberName" placeholder="이름을 입력하세요." required>
+                <input type="text"
+                       name="memberName"
+                       placeholder="이름을 입력하세요."
+                       required>
             </div>
 
-            <%--
-                MemberDTO.nickname으로 자동 매핑
-                DB 컬럼: nickname
-            --%>
-            <div class="form-group">
-                <label>닉네임</label>
-                <input type="text" name="nickname" placeholder="닉네임을 입력하세요.">
-            </div>
+			<div class="form-group">
+			    <label>닉네임</label>
+			    <input type="text"
+			           name="nickname"
+			           id="nickname"
+			           class="join-input"
+			           placeholder="닉네임을 입력하세요."
+			           required>
+			
+			    <small id="nicknameCheckText"></small>
+			</div>
 
-            <%--
-                MemberDTO.phone으로 자동 매핑
-                DB 컬럼: phone
-
-                phone은 DB에서 unique지만 null 가능하다.
-            --%>
-            <div class="form-group">
-                <label>휴대폰 번호</label>
-                <input type="text" name="phone" placeholder="010-1234-5678">
-            </div>
-
-            <%--
-                MemberDTO.email로 자동 매핑
-                DB 컬럼: email
-
-                email은 DB에서 not null + unique이므로 필수 입력
-            --%>
             <div class="form-group">
                 <label>이메일</label>
-                <input type="email" name="email" placeholder="example@email.com" required>
+
+                <div class="email-row">
+                    <input type="text"
+                           name="emailId"
+                           id="emailId"
+                           placeholder="dyddl456"
+                           required>
+
+                    <span>@</span>
+
+                    <select name="emailDomain"
+                            id="emailDomain"
+                            required>
+                        <option value="naver.com">naver.com</option>
+                        <option value="gmail.com">gmail.com</option>
+                        <option value="daum.net">daum.net</option>
+                        <option value="kakao.com">kakao.com</option>
+                        <option value="direct">직접입력</option>
+                    </select>
+                </div>
+
+				<input type="text"
+				       name="emailDomainDirect"
+				       id="emailDomainDirect"
+				       class="direct-email"
+				       placeholder="도메인만 입력 예: nate.com">
+
+                <div class="email-auth-row">
+                    <button type="button"
+                            id="sendEmailCodeBtn"
+                            class="email-auth-btn">
+                        인증번호 발송
+                    </button>
+                </div>
+
+                <div class="email-code-row">
+                    <input type="text"
+                           id="emailCode"
+                           maxlength="6"
+                           placeholder="인증번호 6자리">
+
+                    <button type="button"
+                            id="verifyEmailCodeBtn"
+                            class="email-auth-btn">
+                        인증확인
+                    </button>
+                </div>
+                
+				<small id="emailCheckText"></small>
+				<small id="emailAuthText"></small>
             </div>
 
-            <button type="submit" class="join-btn">회원가입</button>
+            <div class="form-group">
+                <label>휴대폰 번호</label>
+
+                <div class="phone-row">
+                    <input type="text"
+                           id="phone1"
+                           value="010"
+                           maxlength="3"
+                           readonly>
+
+                    <span>-</span>
+
+                    <input type="text"
+                           id="phone2"
+                           maxlength="4"
+                           required>
+
+                    <span>-</span>
+
+                    <input type="text"
+                           id="phone3"
+                           maxlength="4"
+                           required>
+                </div>
+
+				<input type="hidden"
+				       name="phone"
+				       id="phone">
+				
+				<small id="phoneCheckText"></small>
+            </div>
+
+            <div class="form-group">
+                <label>프로필 이미지</label>
+
+                <div class="profile-preview-box">
+                    <img src="${pageContext.request.contextPath}/images/member/profile/default-profile.png"
+                         id="profilePreview"
+                         class="profile-preview"
+                         alt="기본 프로필">
+                </div>
+
+                <label class="profile-upload-btn">
+                    이미지 선택
+                    <input type="file"
+                           name="profileImage"
+                           id="profileImage"
+                           accept="image/*">
+                </label>
+
+                <small>선택하지 않으면 기본 프로필 이미지가 적용됩니다.</small>
+            </div>
+
+            <div class="agree-box">
+                <label>
+                    <input type="checkbox"
+                           id="agreeTerms"
+                           required>
+                    개인정보 수집 및 이용에 동의합니다.
+                </label>
+            </div>
+
+            <button type="submit"
+                    class="join-btn">
+                회원가입
+            </button>
 
         </form>
 
         <div class="join-bottom">
             <span>이미 계정이 있으신가요?</span>
-
-            <%--
-                로그인 화면으로 이동
-                GET /member/login
-            --%>
-            <a href="${pageContext.request.contextPath}/member/login">로그인</a>
+            <a href="${pageContext.request.contextPath}/login">로그인</a>
         </div>
 
     </section>
 
 </main>
+
+<script>
+    const EV_CONTEXT_PATH = "${pageContext.request.contextPath}";
+</script>
+<script src="${pageContext.request.contextPath}/js/member/join.js"></script>
 
 </body>
 </html>

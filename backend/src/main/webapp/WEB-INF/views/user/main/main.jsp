@@ -20,28 +20,51 @@
 
         <!-- 왼쪽 패널 -->
         <aside class="left-panel">
-
-            <section class="welcome-card">
-                <sec:authorize access="isAuthenticated()">
-                    <h2>
-                        <sec:authentication property="principal.memberName" />
-                        님, 안녕하세요!
-                    </h2>
-                </sec:authorize>
-
-                <sec:authorize access="isAnonymous()">
-                    <h2>비회원 님, 안녕하세요!</h2>
-                </sec:authorize>
-
-                <p>
-					로그인 후 서비스를 이용할 수 있습니다.
-                </p>
-
-                <div class="welcome-buttons">
-                    <a href="${pageContext.request.contextPath}/station/map" class="primary-btn">충전소 탐색하기</a>
-                    <a href="${pageContext.request.contextPath}/reservation/my" class="outline-btn">예약 관리하기</a>
-                </div>
-            </section>
+			
+			<section class="welcome-card">
+			
+			    <sec:authorize access="isAnonymous()">
+			        <div class="guest-box">
+			            <h2>로그인이 필요합니다.</h2>
+			            <p>로그인 후 차량 관리, 예약 관리, 충전소 검색 서비스를 이용할 수 있습니다.</p>
+			        </div>
+			
+			        <div class="welcome-buttons">
+			            <a href="${pageContext.request.contextPath}/login" class="primary-btn">
+			                로그인하기
+			            </a>
+			            <a href="${pageContext.request.contextPath}/login" class="outline-btn">
+			                충전소 검색
+			            </a>
+			        </div>
+			    </sec:authorize>
+			
+				<sec:authorize access="isAuthenticated()">
+				    <sec:authentication property="principal.profileImageUrl" var="profileImageUrl" />
+				    <sec:authentication property="principal.nickname" var="nickname" />
+				
+				    <div class="member-profile-card">
+				        <img src="${pageContext.request.contextPath}${profileImageUrl}"
+				             alt="프로필 이미지"
+				             class="member-profile-image">
+				
+				        <div class="member-profile-info">
+				            <strong>${nickname}</strong>
+				            <span>EV Charge 회원</span>
+				        </div>
+				    </div>
+				
+				    <div class="welcome-buttons">
+				        <a href="${pageContext.request.contextPath}/station/map" class="primary-btn">
+				            충전소 검색
+				        </a>
+				        <a href="${pageContext.request.contextPath}/reservation/my" class="outline-btn">
+				            예약 관리하기
+				        </a>
+				    </div>
+				</sec:authorize>
+			
+			</section>
 
             <section class="side-card vehicle-card">
                 <div class="side-card-header">

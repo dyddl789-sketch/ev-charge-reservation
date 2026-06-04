@@ -33,7 +33,7 @@ select {
     background: #ffffff;
     border-bottom: 1px solid #e5e7eb;
     display: grid;
-    grid-template-columns: 240px 1fr 260px;
+    grid-template-columns: 220px 1fr 320px;
     align-items: center;
     padding: 0 30px;
     position: sticky;
@@ -53,29 +53,20 @@ select {
     color: #f05a00;
 }
 
-.logo-icon {
-    width: 34px;
-    height: 34px;
-    background: #f05a00;
-    color: #ffffff;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 19px;
-    font-weight: 700;
-}
-
 .logo-text {
     font-size: 23px;
-    font-weight: 700;
+    font-weight: 800;
 }
+
+/* =========================
+   Navigation
+========================= */
 
 .top-nav {
     height: 100%;
     display: flex;
     justify-content: center;
-    gap: 54px;
+    gap: 36px;
 }
 
 .top-nav a {
@@ -86,46 +77,121 @@ select {
     color: #333333;
     font-size: 15px;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .top-nav a.active {
     color: #f05a00;
     border-bottom-color: #f05a00;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .top-nav a:hover {
     color: #f05a00;
 }
 
+/* =========================
+   User Area
+========================= */
+
 .user-area {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 14px;
-    font-size: 15px;
+    gap: 12px;
+    min-width: 0;
 }
 
-.alarm-icon {
-    font-size: 18px;
+.user-profile {
+    min-width: 150px;
+    max-width: 180px;
+    height: 44px;
+    padding: 5px 12px 5px 6px;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
 }
 
-.user-icon {
+.profile-image,
+.header-profile-image {
     width: 34px;
     height: 34px;
-    background: #f3f4f6;
+    min-width: 34px;
     border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    object-fit: cover;
+    object-position: center;
+    border: 2px solid #ffffff;
+    background: #f3f4f6;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.14);
+    display: block;
 }
 
 .user-name {
-    font-weight: 600;
+    max-width: 95px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 800;
+    color: #111827;
 }
 
-.arrow {
-    color: #777777;
+.logout-form {
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* =========================
+   Header Buttons
+========================= */
+
+.header-login-btn {
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 999px;
+    background: #f05a00;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #f05a00;
+    transition: all 0.2s ease;
+}
+
+.header-login-btn:hover,
+.header-login-btn.active {
+    background: #d94f00;
+    border-color: #d94f00;
+    color: #ffffff;
+}
+
+.header-logout-btn {
+    height: 36px;
+    padding: 0 15px;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid #d1d5db;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.header-logout-btn:hover {
+    border-color: #f05a00;
+    color: #f05a00;
+    background: #fff7ed;
 }
 
 /* =========================
@@ -163,18 +229,4 @@ select {
 .footer-links a:hover,
 .footer-nav a:hover {
     color: #f05a00;
-}
-
-/* =========================
-   Responsive
-========================= */
-
-@media (max-width: 1300px) {
-    .top-header {
-        grid-template-columns: 220px 1fr;
-    }
-
-    .user-area {
-        display: none;
-    }
 }

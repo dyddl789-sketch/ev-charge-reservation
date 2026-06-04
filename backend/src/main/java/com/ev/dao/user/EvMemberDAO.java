@@ -3,6 +3,7 @@ package com.ev.dao.user;
 import org.apache.ibatis.annotations.Mapper;
 
 import com.ev.dto.member.EvMemberDTO;
+import com.ev.dto.member.EvMemberUpdateDTO;
 
 /*
  * 회원가입에서 필요한 기능:
@@ -42,4 +43,12 @@ public interface EvMemberDAO {
 
     //소셜로그인 정보 저장
     void insertSocialMember(EvMemberDTO evMemberDTO);
+    
+ // 회원번호로 회원 조회
+    EvMemberDTO findByMemberId(Long memberId);
+
+    // 회원정보 수정
+    void updateMember(EvMemberUpdateDTO updateDTO);
+ // 닉네임 중복 확인
+    int countByNickname(String nickname);
 }

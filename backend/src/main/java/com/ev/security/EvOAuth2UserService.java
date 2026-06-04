@@ -20,6 +20,9 @@ public class EvOAuth2UserService extends DefaultOAuth2UserService {
 
     private final EvMemberDAO evMemberDAO;
 
+    private static final String DEFAULT_PROFILE_IMAGE_URL =
+            "/images/member/profile/default-profile.png";
+
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
 
@@ -27,6 +30,7 @@ public class EvOAuth2UserService extends DefaultOAuth2UserService {
 
         OAuth2User oauth2User = super.loadUser(userRequest);
         log.info("@# oauth2User attributes => {}", oauth2User.getAttributes());
+
         String registrationId =
                 userRequest.getClientRegistration().getRegistrationId();
 
@@ -45,6 +49,11 @@ public class EvOAuth2UserService extends DefaultOAuth2UserService {
                 (Map<String, Object>) kakaoAccount.get("profile");
 
         String nickname = String.valueOf(profile.get("nickname"));
+        String profileImageUrl = (String) profile.get("profile_image_url");
+
+        if (profileImageUrl == null || profileImageUrl.isBlank()) {
+            profileImageUrl = DEFAULT_PROFILE_IMAGE_URL;
+        }
 
         String userId = "kakao_" + kakaoId;
 
@@ -57,6 +66,8 @@ public class EvOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         log.info("@# kakao email => {}", email);
+        log.info("@# kakao nickname => {}", nickname);
+        log.info("@# kakao profileImageUrl => {}", profileImageUrl);
 
         EvMemberDTO evMemberDTO = evMemberDAO.findByUserId(userId);
 
@@ -67,6 +78,7 @@ public class EvOAuth2UserService extends DefaultOAuth2UserService {
             evMemberDTO.setMemberName(nickname);
             evMemberDTO.setNickname(nickname);
             evMemberDTO.setEmail(email);
+            evMemberDTO.setProfileImageUrl(profileImageUrl);
             evMemberDTO.setUserType("USER");
             evMemberDTO.setLoginType("KAKAO");
             evMemberDTO.setStatus("ACTIVE");

@@ -2,7 +2,8 @@ package com.ev.controller.user;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestParam;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -16,10 +17,17 @@ public class EvAuthController {
      * - 일반 로그인: formLogin
      * - 소셜 로그인: oauth2Login
      */
-    @GetMapping("/login")
-    public String loginForm() {
-        log.info("@# EvAuthController.loginForm()");
+	@GetMapping("/login")
+	public String loginForm(
+	        @RequestParam(value = "error", required = false) String error,
+	        Model model) {
 
-        return "user/member/login";
-    }
+	    log.info("@# EvAuthController.loginForm()");
+
+	    if (error != null) {
+	        model.addAttribute("errorMsg", error);
+	    }
+
+	    return "user/member/login";
+	}
 }

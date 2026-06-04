@@ -15,12 +15,24 @@
     <div class="login-card">
 
         <!-- 왼쪽 이미지 영역 -->
-        <section class="login-visual">
-            <div class="visual-overlay">
-                <h1>EV Charge</h1>
-                <p>전기차 충전 최적화 및 예약 관리 서비스</p>
-            </div>
-        </section>
+		<section class="login-visual">
+		
+		    <a href="${pageContext.request.contextPath}/main"
+		       class="visual-link">
+		
+		        <div class="visual-overlay">
+		
+		            <h1>EV Charge</h1>
+		
+		            <p>
+		                전기차 충전 최적화 및 예약 관리 서비스
+		            </p>
+		
+		        </div>
+		
+		    </a>
+		
+		</section>
 
         <!-- 오른쪽 로그인 영역 -->
         <section class="login-form-area">

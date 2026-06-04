@@ -66,4 +66,12 @@ public class EvUserDetails implements UserDetails {
     public boolean isEnabled() {
         return "ACTIVE".equals(evMemberDTO.getStatus());
     }
+    
+    public String getNickname() {
+        return evMemberDTO.getNickname();
+    }
+
+    public String getProfileImageUrl() {
+        return evMemberDTO.getProfileImageUrl();
+    }
 }
