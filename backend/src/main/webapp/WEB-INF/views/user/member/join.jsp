@@ -193,7 +193,13 @@
                            accept="image/*">
                 </label>
 
-                <small>선택하지 않으면 기본 프로필 이미지가 적용됩니다.</small>
+				<small>
+				선택하지 않으면 기본 프로필 이미지가 적용됩니다.
+				</small>
+				
+				<small>
+				지원 형식: jpg, jpeg, png, gif, webp / 최대 5MB
+				</small>
             </div>
 
             <div class="agree-box">
