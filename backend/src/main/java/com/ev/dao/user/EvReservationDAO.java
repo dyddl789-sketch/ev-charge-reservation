@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 
 import com.ev.dto.reservation.EvReservationChargerDTO;
 import com.ev.dto.reservation.EvReservationDTO;
+import com.ev.dto.station.EvChargerDTO;
 import com.ev.dto.vehicle.EvVehicleDTO;
 
 /*
@@ -174,4 +175,8 @@ public interface EvReservationDAO {
      * 메인페이지 이번 달 충전 비용 합계 조회
      */
     Integer findThisMonthChargingCost(@Param("memberId") Long memberId);
+    
+    List<EvChargerDTO> getChargerStatus(@Param("stationId") Long stationId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime);
 }

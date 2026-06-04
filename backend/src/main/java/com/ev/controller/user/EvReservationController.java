@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ev.dto.reservation.EvReservationChargerDTO;
 import com.ev.dto.reservation.EvReservationDTO;
+import com.ev.dto.station.EvChargerDTO;
 import com.ev.dto.vehicle.EvVehicleDTO;
 import com.ev.security.EvUserDetails;
 import com.ev.service.user.EvReservationService;
@@ -584,5 +585,26 @@ public class EvReservationController {
         );
 
         return "redirect:/station/map?stationId=" + stationId;
+    }
+    
+    /*
+     * 선택한 날짜/시간 기준 충전기 예약 가능 여부 조회
+     *
+     * 요청 URL:
+     * GET /reservation/charger-status
+     */
+    @GetMapping("/charger-status")
+    @ResponseBody
+    public List<EvChargerDTO> getChargerStatus(@RequestParam("stationId") Long stationId,
+                                                @RequestParam("reservationDate") String reservationDate,
+                                                @RequestParam("startTime") String startTime,
+                                                @RequestParam("estimatedMinutes") int estimatedMinutes) {
+        log.info("@# EvReservationController.getChargerStatus()");
+        log.info("@# stationId => {}", stationId);
+        log.info("@# reservationDate => {}", reservationDate);
+        log.info("@# startTime => {}", startTime);
+        log.info("@# estimatedMinutes => {}", estimatedMinutes);
+
+        return evReservationService.getChargerStatus(stationId, reservationDate, startTime, estimatedMinutes);
     }
 }

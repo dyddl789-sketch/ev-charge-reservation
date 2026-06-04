@@ -718,5 +718,100 @@
            and r.start_time >= date_trunc('month', current_timestamp)
            and r.start_time &lt; date_trunc('month', current_timestamp) + interval '1 month'
     </select>
+	
+	
+	<!--
+    선택한 날짜/시간 기준 충전기 상태 조회
 
+    처리 기준:
+    - 선택한 시간대에 충전중 예약이 있으면: 사용중
+    - 선택한 시간대에 예약완료/인증완료 예약이 있으면: 예약중
+    - 충전기 자체 상태가 점검중/고장이면: 점검중/고장
+    - 그 외: 사용가능
+
+    reserved:
+    - 예약중 또는 사용중이면 true
+    - 사용가능이면 false
+	-->
+	<select id="getChargerStatus"
+        resultType="com.ev.dto.station.EvChargerDTO">
+
+    select
+          c.charger_id
+        , c.station_id
+        , c.charger_name
+        , c.charger_type
+        , c.connector_type
+        , c.charging_speed_kw
+        , c.price_per_kwh
+
+        , case
+              /*
+               * 해당 시간대에 실제 충전중인 예약이 있으면
+               * 예약중이 아니라 사용중으로 표시한다.
+               */
+              when exists (
+                  select 1
+                    from reservation r
+                   where r.charger_id = c.charger_id
+                     and r.status = '충전중'
+                     and r.start_time &lt; #{endTime}
+                     and r.end_time &gt; #{startTime}
+              )
+              then '사용중'
+
+              /*
+               * 아직 충전 시작 전이지만 해당 시간대를 점유하는 예약이면
+               * 예약중으로 표시한다.
+               */
+              when exists (
+                  select 1
+                    from reservation r
+                   where r.charger_id = c.charger_id
+                     and r.status in ('예약완료', '인증완료')
+                     and r.start_time &lt; #{endTime}
+                     and r.end_time &gt; #{startTime}
+              )
+              then '예약중'
+
+              /*
+               * 충전기 자체가 점검중/고장이면 해당 상태를 그대로 표시한다.
+               */
+              when c.status in ('점검중', '고장')
+              then c.status
+
+              /*
+               * 겹치는 예약도 없고 고장/점검도 아니면 사용가능
+               */
+              else '사용가능'
+          end as status
+
+        , case
+              when exists (
+                  select 1
+                    from reservation r
+                   where r.charger_id = c.charger_id
+                     and r.status in ('예약완료', '인증완료', '충전중')
+                     and r.start_time &lt; #{endTime}
+                     and r.end_time &gt; #{startTime}
+              )
+              or c.status in ('점검중', '고장')
+              then true
+              else false
+          end as reserved
+
+      from charger c
+     where c.station_id = #{stationId}
+     order by
+          case
+              when c.status = '사용가능' then 1
+              when c.status = '예약중' then 2
+              when c.status = '사용중' then 3
+              when c.status = '점검중' then 4
+              when c.status = '고장' then 5
+              else 6
+          end
+        , c.charger_id asc
+
+	</select>
 </mapper>
