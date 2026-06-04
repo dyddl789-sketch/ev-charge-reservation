@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.ev.dto.reservation.EvReservationChargerDTO;
 import com.ev.dto.reservation.EvReservationDTO;
+import com.ev.dto.station.EvChargerDTO;
 import com.ev.dto.vehicle.EvVehicleDTO;
 
 /*
@@ -124,4 +125,11 @@ public interface EvReservationService {
      */
     Integer getThisMonthChargingCost(Long memberId);
     
+    /*
+     * 선택한 예약 시간 기준 충전기 상태 조회
+     */
+    List<EvChargerDTO> getChargerStatus(Long stationId,
+                                        String reservationDate,
+                                        String startTime,
+                                        int estimatedMinutes);
 }

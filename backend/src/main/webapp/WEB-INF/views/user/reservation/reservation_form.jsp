@@ -47,6 +47,7 @@
 
                     <!-- 예약 저장에 필요한 값 -->
                     <input type="hidden" name="chargerId" id="chargerIdInput" value="${charger.chargerId}">
+                    <input type="hidden" id="stationIdInput" value="${charger.stationId}">
                     <input type="hidden" name="startTime" id="startTimeInput">
                     <input type="hidden" name="endTime" id="endTimeInput">
                     <input type="hidden" name="requiredKwh" id="requiredKwhInput">
@@ -116,7 +117,8 @@
                                 <c:set var="isSelectable" value="${item.selectable}" />
                                 <c:set var="isSelected" value="${item.chargerId == charger.chargerId}" />
 
-                                <label class="charger-option ${isSelectable ? '' : 'charger-disabled'}">
+                                <label class="charger-option ${isSelectable ? '' : 'charger-disabled'}"
+                                       data-charger-id="${item.chargerId}">
 
                                     <input type="radio"
                                            name="selectedCharger"
@@ -140,19 +142,19 @@
 
                                         <c:choose>
                                             <c:when test="${item.selectedByOther}">
-                                                <span class="unavailable">
+                                                <span class="charger-status unavailable">
                                                     선택중
                                                 </span>
                                             </c:when>
 
                                             <c:when test="${item.chargerStatus == '사용가능'}">
-                                                <span class="available">
+                                                <span class="charger-status available">
                                                     ${item.chargerStatus}
                                                 </span>
                                             </c:when>
 
                                             <c:otherwise>
-                                                <span class="unavailable">
+                                                <span class="charger-status unavailable">
                                                     ${item.chargerStatus}
                                                 </span>
                                             </c:otherwise>
@@ -346,6 +348,7 @@
     const reservationDateInput = document.getElementById("reservationDate");
     const form = document.getElementById("reservationForm");
     const chargerIdInput = document.getElementById("chargerIdInput");
+    const stationIdInput = document.getElementById("stationIdInput");
 
     /*
      * 현재 Redis에서 내가 선점 중인 충전기 ID
@@ -630,29 +633,215 @@
         });
     }
 
+
+    /*
+     * 선택한 예약 날짜/시작 시간 기준으로 충전기 예약 상태를 다시 조회한다.
+     *
+     * 목적:
+     * - 1번 유저가 18:00에 특정 충전기를 예약했다면
+     * - 2번 유저가 select 박스에서 18:00을 선택했을 때
+     * - 해당 충전기를 화면에서 바로 '예약중'으로 표시하고 선택을 막는다.
+     *
+     * 주의:
+     * - 화면에서 막는 것은 사용자 편의용이다.
+     * - 실제 중복 예약 방지는 Service의 예약 등록 로직에서 한 번 더 검사해야 한다.
+     */
+    function updateChargerStatusBySelectedTime() {
+        /*
+         * 먼저 예상 충전 시간 hidden 값을 최신 상태로 만든다.
+         * 차량, 충전기, SOC 값에 따라 estimatedMinutes가 달라질 수 있기 때문이다.
+         */
+        calculateReservation(false);
+
+        const stationId = stationIdInput ? stationIdInput.value : "";
+        const reservationDate = reservationDateInput.value;
+        const startTime = startTimeValueInput.value;
+        const estimatedMinutes = estimatedMinutesInput.value;
+
+        if (!stationId || !reservationDate || !startTime || !estimatedMinutes) {
+            return;
+        }
+
+        const params = new URLSearchParams();
+        params.append("stationId", stationId);
+        params.append("reservationDate", reservationDate);
+        params.append("startTime", startTime);
+        params.append("estimatedMinutes", estimatedMinutes);
+
+        fetch("${pageContext.request.contextPath}/reservation/charger-status?" + params.toString(), {
+            method: "GET"
+        })
+        .then(function(response) {
+            console.log("@# charger status response status =>", response.status);
+
+            if (!response.ok) {
+                throw new Error("charger status request failed. status=" + response.status);
+            }
+
+            return response.json();
+        })
+        .then(function(chargers) {
+            console.log("@# charger status result =>", chargers);
+            applyChargerStatus(chargers);
+        })
+        .catch(function(error) {
+            console.error("@# charger status error =>", error);
+        });
+    }
+
+    /*
+     * 서버에서 받은 충전기 상태를 화면에 반영한다.
+     *
+     * 서버 응답 DTO에는 최소한 아래 값이 있어야 한다.
+     * - chargerId
+     * - reserved
+     *
+     * reserved == true:
+     * - 이미 해당 시간대에 예약이 겹치는 충전기
+     * - 예약중 표시
+     * - radio disabled 처리
+     */
+     /*
+      * 서버에서 받은 충전기 상태를 화면에 반영한다.
+      *
+      * 처리 기준:
+      * - 예약완료 / 인증완료 상태로 시간 겹침 → 예약중
+      * - 충전중 상태로 시간 겹침 → 사용중
+      * - 사용가능 → 선택 가능
+      * - 점검중 / 고장 → 선택 불가
+      */
+     function applyChargerStatus(chargers) {
+         if (!Array.isArray(chargers)) {
+             return;
+         }
+
+         chargers.forEach(function(charger) {
+             const chargerId = String(charger.chargerId);
+
+             /*
+              * reserved:
+              * - 해당 시간대에 이미 예약/인증/충전중인 예약이 있으면 true
+              */
+             const reserved = charger.reserved === true || charger.reserved === "true";
+
+             /*
+              * 서버에서 내려준 상태값
+              *
+              * Mapper에서 status로 내려오면 charger.status
+              * Mapper에서 charger_status로 내려오면 charger.chargerStatus
+              */
+             const serverStatus = charger.status || charger.chargerStatus || "";
+
+             const card = document.querySelector(".charger-option[data-charger-id='" + chargerId + "']");
+
+             if (!card) {
+                 return;
+             }
+
+             const radio = card.querySelector("input[name='selectedCharger']");
+             const status = card.querySelector(".charger-status");
+
+             if (!radio || !status) {
+                 return;
+             }
+
+             /*
+              * 선택 불가능 상태로 변경하는 공통 함수
+              */
+             function disableCharger(statusText) {
+                 status.textContent = statusText;
+
+                 status.classList.remove("available");
+                 status.classList.add("unavailable");
+
+                 card.classList.add("charger-disabled");
+
+                 /*
+                  * 이미 체크되어 있던 충전기가 예약중/사용중으로 바뀌면 선택 해제
+                  */
+                 if (radio.checked) {
+                     radio.checked = false;
+                     chargerIdInput.value = "";
+                     calculateReservation(false);
+                 }
+
+                 radio.disabled = true;
+             }
+
+             /*
+              * 선택 가능 상태로 변경하는 공통 함수
+              */
+             function enableCharger() {
+                 status.textContent = "사용가능";
+
+                 status.classList.remove("unavailable");
+                 status.classList.add("available");
+
+                 card.classList.remove("charger-disabled");
+
+                 radio.disabled = false;
+             }
+
+             /*
+              * 1. 해당 시간대에 겹치는 예약이 있는 경우
+              *
+              * 서버 상태가 사용중이면 사용중 표시
+              * 그 외 예약 겹침은 예약중 표시
+              */
+             if (reserved) {
+                 if (serverStatus === "사용중") {
+                     disableCharger("사용중");
+                 } else {
+                     disableCharger("예약중");
+                 }
+
+                 return;
+             }
+
+             /*
+              * 2. 해당 시간대에 겹치는 예약은 없지만,
+              * 충전기 자체 상태가 점검중/고장/사용중이면 선택 불가
+              */
+             if (serverStatus === "점검중" || serverStatus === "고장" || serverStatus === "사용중") {
+                 disableCharger(serverStatus);
+                 return;
+             }
+
+             /*
+              * 3. 사용가능 상태
+              */
+             enableCharger();
+         });
+     }
+
     /*
      * 입력 중에는 alert 없이 조용히 계산만 시도한다.
      */
     if (vehicleSelect && !vehicleSelect.disabled) {
         vehicleSelect.addEventListener("change", function() {
             calculateReservation(false);
+            updateChargerStatusBySelectedTime();
         });
     }
 
     currentSocInput.addEventListener("input", function() {
         calculateReservation(false);
+        updateChargerStatusBySelectedTime();
     });
 
     targetSocInput.addEventListener("input", function() {
         calculateReservation(false);
+        updateChargerStatusBySelectedTime();
     });
 
     startTimeValueInput.addEventListener("change", function() {
         calculateReservation(false);
+        updateChargerStatusBySelectedTime();
     });
 
     reservationDateInput.addEventListener("change", function() {
         calculateReservation(false);
+        updateChargerStatusBySelectedTime();
     });
 
     /*
@@ -727,6 +916,7 @@
 
     setTodayDefault();
     calculateReservation(false);
+    updateChargerStatusBySelectedTime();
 
     /*
      * 예약 폼 이탈 시 Redis 임시 점유 해제

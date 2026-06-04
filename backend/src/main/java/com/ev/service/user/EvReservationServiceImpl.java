@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ev.dao.user.EvReservationDAO;
 import com.ev.dto.reservation.EvReservationChargerDTO;
 import com.ev.dto.reservation.EvReservationDTO;
+import com.ev.dto.station.EvChargerDTO;
 import com.ev.dto.vehicle.EvVehicleDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -718,6 +719,19 @@ public class EvReservationServiceImpl implements EvReservationService {
         }
 
         return cost;
+    }
+    
+    @Override
+    public List<EvChargerDTO> getChargerStatus(Long stationId,
+                                               String reservationDate,
+                                               String startTime,
+                                               int estimatedMinutes) {
+        log.info("@# EvReservationServiceImpl.getChargerStatus()");
+
+        LocalDateTime startDateTime = LocalDateTime.parse(reservationDate + "T" + startTime);
+        LocalDateTime endDateTime = startDateTime.plusMinutes(estimatedMinutes);
+
+        return reservationDAO.getChargerStatus(stationId, startDateTime, endDateTime);
     }
 
 }

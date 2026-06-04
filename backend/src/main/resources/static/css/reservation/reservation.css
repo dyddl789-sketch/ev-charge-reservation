@@ -252,6 +252,21 @@
     font-weight: 700;
 }
 
+.charger-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.charger-status.reserved {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.charger-status.available {
+    background-color: #dcfce7;
+    color: #16a34a;
+}
+
 /* =========================
    Buttons
 ========================= */
