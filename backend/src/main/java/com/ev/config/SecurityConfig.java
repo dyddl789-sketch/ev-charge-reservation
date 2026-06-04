@@ -3,36 +3,138 @@ package com.ev.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 
-// Spring Security 설정 클래스라는 의미
+import com.ev.security.EvLoginFailureHandler;
+import com.ev.security.EvLoginSuccessHandler;
+import com.ev.security.EvOAuth2UserService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/*
+ * Spring Security 설정 클래스
+ */
+@Slf4j
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    // SecurityFilterChain Bean 등록
-    // -> Spring Security의 보안 규칙 설정
+    private final EvLoginSuccessHandler evLoginSuccessHandler;
+    private final EvLoginFailureHandler evLoginFailureHandler;
+    private final EvOAuth2UserService evOAuth2UserService;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-        
-            // CSRF 보안 기능 비활성화
-            // 개발 초기 단계에서는 보통 꺼두고 사용
+            // 개발 편의를 위해 CSRF 비활성화
             .csrf(csrf -> csrf.disable())
 
             // URL 접근 권한 설정
             .authorizeHttpRequests(auth -> auth
-            
-                // 모든 요청(URL) 허용
-                // 현재는 로그인 없이 전체 접근 가능
+
+                // 로그인 없이 접근 가능
+                .requestMatchers(
+                    "/",
+                    "/main",
+                    "/login",
+                    "/member/join",
+                    "/member/find",
+                    "/css/**",
+                    "/js/**",
+                    "/image/**",
+                    "/images/**",
+                    "/favicon.ico",
+                    "/oauth2/**",
+                    "/login/oauth2/**"
+                ).permitAll()
+
+                // 관리자만 접근 가능
+                // DB user_type = ADMIN 이면 EvUserDetails에서 ROLE_ADMIN 으로 변환되어야 함
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+
+                // 로그인 사용자만 접근 가능
+                .requestMatchers(
+                	    "/vehicle/**",
+                	    "/reservation/**",
+                	    "/station/**",
+                	    "/ai-chat/**",
+                	    "/member/mypage/**"
+                	).authenticated()
+
+                // 나머지는 일단 허용
                 .anyRequest().permitAll()
             )
 
-            // Spring Security 기본 로그인 화면 비활성화
-            // 기본 "Please sign in" 페이지 제거
-            .formLogin(form -> form.disable());
+            // 일반 로그인 설정
+            .formLogin(form -> form
+                .loginPage("/login")
+                .loginProcessingUrl("/login")
+                .usernameParameter("userId")
+                .passwordParameter("password")
+                .successHandler(evLoginSuccessHandler)
+                .failureHandler(evLoginFailureHandler)
+                .permitAll()
+            )
 
-        // 설정 내용 적용 후 반환
+            // 카카오 OAuth2 로그인 설정
+            .oauth2Login(oauth2 -> oauth2
+                .loginPage("/login")
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(evOAuth2UserService)
+                )
+                .successHandler((request, response, authentication) -> {
+                    log.info("@# OAuth2 login success");
+                    response.sendRedirect("/main");
+                })
+                .failureHandler((request, response, exception) -> {
+                    log.error("@# OAuth2 login fail", exception);
+                    response.sendRedirect("/login?error=true");
+                })
+            )
+
+            // 권한 부족 처리
+            // 일반 USER가 /admin/** 접근하면 메인으로 돌려보냄
+            .exceptionHandling(exception -> exception
+                .accessDeniedHandler(accessDeniedHandler())
+            )
+
+            // 로그아웃 설정
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login?logout=true")
+                .invalidateHttpSession(true)
+                .clearAuthentication(true)
+                .deleteCookies("JSESSIONID")
+            );
+
         return http.build();
+    }
+
+    /*
+     * 권한 부족 처리 핸들러
+     */
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+
+        return (request, response, accessDeniedException) -> {
+
+            log.warn("@# access denied url => {}", request.getRequestURI());
+            log.warn("@# access denied message => {}", accessDeniedException.getMessage());
+
+            response.sendRedirect("/main?authMsg=accessDenied");
+        };
+    }
+
+    /*
+     * 비밀번호 암호화
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

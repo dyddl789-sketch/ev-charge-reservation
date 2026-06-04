@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.admin.EvAdminMemberDAO">
+
+    <!-- 전체 회원 수 -->
+    <select id="countTotalMembers" resultType="long">
+        select count(*)
+        from app_member
+    </select>
+
+    <!-- 활성 회원 수 -->
+    <select id="countActiveMembers" resultType="long">
+        select count(*)
+        from app_member
+        where status = 'ACTIVE'
+    </select>
+
+    <!-- 탈퇴 회원 수 -->
+    <select id="countInactiveMembers" resultType="long">
+        select count(*)
+        from app_member
+        where status = 'INACTIVE'
+    </select>
+
+    <!-- 검색 결과 수 -->
+    <select id="countMemberList"
+            parameterType="com.ev.dto.admin.EvAdminMemberSearchDTO"
+            resultType="long">
+        select count(*)
+        from app_member
+        <where>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+
+            <if test="joinStart != null">
+                and created_at::date <![CDATA[>=]]> #{joinStart}
+            </if>
+
+            <if test="joinEnd != null">
+                and created_at::date <![CDATA[<=]]> #{joinEnd}
+            </if>
+
+            <if test="keyword != null and keyword != ''">
+                <choose>
+                    <when test="searchType == 'id'">
+                        and user_id ilike concat('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'email'">
+                        and email ilike concat('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'phone'">
+                        and phone ilike concat('%', #{keyword}, '%')
+                    </when>
+                    <otherwise>
+                        and member_name ilike concat('%', #{keyword}, '%')
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+    </select>
+
+    <!-- 회원 목록 조회 -->
+    <select id="findMemberList"
+            parameterType="com.ev.dto.admin.EvAdminMemberSearchDTO"
+            resultType="com.ev.dto.admin.EvAdminMemberRowDTO">
+        select
+              member_id as memberId
+            , user_id as userId
+            , member_name as memberName
+            , email as email
+            , phone as phone
+            , user_type as userType
+            , login_type as loginType
+            , status as status
+            , created_at as createdAt
+        from app_member
+        <where>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+
+            <if test="joinStart != null">
+                and created_at::date <![CDATA[>=]]> #{joinStart}
+            </if>
+
+            <if test="joinEnd != null">
+                and created_at::date <![CDATA[<=]]> #{joinEnd}
+            </if>
+
+            <if test="keyword != null and keyword != ''">
+                <choose>
+                    <when test="searchType == 'id'">
+                        and user_id ilike concat('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'email'">
+                        and email ilike concat('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'phone'">
+                        and phone ilike concat('%', #{keyword}, '%')
+                    </when>
+                    <otherwise>
+                        and member_name ilike concat('%', #{keyword}, '%')
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+        order by member_id desc
+        limit #{size}
+        offset #{offset}
+    </select>
+
+    <!-- 회원 상태 변경 -->
+    <update id="updateMemberStatus">
+        update app_member
+        set status = #{status},
+            updated_at = current_timestamp
+        where member_id = #{memberId}
+    </update>
+    
+    <!-- 회원 상세 조회 -->
+	<select id="findMemberDetail"
+	        parameterType="long"
+	        resultType="com.ev.dto.admin.EvAdminMemberDetailDTO">
+	
+	    select
+	          m.member_id as memberId
+	        , m.user_id as userId
+	        , m.member_name as memberName
+	        , m.nickname as nickname
+	        , m.phone as phone
+	        , m.email as email
+	        , m.user_type as userType
+	        , m.login_type as loginType
+	        , m.status as status
+	        , m.last_login_at as lastLoginAt
+	        , m.created_at as createdAt
+	        , m.updated_at as updatedAt
+	
+	        , (
+	            select count(*)
+	            from vehicle v
+	            where v.member_id = m.member_id
+	              and v.is_deleted = false
+	          ) as vehicleCount
+	
+	        , (
+	            select count(*)
+	            from reservation r
+	            where r.member_id = m.member_id
+	          ) as reservationCount
+	
+	        , (
+	            select count(*)
+	            from charging_session cs
+	            where cs.member_id = m.member_id
+	              and cs.status = '완료'
+	          ) as completedSessionCount
+	
+	        , (
+	            select coalesce(sum(cs.actual_cost), 0)
+	            from charging_session cs
+	            where cs.member_id = m.member_id
+	              and cs.status = '완료'
+	          ) as totalPaymentAmount
+	
+	    from app_member m
+	    where m.member_id = #{memberId}
+	
+	</select>
+	
+	<select id="findMemberVehicleList"
+	        resultType="com.ev.dto.admin.EvAdminMemberVehicleDTO">
+	    select
+	          v.vehicle_id as vehicleId
+	        , v.vehicle_nickname as vehicleNickname
+	        , v.plate_number as plateNumber
+	        , v.is_default as isDefault
+	        , v.created_at as createdAt
+	        , vm.manufacturer as manufacturer
+	        , vm.model_name as modelName
+	    from vehicle v
+	    join vehicle_model vm
+	      on v.model_id = vm.model_id
+	    where v.member_id = #{memberId}
+	      and v.is_deleted = false
+	    order by v.is_default desc, v.created_at desc
+	</select>
+	
+	<select id="findMemberReservationList"
+	        resultType="com.ev.dto.admin.EvAdminMemberReservationDTO">
+	    select
+	          r.reservation_id as reservationId
+	        , cs.station_name as stationName
+	        , c.charger_name as chargerName
+	        , v.vehicle_nickname as vehicleNickname
+	        , vm.model_name as modelName
+	        , r.start_time as startTime
+	        , r.end_time as endTime
+	        , r.status as status
+	        , r.estimated_cost as estimatedCost
+	    from reservation r
+	    join charger c on r.charger_id = c.charger_id
+	    join charging_station cs on c.station_id = cs.station_id
+	    join vehicle v on r.vehicle_id = v.vehicle_id
+	    join vehicle_model vm on v.model_id = vm.model_id
+	    where r.member_id = #{memberId}
+	    order by r.created_at desc
+	</select>
+	
+	<select id="findMemberChargingList"
+	        resultType="com.ev.dto.admin.EvAdminMemberChargingDTO">
+	    select
+	          cs.session_id as sessionId
+	        , cs.reservation_id as reservationId
+	        , st.station_name as stationName
+	        , c.charger_name as chargerName
+	        , v.vehicle_nickname as vehicleNickname
+	        , vm.model_name as modelName
+	        , cs.actual_start_time as actualStartTime
+	        , cs.actual_end_time as actualEndTime
+	        , cs.actual_kwh as actualKwh
+	        , cs.actual_cost as actualCost
+	        , cs.status as status
+	    from charging_session cs
+	    join charger c on cs.charger_id = c.charger_id
+	    join charging_station st on c.station_id = st.station_id
+	    join vehicle v on cs.vehicle_id = v.vehicle_id
+	    join vehicle_model vm on v.model_id = vm.model_id
+	    where cs.member_id = #{memberId}
+	    order by cs.actual_start_time desc
+	</select>
+	
+	<select id="findMemberPaymentList"
+	        resultType="com.ev.dto.admin.EvAdminMemberPaymentDTO">
+	    select
+	          cs.session_id as sessionId
+	        , cs.reservation_id as reservationId
+	        , st.station_name as stationName
+	        , cs.actual_kwh as actualKwh
+	        , cs.actual_cost as actualCost
+	        , cs.actual_end_time as paidAt
+	        , cs.status as status
+	    from charging_session cs
+	    join charger c on cs.charger_id = c.charger_id
+	    join charging_station st on c.station_id = st.station_id
+	    where cs.member_id = #{memberId}
+	      and cs.status = '완료'
+	    order by cs.actual_end_time desc
+	</select>
+
+</mapper>

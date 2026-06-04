@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <!DOCTYPE html>
 <html>
@@ -28,8 +30,8 @@
                     <p>EV Charge 서비스 운영 현황을 한눈에 확인하고 관리할 수 있습니다.</p>
                 </div>
 
-                <form action="/admin/dashboard" method="get" class="date-box">
-                    <input type="date" name="date" value="2026-05-20">
+                <form action="${pageContext.request.contextPath}/admin/dashboard" method="get" class="date-box">
+                    <input type="date" name="date" value="${selectedDate}" onchange="this.form.submit()">
                 </form>
             </section>
 
@@ -38,26 +40,34 @@
 
                 <article class="summary-card">
                     <span>전체 회원 수</span>
-                    <strong>28,745명</strong>
-                    <p>어제 대비 +318</p>
+                    <strong>
+                        <fmt:formatNumber value="${dashboard.totalMemberCount}" pattern="#,###"/>명
+                    </strong>
+                    <p>선택일 신규 +<fmt:formatNumber value="${dashboard.memberIncreaseCount}" pattern="#,###"/></p>
                 </article>
 
                 <article class="summary-card">
                     <span>전체 충전소 수</span>
-                    <strong>156개</strong>
-                    <p>어제 대비 +1</p>
+                    <strong>
+                        <fmt:formatNumber value="${dashboard.totalStationCount}" pattern="#,###"/>개
+                    </strong>
+                    <p>선택일 신규 +<fmt:formatNumber value="${dashboard.stationIncreaseCount}" pattern="#,###"/></p>
                 </article>
 
                 <article class="summary-card">
                     <span>전체 충전기 수</span>
-                    <strong>1,248대</strong>
-                    <p>어제 대비 +8</p>
+                    <strong>
+                        <fmt:formatNumber value="${dashboard.totalChargerCount}" pattern="#,###"/>대
+                    </strong>
+                    <p>선택일 신규 +<fmt:formatNumber value="${dashboard.chargerIncreaseCount}" pattern="#,###"/></p>
                 </article>
 
                 <article class="summary-card">
-                    <span>오늘 예약 수</span>
-                    <strong>342건</strong>
-                    <p>어제 대비 +27</p>
+                    <span>선택일 예약 수</span>
+                    <strong>
+                        <fmt:formatNumber value="${dashboard.todayReservationCount}" pattern="#,###"/>건
+                    </strong>
+                    <p>전일 대비 ${dashboard.reservationIncreaseCount}</p>
                 </article>
 
             </section>
@@ -76,39 +86,47 @@
                         <div>
                             <span class="status-icon green">✓</span>
                             <p>사용 가능</p>
-                            <strong class="green-text">856대</strong>
-                            <em>68.6%</em>
+                            <strong class="green-text">
+                                <fmt:formatNumber value="${dashboard.availableChargerCount}" pattern="#,###"/>대
+                            </strong>
+                            <em>${dashboard.availableChargerRate}%</em>
                         </div>
 
                         <div>
                             <span class="status-icon blue">■</span>
                             <p>사용중</p>
-                            <strong class="blue-text">274대</strong>
-                            <em>22.0%</em>
+                            <strong class="blue-text">
+                                <fmt:formatNumber value="${dashboard.chargingChargerCount}" pattern="#,###"/>대
+                            </strong>
+                            <em>${dashboard.chargingChargerRate}%</em>
                         </div>
 
                         <div>
                             <span class="status-icon orange">⌚</span>
                             <p>예약됨</p>
-                            <strong class="orange-text">68대</strong>
-                            <em>5.5%</em>
+                            <strong class="orange-text">
+                                <fmt:formatNumber value="${dashboard.reservedChargerCount}" pattern="#,###"/>대
+                            </strong>
+                            <em>${dashboard.reservedChargerRate}%</em>
                         </div>
 
                         <div>
                             <span class="status-icon red">!</span>
                             <p>점검중/고장</p>
-                            <strong class="red-text">50대</strong>
-                            <em>4.0%</em>
+                            <strong class="red-text">
+                                <fmt:formatNumber value="${dashboard.troubleChargerCount}" pattern="#,###"/>대
+                            </strong>
+                            <em>${dashboard.troubleChargerRate}%</em>
                         </div>
 
                     </div>
                 </article>
 
-                <!-- 오늘 예약 현황 -->
+                <!-- 선택일 예약 현황 -->
                 <article class="dashboard-card">
                     <div class="card-header">
-                        <h2>오늘 예약 현황</h2>
-                        <a href="/admin/reservation/list">전체 보기</a>
+                        <h2>선택일 예약 현황</h2>
+                        <a href="${pageContext.request.contextPath}/admin/reservation/list">전체 보기</a>
                     </div>
 
                     <table class="admin-table">
@@ -124,50 +142,30 @@
                         </thead>
 
                         <tbody>
-                            <tr>
-                                <td>김민수</td>
-                                <td>아이오닉 5</td>
-                                <td>부산 사상 EV 충전소</td>
-                                <td>DC콤보 02</td>
-                                <td>09:00 ~ 10:00</td>
-                                <td><span class="table-badge reserved">예약 확정</span></td>
-                            </tr>
+                            <c:choose>
+                                <c:when test="${empty dashboard.todayReservationList}">
+                                    <tr>
+                                        <td colspan="6">선택한 날짜의 예약 내역이 없습니다.</td>
+                                    </tr>
+                                </c:when>
 
-                            <tr>
-                                <td>이소연</td>
-                                <td>EV6</td>
-                                <td>서면 EV 충전소</td>
-                                <td>DC콤보 01</td>
-                                <td>10:30 ~ 11:30</td>
-                                <td><span class="table-badge reserved">예약 확정</span></td>
-                            </tr>
-
-                            <tr>
-                                <td>박정훈</td>
-                                <td>테슬라 모델 3</td>
-                                <td>해운대 센텀 충전소</td>
-                                <td>DC콤보 03</td>
-                                <td>11:00 ~ 12:00</td>
-                                <td><span class="table-badge reserved">예약 확정</span></td>
-                            </tr>
-
-                            <tr>
-                                <td>최지은</td>
-                                <td>코나 EV</td>
-                                <td>동래구 공영 충전소</td>
-                                <td>DC콤보 02</td>
-                                <td>13:00 ~ 14:00</td>
-                                <td><span class="table-badge reserved">예약 확정</span></td>
-                            </tr>
-
-                            <tr>
-                                <td>정하늘</td>
-                                <td>아이오닉 6</td>
-                                <td>수영강변 공영 충전소</td>
-                                <td>DC콤보 01</td>
-                                <td>14:30 ~ 15:30</td>
-                                <td><span class="table-badge reserved">예약 확정</span></td>
-                            </tr>
+                                <c:otherwise>
+                                    <c:forEach var="reservation" items="${dashboard.todayReservationList}">
+                                        <tr>
+                                            <td>${reservation.memberName}</td>
+                                            <td>${reservation.modelName}</td>
+                                            <td>${reservation.stationName}</td>
+                                            <td>${reservation.chargerName}</td>
+                                            <td>${reservation.reservationTimeText}</td>
+                                            <td>
+                                                <span class="table-badge ${reservation.statusClass}">
+                                                    ${reservation.statusText}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </c:forEach>
+                                </c:otherwise>
+                            </c:choose>
                         </tbody>
                     </table>
                 </article>
@@ -181,7 +179,7 @@
                 <article class="dashboard-card">
                     <div class="card-header">
                         <h2>충전소 운영 현황</h2>
-                        <a href="/admin/station/list">전체 보기</a>
+                        <a href="${pageContext.request.contextPath}/admin/station/list">전체 보기</a>
                     </div>
 
                     <table class="admin-table">
@@ -196,45 +194,32 @@
                         </thead>
 
                         <tbody>
-                            <tr>
-                                <td>부산 사상 EV 충전소</td>
-                                <td>부산 사상구 괘법동 518-1</td>
-                                <td>12</td>
-                                <td>8대</td>
-                                <td><span class="dot green-dot"></span>정상 운영</td>
-                            </tr>
+                            <c:choose>
+                                <c:when test="${empty dashboard.stationStatusList}">
+                                    <tr>
+                                        <td colspan="5">등록된 충전소가 없습니다.</td>
+                                    </tr>
+                                </c:when>
 
-                            <tr>
-                                <td>부산역 환승센터</td>
-                                <td>부산 동구 중앙대로 206</td>
-                                <td>10</td>
-                                <td>7대</td>
-                                <td><span class="dot green-dot"></span>정상 운영</td>
-                            </tr>
-
-                            <tr>
-                                <td>서면 EV 충전소</td>
-                                <td>부산 부산진구 중앙대로 672</td>
-                                <td>8</td>
-                                <td>5대</td>
-                                <td><span class="dot green-dot"></span>정상 운영</td>
-                            </tr>
-
-                            <tr>
-                                <td>해운대 센텀 충전소</td>
-                                <td>부산 해운대구 센텀중앙로 55</td>
-                                <td>10</td>
-                                <td>6대</td>
-                                <td><span class="dot green-dot"></span>정상 운영</td>
-                            </tr>
-
-                            <tr>
-                                <td>동래구 공영 충전소</td>
-                                <td>부산 동래구 명륜동 530-1</td>
-                                <td>6</td>
-                                <td>3대</td>
-                                <td><span class="dot orange-dot"></span>일부 점검</td>
-                            </tr>
+                                <c:otherwise>
+                                    <c:forEach var="station" items="${dashboard.stationStatusList}">
+                                        <tr>
+                                            <td>${station.stationName}</td>
+                                            <td>${station.address}</td>
+                                            <td>
+                                                <fmt:formatNumber value="${station.totalChargerCount}" pattern="#,###"/>
+                                            </td>
+                                            <td>
+                                                <fmt:formatNumber value="${station.availableChargerCount}" pattern="#,###"/>대
+                                            </td>
+                                            <td>
+                                                <span class="dot ${station.dotClass}"></span>
+                                                ${station.operationText}
+                                            </td>
+                                        </tr>
+                                    </c:forEach>
+                                </c:otherwise>
+                            </c:choose>
                         </tbody>
                     </table>
                 </article>
@@ -246,32 +231,12 @@
                     </div>
 
                     <div class="notice-list">
-
-                        <div>
-                            <strong>서면 EV 충전소 DC콤보 04가 정상으로 복구되었습니다.</strong>
-                            <span>10분 전</span>
-                        </div>
-
-                        <div>
-                            <strong>오늘 예약 건수가 300건을 초과했습니다.</strong>
-                            <span>1시간 전</span>
-                        </div>
-
-                        <div>
-                            <strong>해운대 센텀 충전소 DC콤보 05 점검이 필요합니다.</strong>
-                            <span>2시간 전</span>
-                        </div>
-
-                        <div>
-                            <strong>신규 회원 25명이 가입했습니다.</strong>
-                            <span>3시간 전</span>
-                        </div>
-
-                        <div>
-                            <strong>오늘 매출이 1,200만원을 달성했습니다.</strong>
-                            <span>4시간 전</span>
-                        </div>
-
+                        <c:forEach var="notice" items="${dashboard.noticeList}">
+                            <div>
+                                <strong>${notice.message}</strong>
+                                <span>${notice.timeText}</span>
+                            </div>
+                        </c:forEach>
                     </div>
                 </article>
 

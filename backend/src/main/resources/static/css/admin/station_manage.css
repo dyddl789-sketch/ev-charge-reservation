@@ -1,658 +1,368 @@
-/* =========================
-   Reset
-========================= */
-
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    background: #f7f8fa;
-    color: #111827;
-    font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
-}
-
-a {
-    color: inherit;
-    text-decoration: none;
-}
-
-button,
-input,
-select {
-    font-family: inherit;
-}
-
-/* =========================
-   Page / Header
-========================= */
-
-.admin-page {
-    min-height: 100vh;
-    background: #f7f8fa;
-}
-
-.admin-top-header {
-    height: 68px;
-    background: #ffffff;
-    border-bottom: 1px solid #e5e7eb;
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    align-items: center;
-    padding: 0 30px;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-}
-
-.admin-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #f05a00;
-}
-
-.logo-icon {
-    width: 34px;
-    height: 34px;
-    background: #f05a00;
-    color: #ffffff;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 19px;
-    font-weight: 800;
-}
-
-.logo-text {
-    font-size: 24px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-}
-
-.admin-top-nav {
-    height: 100%;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 42px;
-}
-
-.admin-top-nav a {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    color: #333333;
-    font-size: 15px;
-    font-weight: 600;
-    border-bottom: 3px solid transparent;
-}
-
-.admin-top-nav a:hover,
-.admin-top-nav a.active {
-    color: #f05a00;
-}
-
-.admin-top-nav a.active {
-    border-bottom-color: #f05a00;
-    font-weight: 800;
-}
-
-/* =========================
-   Layout / Sidebar
-========================= */
-
-.admin-layout {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    min-height: calc(100vh - 68px);
-}
-
-.admin-sidebar {
-    background: #ffffff;
-    border-right: 1px solid #e5e7eb;
-    padding: 22px 16px;
-}
-
-.admin-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-}
-
-.dashboard-link {
-    height: 44px;
-    padding: 0 14px;
-    display: flex;
-    align-items: center;
-    color: #333333;
-    font-size: 15px;
-    font-weight: 800;
-    border: 1px solid transparent;
-}
-
-.dashboard-link.active,
-.dashboard-link:hover {
-    color: #f05a00;
-    background: #fff7ed;
-    border-color: #fed7aa;
-}
-
-.menu-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.menu-group p {
-    margin: 0 0 4px;
-    padding: 0 8px;
-    color: #111827;
-    font-size: 15px;
-    font-weight: 800;
-}
-
-.menu-group a {
-    height: 36px;
-    padding: 0 14px;
-    display: flex;
-    align-items: center;
-    color: #555555;
-    font-size: 14px;
-    font-weight: 500;
-    border: 1px solid transparent;
-}
-
-.menu-group a:hover,
-.menu-group a.active {
-    color: #f05a00;
-    background: #fff7ed;
-}
-
-/* =========================
-   Content
-========================= */
-
-.admin-content {
-    min-width: 0;
-    padding: 32px 36px 60px;
-}
-
-.admin-title-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 24px;
-}
-
-.admin-title-row h1 {
-    margin: 0 0 8px;
-    color: #111827;
-    font-size: 34px;
-    font-weight: 800;
-    letter-spacing: -1px;
-}
-
-.admin-title-row p {
-    margin: 0;
-    color: #666666;
-    font-size: 15px;
-}
-
-.list-btn {
-    height: 44px;
-    padding: 0 20px;
-    background: #ffffff;
-    border: 1px solid #f05a00;
-    color: #f05a00;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-}
-
-.list-btn:hover {
-    background: #fff7ed;
-}
-
-/* =========================
-   Manage Layout
-========================= */
-
-.manage-layout {
-    display: grid;
-    grid-template-columns: 1fr 360px;
-    gap: 18px;
-}
-
-.station-form,
-.manage-guide {
+/* 충전소 등록/관리 폼 카드 */
+.station-form-card,
+.charger-form-card {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    padding: 28px;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+    border-radius: 18px;
+    padding: 26px;
+    margin-bottom: 22px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
-.form-section {
-    margin-bottom: 32px;
+/* 섹션 제목 */
+.form-section-title {
+    margin-bottom: 22px;
 }
 
-.form-section h2,
-.manage-guide h2 {
-    margin: 0 0 20px;
-    color: #111827;
-    font-size: 22px;
+.form-section-title h2 {
+    margin: 0;
+    font-size: 20px;
     font-weight: 800;
+    color: #111827;
 }
 
-.form-grid {
+.form-section-title p {
+    margin: 6px 0 0;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.form-section-title.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+/* 충전소 기본 정보 그리드 */
+.station-form-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 18px 20px;
 }
 
-.form-group.full {
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-field.full {
     grid-column: 1 / -1;
 }
 
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: #333333;
-    font-size: 14px;
+.form-field label {
+    font-size: 13px;
     font-weight: 700;
+    color: #374151;
 }
 
-.form-group input,
-.form-group select {
-    width: 100%;
+.form-field input,
+.form-field select {
     height: 44px;
-    border: 1px solid #dcdfe6;
-    padding: 0 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 0 14px;
+    font-size: 14px;
+    color: #111827;
+    background: #ffffff;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+/* 충전기 추가 버튼 */
+.add-charger-btn {
+    height: 42px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 12px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.add-charger-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+/* 충전기 테이블 */
+.charger-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.charger-table {
+    width: 100%;
+    min-width: 920px;
+    border-collapse: collapse;
+}
+
+.charger-table th {
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 13px 12px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #475569;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.charger-table td {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 12px;
+    vertical-align: middle;
+}
+
+.charger-table input,
+.charger-table select {
+    width: 100%;
+    height: 40px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 0 10px;
+    font-size: 13px;
+    color: #111827;
     background: #ffffff;
     outline: none;
 }
 
-.form-group input:focus,
-.form-group select:focus {
-    border-color: #f05a00;
-    box-shadow: 0 0 0 2px rgba(240, 90, 0, 0.08);
+.charger-table input:focus,
+.charger-table select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-.help-text {
-    margin: 6px 0 0;
-    color: #777777;
-    font-size: 12px;
+/* 충전기 삭제 버튼 */
+.remove-charger-btn {
+    width: 58px;
+    height: 36px;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    background: #fff1f2;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
 }
 
-.address-row {
+.remove-charger-btn:hover {
+    background: #fee2e2;
+}
+
+/* 도움말 */
+.form-help-text {
+    margin: 14px 0 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* 하단 버튼 */
+.form-action-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+    margin-bottom: 30px;
+}
+
+.cancel-btn,
+.submit-btn {
+    min-width: 110px;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.cancel-btn {
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #374151;
+}
+
+.cancel-btn:hover {
+    background: #f9fafb;
+}
+
+.submit-btn {
+    border: none;
+    background: #111827;
+    color: #ffffff;
+}
+
+.submit-btn:hover {
+    background: #020617;
+}
+
+/* 목록으로 버튼 보정 */
+.detail-btn {
+    height: 42px;
+    padding: 0 16px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.detail-btn:hover {
+    background: #f9fafb;
+}
+
+/* 반응형 */
+@media (max-width: 900px) {
+    .station-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-section-title.row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .add-charger-btn {
+        width: 100%;
+    }
+
+    .form-action-row {
+        flex-direction: column-reverse;
+    }	
+
+    .cancel-btn,
+    .submit-btn {
+        width: 100%;
+    }
+}
+
+/* 수정 화면 상단 요약 카드 */
+.station-info-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.station-info-summary article {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+}
+
+.station-info-summary span {
+    display: block;
+    margin-bottom: 8px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.station-info-summary strong {
+    color: #f97316;
+    font-size: 24px;
+    font-weight: 900;
+}
+
+/* 주소 검색 입력 줄 */
+.address-input-row {
     display: flex;
     gap: 10px;
 }
 
-.address-row input {
+.address-input-row input {
     flex: 1;
 }
 
 .address-btn {
     width: 110px;
     height: 44px;
-    border: 1px solid #f05a00;
-    background: #ffffff;
-    color: #f05a00;
+    border: none;
+    border-radius: 12px;
+    background: #f97316;
+    color: #ffffff;
+    font-size: 14px;
     font-weight: 800;
     cursor: pointer;
 }
 
 .address-btn:hover {
-    background: #fff7ed;
+    background: #ea580c;
 }
 
-/* =========================
-   Charger
-========================= */
-
-.charger-form-box {
-    border: 1px solid #eeeeee;
-    background: #f9fafb;
-    padding: 20px;
+/* 읽기 전용 필드 */
+.form-field input[readonly] {
+    background: #f8fafc;
+    color: #475569;
 }
 
-.charger-add-area {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 18px;
-}
-
-.add-charger-btn {
-    height: 42px;
-    padding: 0 18px;
-    border: 1px solid #f05a00;
-    background: #f05a00;
-    color: #ffffff;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.add-charger-btn:hover {
-    background: #d94f00;
-}
-
-.charger-list-preview {
-    margin-top: 20px;
-}
-
-.charger-list-preview h3 {
-    margin: 0 0 12px;
-    color: #111827;
-    font-size: 18px;
-    font-weight: 800;
-}
-
-.charger-list-preview table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-
-.charger-list-preview th {
-    height: 42px;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    color: #555555;
-    font-weight: 800;
-}
-
-.charger-list-preview td {
-    height: 46px;
-    border: 1px solid #e5e7eb;
-    text-align: center;
-    color: #333333;
-}
-
-.status-badge {
-    height: 28px;
-    padding: 0 10px;
+/* 충전기 ID 배지 */
+.charger-id-text {
     display: inline-flex;
     align-items: center;
-    font-size: 12px;
-    font-weight: 800;
-}
-
-.status-badge.active {
-    background: #eaf7ee;
-    color: #138a43;
-}
-
-/* =========================
-   Notice / Buttons / Guide
-========================= */
-
-.form-notice {
-    padding: 14px 16px;
-    background: #fff7ed;
-    border: 1px solid #fed7aa;
-    color: #9a3412;
-    font-size: 13px;
-    line-height: 1.7;
-}
-
-.form-notice p {
-    margin: 0;
-}
-
-.form-buttons {
-    display: flex;
     justify-content: center;
-    gap: 12px;
-    margin-top: 28px;
-    padding-top: 28px;
-    border-top: 1px solid #eeeeee;
-}
-
-.submit-btn,
-.reset-form-btn {
-    width: 140px;
-    height: 44px;
-    border: 1px solid #dcdfe6;
-    background: #ffffff;
-    color: #333333;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.submit-btn {
-    border-color: #f05a00;
-    background: #f05a00;
-    color: #ffffff;
-}
-
-.submit-btn:hover {
-    background: #d94f00;
-}
-
-.reset-form-btn:hover {
-    border-color: #f05a00;
-    color: #f05a00;
-}
-
-.manage-guide ul {
-    margin: 0;
-    padding-left: 20px;
-    color: #555555;
-    font-size: 14px;
-    line-height: 1.9;
-}
-
-.guide-box {
-    margin-top: 24px;
-    padding: 16px;
-    background: #f9fafb;
-    border: 1px solid #eeeeee;
-}
-
-.guide-box strong {
-    display: block;
-    margin-bottom: 8px;
-    color: #111827;
-}
-
-.guide-box p {
-    margin: 0;
-    color: #666666;
+    min-width: 48px;
+    height: 30px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #334155;
     font-size: 13px;
-    line-height: 1.6;
+    font-weight: 800;
 }
 
-/* =========================
-   Responsive
-========================= */
+.charger-id-text.new {
+    background: #eff6ff;
+    color: #2563eb;
+}
 
-@media (max-width: 1300px) {
-    .manage-layout {
-        grid-template-columns: 1fr;
-    }
+/* 수정/등록 버튼 시각 구분 */
+.submit-btn.update-mode {
+    background: #f97316;
+}
+
+.submit-btn.update-mode:hover {
+    background: #ea580c;
+}
+
+.submit-btn.register-mode {
+    background: #111827;
+}
+
+.submit-btn.register-mode:hover {
+    background: #020617;
 }
 
 @media (max-width: 900px) {
-    .admin-top-header {
-        grid-template-columns: 1fr;
-        height: auto;
-        padding: 18px;
-        gap: 14px;
-    }
-
-    .admin-top-nav {
-        justify-content: flex-start;
-        flex-wrap: wrap;
-        gap: 16px;
-    }
-
-    .admin-layout {
+    .station-info-summary {
         grid-template-columns: 1fr;
     }
 
-    .admin-sidebar {
-        border-right: none;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .admin-content {
-        padding: 24px 16px 40px;
-    }
-
-    .admin-title-row {
-        flex-direction: column;
-        gap: 14px;
-    }
-
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .address-row {
+    .address-input-row {
         flex-direction: column;
     }
 
     .address-btn {
         width: 100%;
     }
-
-    .charger-list-preview {
-        overflow-x: auto;
-    }
-
-    .charger-list-preview table {
-        min-width: 700px;
-    }
-}
-
-
-/* =========================
-   Typography Consistency
-   - admin.css의 공통 기준값과 맞춤
-========================= */
-
-.page-title-row h1,
-.sales-title-row h1,
-.detail-title-row h1 {
-    color: var(--admin-text-main);
-    font-size: var(--admin-title-size);
-    font-weight: var(--admin-title-weight);
-    letter-spacing: -0.8px;
-}
-
-.page-title-row p,
-.sales-title-row p,
-.detail-title-row p {
-    color: var(--admin-text-sub);
-    font-size: var(--admin-body-size);
-    font-weight: var(--admin-body-weight);
-}
-
-.summary-card span,
-.member-summary-card span,
-.station-summary-card span,
-.reservation-summary-card span,
-.usage-summary-card span,
-.summary-row span,
-.overview-item span {
-    color: var(--admin-text-sub);
-    font-size: var(--admin-label-size);
-    font-weight: var(--admin-label-weight);
-}
-
-.summary-card strong,
-.member-summary-card strong,
-.station-summary-card strong,
-.reservation-summary-card strong,
-.usage-summary-card strong,
-.summary-row strong {
-    color: var(--admin-primary);
-    font-size: var(--admin-number-size);
-    font-weight: var(--admin-number-weight);
-    letter-spacing: -0.5px;
-}
-
-.admin-table th,
-.member-table th,
-.station-table th,
-.reservation-table th,
-.usage-table th,
-.recent-usage-table th,
-.rank-table th,
-.sales-history-table th,
-.history-table th,
-.charger-list-preview th {
-    color: var(--admin-text-head);
-    font-size: var(--admin-table-size);
-    font-weight: var(--admin-table-head-weight);
-}
-
-.admin-table td,
-.member-table td,
-.station-table td,
-.reservation-table td,
-.usage-table td,
-.recent-usage-table td,
-.rank-table td,
-.sales-history-table td,
-.history-table td,
-.charger-list-preview td {
-    color: var(--admin-text-body);
-    font-size: var(--admin-table-size);
-    font-weight: var(--admin-table-body-weight);
-}
-
-.card-header h2,
-.usage-card-header h2,
-.detail-card h2,
-.status-history-card h2,
-.form-section h2,
-.manage-guide h2,
-.charger-list-preview h3,
-.side-card-header h2 {
-    color: var(--admin-text-main);
-    font-size: var(--admin-section-size);
-    font-weight: var(--admin-section-weight);
-}
-
-button,
-.back-btn,
-.list-btn,
-.add-station-btn,
-.detail-btn,
-.edit-btn,
-.cancel-btn,
-.start-btn,
-.receipt-btn,
-.delete-btn,
-.withdraw-btn,
-.restore-btn,
-.submit-btn,
-.reset-form-btn,
-.add-charger-btn,
-.address-btn,
-.filter-btn {
-    font-size: var(--admin-button-size);
-    font-weight: var(--admin-button-weight);
-}
-
-.status-badge,
-.type-badge,
-.member-type,
-.table-badge,
-.rank-badge {
-    font-size: var(--admin-badge-size);
-    font-weight: var(--admin-badge-weight);
-}
-
-.point-text,
-.up-text,
-.orange-text,
-.cost-text,
-.auth-code {
-    color: var(--admin-primary) !important;
 }

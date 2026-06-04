@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.user.EvSavedLocationDAO">
+
+    <!--
+        로그인한 회원의 저장 위치 목록 조회
+
+        사용 위치:
+        GET /station/saved-locations
+
+        정렬 기준:
+        1. 기본 위치(is_default = true)를 가장 위에 표시
+        2. 그 외에는 등록 순서(location_id) 기준
+    -->
+    <select id="findSavedLocationList"
+            resultType="com.ev.dto.map.EvSavedLocationDTO">
+        select
+              location_id
+            , member_id
+            , location_name
+            , location_type
+            , address
+            , latitude
+            , longitude
+            , is_default
+          from saved_location
+         where member_id = #{memberId}
+         order by
+              is_default desc
+            , location_id asc
+    </select>
+
+
+    <!--
+        저장 위치 등록
+
+        주의:
+        saved_location 테이블에는 location geography(Point, 4326) 컬럼이 not null이다.
+        그래서 latitude / longitude만 저장하면 안 되고,
+        ST_SetSRID(ST_MakePoint(경도, 위도), 4326)::geography 형태로 location 컬럼도 같이 저장해야 한다.
+
+        ST_MakePoint 순서:
+        ST_MakePoint(longitude, latitude)
+    -->
+    <insert id="insertSavedLocation"
+            parameterType="com.ev.dto.map.EvSavedLocationDTO">
+        insert into saved_location (
+              member_id
+            , location_name
+            , location_type
+            , address
+            , latitude
+            , longitude
+            , location
+            , is_default
+        )
+        values (
+              #{memberId}
+            , #{locationName}
+            , coalesce(#{locationType}, 'CUSTOM')
+            , #{address}
+            , #{latitude}
+            , #{longitude}
+            , ST_SetSRID(ST_MakePoint(#{longitude}, #{latitude}), 4326)::geography
+            , coalesce(#{isDefault}, false)
+        )
+    </insert>
+
+
+    <!--
+        기본 위치 초기화
+
+        새 기본 위치를 설정하기 전에
+        해당 회원의 모든 저장 위치를 기본 위치 false로 바꾼다.
+    -->
+    <update id="clearDefaultLocation">
+        update saved_location
+           set is_default = false
+             , updated_at = current_timestamp
+         where member_id = #{memberId}
+    </update>
+
+
+    <!--
+        기본 위치 설정
+
+        clearDefaultLocation 실행 후,
+        선택한 위치만 기본 위치 true로 변경한다.
+    -->
+    <update id="setDefaultLocation">
+        update saved_location
+           set is_default = true
+             , updated_at = current_timestamp
+         where member_id = #{memberId}
+           and location_id = #{locationId}
+    </update>
+
+
+    <!--
+        저장 위치 삭제
+
+        로그인한 회원의 위치만 삭제되도록
+        member_id와 location_id를 함께 조건으로 사용한다.
+    -->
+    <delete id="deleteSavedLocation">
+        delete from saved_location
+         where member_id = #{memberId}
+           and location_id = #{locationId}
+    </delete>
+
+</mapper>

@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <!DOCTYPE html>
 <html>
@@ -8,341 +10,261 @@
 <title>EV Charge 예약 현황</title>
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/admin/admin.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/admin/reservation.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/admin/reservation_list.css">
 </head>
 <body>
 
 <div class="admin-page">
+
     <%@ include file="/WEB-INF/views/common/admin_header.jsp" %>
+
     <div class="admin-layout">
+
         <%@ include file="/WEB-INF/views/common/admin_sidebar.jsp" %>
 
-        <!-- 본문 -->
         <main class="admin-content">
 
-            <section class="admin-title-row">
-                <div>
-                    <h1>예약 현황</h1>
-                    <p>전체 예약 진행 상태와 인증, 취소, 노쇼 현황을 확인하고 관리합니다.</p>
+        <div class="page-header">
+            <div>
+                <h1>예약 현황</h1>
+                <p>전체 충전 예약 상태와 예약 이슈를 관리합니다.</p>
+            </div>
+        </div>
+
+        <!-- 예약 요약 카드 -->
+        <div class="dashboard-stats">
+
+            <div class="stat-card">
+                <div class="stat-label">전체 예약</div>
+                <div class="stat-value">${reservationPage.summary.totalCount}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">예약완료</div>
+                <div class="stat-value">${reservationPage.summary.reservedCount}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">인증완료</div>
+                <div class="stat-value">${reservationPage.summary.verifiedCount}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">충전중</div>
+                <div class="stat-value">${reservationPage.summary.chargingCount}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">완료</div>
+                <div class="stat-value">${reservationPage.summary.completedCount}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">취소</div>
+                <div class="stat-value">${reservationPage.summary.canceledCount}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">노쇼</div>
+                <div class="stat-value">${reservationPage.summary.noShowCount}</div>
+            </div>
+
+        </div>
+
+        <!-- 오늘 예약 이슈 -->
+        <section class="issue-panel">
+            <div class="section-title">
+                <h2>오늘 예약 이슈</h2>
+            </div>
+
+            <div class="issue-grid">
+
+                <div class="issue-card">
+                    <span class="issue-title">인증 대기</span>
+                    <strong>${reservationPage.issue.waitingAuthCount}</strong>
                 </div>
 
-                <form action="/admin/reservation/list" method="get" class="date-box">
-                    <input type="date" id="reservationDate" name="date" value="2026-05-20">
-                </form>
-            </section>
-
-            <!-- 요약 카드 -->
-            <section class="reservation-summary">
-
-                <article class="reservation-summary-card">
-                    <span>전체 예약 수</span>
-                    <strong>1,248건</strong>
-                    <p>오늘 기준 전체 예약</p>
-                </article>
-
-                <article class="reservation-summary-card">
-                    <span>예약완료</span>
-                    <strong class="orange-text">312건</strong>
-                    <p>인증 대기 상태</p>
-                </article>
-
-                <article class="reservation-summary-card">
-                    <span>인증완료</span>
-                    <strong class="blue-text">186건</strong>
-                    <p>충전 시작 대기</p>
-                </article>
-
-                <article class="reservation-summary-card">
-                    <span>충전중</span>
-                    <strong class="green-text">74건</strong>
-                    <p>현재 충전 진행</p>
-                </article>
-
-                <article class="reservation-summary-card">
-                    <span>완료</span>
-                    <strong>548건</strong>
-                    <p>충전 완료</p>
-                </article>
-
-                <article class="reservation-summary-card">
-                    <span>취소 / 노쇼</span>
-                    <strong class="red-text">128건</strong>
-                    <p>취소 96건 / 노쇼 32건</p>
-                </article>
-
-            </section>
-
-            <!-- 검색 영역 -->
-            <section class="reservation-search-card">
-
-                <div class="filter-row">
-                    <span class="filter-title">상태 필터</span>
-
-                    <button type="button" class="filter-btn active">전체</button>
-                    <button type="button" class="filter-btn">예약완료</button>
-                    <button type="button" class="filter-btn">인증완료</button>
-                    <button type="button" class="filter-btn">충전중</button>
-                    <button type="button" class="filter-btn">완료</button>
-                    <button type="button" class="filter-btn">취소</button>
-                    <button type="button" class="filter-btn">노쇼</button>
+                <div class="issue-card">
+                    <span class="issue-title">취소 건수</span>
+                    <strong>${reservationPage.issue.cancelRequestCount}</strong>
                 </div>
 
-                <div class="search-row">
-                    <div class="search-group">
-                        <label for="searchType">검색 기준</label>
-                        <select id="searchType">
-                            <option value="member">회원명</option>
-                            <option value="vehicle">차량명</option>
-                            <option value="station">충전소명</option>
-                            <option value="authCode">인증코드</option>
-                        </select>
-                    </div>
-
-                    <div class="keyword-box">
-                        <input type="text" placeholder="회원명, 차량명, 충전소명, 인증코드를 입력하세요.">
-                        <button type="button">검색</button>
-                    </div>
-
-                    <div class="search-group date">
-                        <label for="startDate">시작일</label>
-                        <input type="date" id="startDate" value="2026-05-01">
-                    </div>
-
-                    <span class="date-wave">~</span>
-
-                    <div class="search-group date">
-                        <label for="endDate">종료일</label>
-                        <input type="date" id="endDate" value="2026-05-20">
-                    </div>
+                <div class="issue-card">
+                    <span class="issue-title">예상 노쇼</span>
+                    <strong>${reservationPage.issue.expectedNoShowCount}</strong>
                 </div>
 
-            </section>
+                <div class="issue-card">
+                    <span class="issue-title">시작 지연</span>
+                    <strong>${reservationPage.issue.delayedStartCount}</strong>
+                </div>
 
-            <section class="reservation-content-grid">
+            </div>
+        </section>
 
-                <!-- 예약 목록 -->
-                <section class="reservation-table-card">
+        <!-- 검색 영역 -->
+        <section class="search-panel">
+            <form method="get"
+                  action="${pageContext.request.contextPath}/admin/reservation/list"
+                  class="search-form">
 
-                    <div class="table-top">
-                        <p>총 <strong>1,248건</strong></p>
+                <select name="status">
+                    <option value="">전체 상태</option>
+                    <option value="예약완료" ${searchDTO.status eq '예약완료' ? 'selected' : ''}>예약완료</option>
+                    <option value="인증완료" ${searchDTO.status eq '인증완료' ? 'selected' : ''}>인증완료</option>
+                    <option value="충전중" ${searchDTO.status eq '충전중' ? 'selected' : ''}>충전중</option>
+                    <option value="완료" ${searchDTO.status eq '완료' ? 'selected' : ''}>완료</option>
+                    <option value="취소" ${searchDTO.status eq '취소' ? 'selected' : ''}>취소</option>
+                    <option value="노쇼" ${searchDTO.status eq '노쇼' ? 'selected' : ''}>노쇼</option>
+                </select>
 
-                        <select>
-                            <option>10개씩 보기</option>
-                            <option>20개씩 보기</option>
-                            <option>50개씩 보기</option>
-                        </select>
-                    </div>
+                <select name="searchType">
+                    <option value="">전체 검색</option>
+                    <option value="memberName" ${searchDTO.searchType eq 'memberName' ? 'selected' : ''}>회원명</option>
+                    <option value="stationName" ${searchDTO.searchType eq 'stationName' ? 'selected' : ''}>충전소명</option>
+                    <option value="vehicleName" ${searchDTO.searchType eq 'vehicleName' ? 'selected' : ''}>차량명</option>
+                </select>
 
-                    <table class="reservation-table">
-                        <thead>
+                <input type="date" name="startDate" value="${searchDTO.startDate}">
+                <input type="date" name="endDate" value="${searchDTO.endDate}">
+
+                <input type="text"
+                       name="keyword"
+                       placeholder="검색어를 입력하세요"
+                       value="${searchDTO.keyword}">
+
+                <input type="hidden" name="size" value="${searchDTO.size}">
+
+                <button type="submit" class="btn-search">검색</button>
+            </form>
+        </section>
+
+        <!-- 예약 목록 -->
+        <section class="table-panel">
+
+            <div class="section-title">
+                <h2>예약 목록</h2>
+                <span>총 ${reservationPage.totalCount}건</span>
+            </div>
+
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>예약번호</th>
+                        <th>예약시간</th>
+                        <th>회원명</th>
+                        <th>차량</th>
+                        <th>충전소</th>
+                        <th>충전기</th>
+                        <th>SOC</th>
+                        <th>예상시간</th>
+                        <th>예상금액</th>
+                        <th>인증코드</th>
+                        <th>상태</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <c:choose>
+                        <c:when test="${empty reservationPage.reservationList}">
                             <tr>
-                                <th>예약번호</th>
-                                <th>예약일시</th>
-                                <th>회원명</th>
-                                <th>차량</th>
-                                <th>충전소</th>
-                                <th>충전기</th>
-                                <th>SOC</th>
-                                <th>예상시간</th>
-                                <th>예상비용</th>
-                                <th>인증코드</th>
-                                <th>상태</th>
-                                <th>관리</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            <tr>
-                                <td>R250519-001</td>
-                                <td>2026-05-19 09:00</td>
-                                <td>김민수</td>
-                                <td>아이오닉 5</td>
-                                <td>부산 사상 EV 충전소</td>
-                                <td>DC콤보 02</td>
-                                <td>30% → 80%</td>
-                                <td>24분</td>
-                                <td>9,675원</td>
-                                <td>A8K29Q</td>
-                                <td><span class="status-badge reserved">예약완료</span></td>
-                                <td>
-                                    <a href="/admin/reservation/detail?reservationId=1" class="detail-btn">상세</a>
-                                    <button type="button" class="cancel-btn">취소</button>
+                                <td colspan="12" class="empty-row">
+                                    조회된 예약 내역이 없습니다.
                                 </td>
                             </tr>
+                        </c:when>
 
-                            <tr>
-                                <td>R250519-002</td>
-                                <td>2026-05-19 10:30</td>
-                                <td>이소연</td>
-                                <td>EV6</td>
-                                <td>서면 EV 충전소</td>
-                                <td>DC콤보 01</td>
-                                <td>35% → 90%</td>
-                                <td>28분</td>
-                                <td>11,250원</td>
-                                <td>B4J17P</td>
-                                <td><span class="status-badge verified">인증완료</span></td>
-                                <td>
-                                    <a href="/admin/reservation/detail?reservationId=1" class="detail-btn">상세</a>
-                                    <button type="button" class="start-btn">충전시작</button>
-                                </td>
-                            </tr>
+                        <c:otherwise>
+                            <c:forEach var="reservation" items="${reservationPage.reservationList}">
+                                <tr>
+                                    <td>${reservation.reservationNo}</td>
+                                    <td>${reservation.startTimeText}</td>
+                                    <td>${reservation.memberName}</td>
+                                    <td>${reservation.vehicleName}</td>
+                                    <td>${reservation.stationName}</td>
+                                    <td>${reservation.chargerName}</td>
+                                    <td>${reservation.socText}</td>
+                                    <td>${reservation.estimatedMinutes}분</td>
+                                    <td>${reservation.estimatedCost}원</td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${empty reservation.authCode}">
+                                                -
+                                            </c:when>
+                                            <c:otherwise>
+                                                ${reservation.authCode}
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge ${reservation.statusClass}">
+                                            ${reservation.status}
+                                        </span>
+                                    </td>
+                                    <td class="action-cell">
 
-                            <tr>
-                                <td>R250519-003</td>
-                                <td>2026-05-19 11:00</td>
-                                <td>박정훈</td>
-                                <td>테슬라 모델 3</td>
-                                <td>해운대 센텀 충전소</td>
-                                <td>급속 03</td>
-                                <td>42% → 85%</td>
-                                <td>21분</td>
-                                <td>8,300원</td>
-                                <td>C6M55X</td>
-                                <td><span class="status-badge charging">충전중</span></td>
-                                <td>
-                                    <a href="/admin/reservation/detail?reservationId=1" class="detail-btn">상세</a>
-                                </td>
-                            </tr>
+                                        <c:if test="${reservation.status eq '예약완료' or reservation.status eq '인증완료'}">
+                                            <form method="post"
+                                                  action="${pageContext.request.contextPath}/admin/reservation/cancel"
+                                                  onsubmit="return confirm('예약을 취소 처리하시겠습니까?');">
+                                                <input type="hidden" name="reservationId" value="${reservation.reservationId}">
+                                                <button type="submit" class="btn-action cancel">취소</button>
+                                            </form>
+                                        </c:if>
 
-                            <tr>
-                                <td>R250519-004</td>
-                                <td>2026-05-19 12:30</td>
-                                <td>최지은</td>
-                                <td>코나 EV</td>
-                                <td>동래구 공영 충전소</td>
-                                <td>DC콤보 02</td>
-                                <td>25% → 85%</td>
-                                <td>30분</td>
-                                <td>10,800원</td>
-                                <td>D7J31K</td>
-                                <td><span class="status-badge completed">완료</span></td>
-                                <td>
-                                    <a href="/admin/reservation/detail?reservationId=1" class="detail-btn">상세</a>
-                                </td>
-                            </tr>
+                                        <c:if test="${reservation.status eq '예약완료' or reservation.status eq '인증완료'}">
+                                            <form method="post"
+                                                  action="${pageContext.request.contextPath}/admin/reservation/noshow"
+                                                  onsubmit="return confirm('노쇼 처리하시겠습니까?');">
+                                                <input type="hidden" name="reservationId" value="${reservation.reservationId}">
+                                                <button type="submit" class="btn-action noshow">노쇼</button>
+                                            </form>
+                                        </c:if>
 
-                            <tr>
-                                <td>R250519-005</td>
-                                <td>2026-05-19 13:00</td>
-                                <td>정하늘</td>
-                                <td>아이오닉 6</td>
-                                <td>수영강변 공영 충전소</td>
-                                <td>DC콤보 01</td>
-                                <td>50% → 90%</td>
-                                <td>18분</td>
-                                <td>6,750원</td>
-                                <td>E9P88L</td>
-                                <td><span class="status-badge canceled">취소</span></td>
-                                <td>
-                                    <a href="/admin/reservation/detail?reservationId=1" class="detail-btn">상세</a>
-                                    <button type="button" class="delete-btn">삭제</button>
-                                </td>
-                            </tr>
+                                        <c:if test="${reservation.status eq '인증완료'}">
+                                            <form method="post"
+                                                  action="${pageContext.request.contextPath}/admin/reservation/start"
+                                                  onsubmit="return confirm('충전중 상태로 변경하시겠습니까?');">
+                                                <input type="hidden" name="reservationId" value="${reservation.reservationId}">
+                                                <button type="submit" class="btn-action start">충전시작</button>
+                                            </form>
+                                        </c:if>
 
-                            <tr>
-                                <td>R250519-006</td>
-                                <td>2026-05-19 14:30</td>
-                                <td>강태우</td>
-                                <td>EV9</td>
-                                <td>부산 사상 EV 충전소</td>
-                                <td>DC콤보 03</td>
-                                <td>60% → 90%</td>
-                                <td>18분</td>
-                                <td>6,480원</td>
-                                <td>F2Q91M</td>
-                                <td><span class="status-badge noshow">노쇼</span></td>
-                                <td>
-                                    <a href="/admin/reservation/detail?reservationId=1" class="detail-btn">상세</a>
-                                    <button type="button" class="delete-btn">삭제</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                        </c:otherwise>
+                    </c:choose>
+                </tbody>
+            </table>
 
-                    <div class="pagination">
-                        <button type="button">«</button>
-                        <button type="button">‹</button>
-                        <button type="button" class="active">1</button>
-                        <button type="button">2</button>
-                        <button type="button">3</button>
-                        <button type="button">4</button>
-                        <button type="button">5</button>
-                        <button type="button">›</button>
-                        <button type="button">»</button>
-                    </div>
+        </section>
 
-                </section>
+        <!-- 페이징 -->
+        <div class="pagination">
 
-                <!-- 우측 정보 패널 -->
-                <aside class="reservation-side-panel">
+            <c:if test="${!reservationPage.firstPage}">
+                <a href="${pageContext.request.contextPath}/admin/reservation/list?page=${reservationPage.page - 1}&size=${reservationPage.size}&status=${searchDTO.status}&searchType=${searchDTO.searchType}&keyword=${searchDTO.keyword}&startDate=${searchDTO.startDate}&endDate=${searchDTO.endDate}">
+                    이전
+                </a>
+            </c:if>
 
-                    <section class="issue-card">
-                        <div class="side-card-header">
-                            <h2>오늘 예약 이슈</h2>
-                            <a href="#">전체 보기</a>
-                        </div>
+            <span class="page-info">
+                ${reservationPage.page} / ${reservationPage.totalPage}
+            </span>
 
-                        <div class="issue-list">
-                            <div>
-                                <span>인증 대기</span>
-                                <strong>24건</strong>
-                            </div>
-
-                            <div>
-                                <span>취소 요청</span>
-                                <strong>8건</strong>
-                            </div>
-
-                            <div>
-                                <span>노쇼 예정</span>
-                                <strong>3건</strong>
-                            </div>
-
-                            <div>
-                                <span>충전 시작 지연</span>
-                                <strong>5건</strong>
-                            </div>
-                        </div>
-                    </section>
-
-                </aside>
-
-            </section>
-
+            <c:if test="${!reservationPage.lastPage}">
+                <a href="${pageContext.request.contextPath}/admin/reservation/list?page=${reservationPage.page + 1}&size=${reservationPage.size}&status=${searchDTO.status}&searchType=${searchDTO.searchType}&keyword=${searchDTO.keyword}&startDate=${searchDTO.startDate}&endDate=${searchDTO.endDate}">
+                    다음
+                </a>
+            </c:if>
+		 </div>
         </main>
 
     </div>
 
 </div>
-
-<script>
-    const filterButtons = document.querySelectorAll(".filter-btn");
-
-    filterButtons.forEach(function(button) {
-        button.addEventListener("click", function() {
-            filterButtons.forEach(function(item) {
-                item.classList.remove("active");
-            });
-
-            button.classList.add("active");
-        });
-    });
-
-    const cancelButtons = document.querySelectorAll(".cancel-btn");
-
-    cancelButtons.forEach(function(button) {
-        button.addEventListener("click", function() {
-            const result = confirm("해당 예약을 취소 처리하시겠습니까?");
-
-            if (!result) {
-                return;
-            }
-
-            alert("예약이 취소 처리되었습니다.");
-        });
-    });
-</script>
 
 </body>
 </html>

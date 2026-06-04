@@ -781,3 +781,17 @@ button,
     font-size: var(--admin-section-size);
     font-weight: var(--admin-section-weight);
 }
+
+.table-badge.done {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.table-badge.cancel {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.red-dot {
+    background: #ef4444;
+}

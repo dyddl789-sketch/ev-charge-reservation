@@ -34,3 +34,7 @@ application-secret.yml
 
 # STS build folder
 bin/
+
+# Secret properties
+application-secret.properties
+

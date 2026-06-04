@@ -1,0 +1,234 @@
+/* =========================
+   Page
+========================= */
+
+.admin-content {
+    padding: 24px;
+}
+
+.admin-page-header {
+    margin-bottom: 24px;
+}
+
+.admin-page-header h1 {
+    margin: 0 0 8px;
+    font-size: 34px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.admin-page-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* =========================
+   Search
+========================= */
+
+.sales-filter-section {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.sales-filter-form {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.sales-filter-form label {
+    margin-right: auto;
+    font-size: 14px;
+    font-weight: 700;
+    color: #374151;
+}
+
+.sales-filter-form input[type="date"] {
+    height: 40px;
+    border: 1px solid #dcdfe6;
+    padding: 0 12px;
+}
+
+.sales-filter-form button {
+    height: 40px;
+    padding: 0 18px;
+    border: none;
+    background: #f05a00;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.sales-filter-form button:hover {
+    background: #d94f00;
+}
+
+/* =========================
+   Summary
+========================= */
+
+.sales-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.sales-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 24px;
+    min-height: 120px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.sales-label {
+    margin: 0 0 10px;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.sales-value {
+    display: block;
+    color: #f05a00;
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+/* =========================
+   Chart
+========================= */
+
+.sales-chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.sales-panel {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.sales-panel-header {
+    margin-bottom: 16px;
+}
+
+.sales-panel-header h2 {
+    margin: 0 0 6px;
+    color: #111827;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.sales-panel-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.sales-panel canvas {
+    width: 100%;
+    height: 320px !important;
+}
+
+/* =========================
+   Table
+========================= */
+
+.sales-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.sales-table th {
+    height: 46px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.sales-table td {
+    height: 48px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+    padding: 0 10px;
+    color: #374151;
+    font-size: 14px;
+}
+
+.sales-table tbody tr:hover {
+    background: #fff7f2;
+}
+
+.sales-table td:nth-child(2) {
+    text-align: left;
+    padding-left: 16px;
+}
+
+.empty-cell {
+    padding: 40px !important;
+    color: #9ca3af !important;
+}
+
+/* =========================
+   Amount
+========================= */
+
+.amount-text {
+    color: #f05a00;
+    font-weight: 800;
+}
+
+.rank-text {
+    font-weight: 700;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1400px) {
+
+    .sales-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .sales-chart-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 900px) {
+
+    .sales-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-filter-form {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    .sales-panel {
+        overflow-x: auto;
+    }
+
+    .sales-table {
+        min-width: 900px;
+    }
+}

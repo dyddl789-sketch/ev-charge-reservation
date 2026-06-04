@@ -438,3 +438,37 @@ button,
 .auth-code {
     color: var(--admin-primary) !important;
 }
+
+.inline-form {
+    display: inline-block;
+    margin-left: 4px;
+}
+
+.member-type.admin {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.status-badge.blocked {
+    background: #fff7ed;
+    color: #ea580c;
+}
+
+.pagination a {
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid #dcdfe6;
+    background: #ffffff;
+    color: #333333;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination a.active {
+    border-color: #f05a00;
+    background: #f05a00;
+    color: #ffffff;
+}
