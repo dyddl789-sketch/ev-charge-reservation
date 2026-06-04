@@ -10,11 +10,14 @@ import com.ev.dto.vehicle.EvVehicleDTO;
 import com.ev.dto.vehicle.EvVehicleModelDTO;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EvVehicleServiceImpl implements EvVehicleService {
-
+	
+	private final EvAiChatService evAiChatService;
     private final EvVehicleDAO evVehicleDAO;
  // 차량 등록 화면 진입 시 차량 모델 목록 조회
     @Override
@@ -68,6 +71,12 @@ public class EvVehicleServiceImpl implements EvVehicleService {
 
         // 선택 차량 기본 차량 설정
     	evVehicleDAO.updateDefaultVehicle(memberId, vehicleId);
+    	
+        // AI 대화 캐시 삭제
+        evAiChatService.clearChatCache(memberId);
+
+        log.info("@# 대표 차량 변경으로 AI 캐시 삭제 완료");
+    	
 
     }
     

@@ -776,6 +776,20 @@ where charger_id in (
     limit 2
 );
 
+update charger
+set connector_type = 'NACS',
+    status = '사용가능',
+    updated_at = current_timestamp
+where charger_id in (
+    select c.charger_id
+    from charger c
+    join charging_station cs
+        on cs.station_id = c.station_id
+    where cs.station_status = '운영중'
+      and c.status in ('예약중', '사용중')
+    order by c.charger_id
+    limit 5
+);
 
 -- 결과 확인
 select status, count(*) from reservation where auth_code like 'ADM%' group by status order by status;

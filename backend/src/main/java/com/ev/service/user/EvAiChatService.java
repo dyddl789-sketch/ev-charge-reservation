@@ -12,4 +12,6 @@ public interface EvAiChatService {
     
     // 이전 채팅 메시지 조회
     List<EvAiChatMessageDTO> getChatHistory(Long memberId);
+    
+    void clearChatCache(Long memberId);
 }
