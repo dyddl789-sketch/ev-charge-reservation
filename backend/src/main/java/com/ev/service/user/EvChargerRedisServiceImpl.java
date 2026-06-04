@@ -1,6 +1,7 @@
 package com.ev.service.user;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -35,25 +36,20 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
 
     /*
      * 충전기 인증코드 유효 시간
-     *
-     * 5분 동안만 유효하다.
      */
     private static final Duration AUTH_CODE_TTL = Duration.ofMinutes(5);
 
     /*
      * 인증 실패 횟수 제한 시간
-     *
-     * 10분 동안 실패 횟수를 기억한다.
      */
     private static final Duration VERIFY_ATTEMPT_TTL = Duration.ofMinutes(10);
 
     /*
      * 예약 입력 중 충전기 임시 점유 시간
      *
-     * 사용자가 예약 화면에서 정보를 입력하는 동안
-     * 다른 사용자가 같은 충전기를 예약하지 못하게 막는다.
-     *
-     * 사용자가 창을 닫거나 이탈해도 TTL이 지나면 자동 해제된다.
+     * 주의:
+     * - 현재 20초로 되어 있으므로, 화면에서 오래 머물면 key가 만료될 수 있다.
+     * - 화면에서 주기적으로 hold 연장 요청을 보내지 않는다면 1~5분 정도로 늘려도 된다.
      */
     private static final Duration RESERVATION_HOLD_TTL = Duration.ofSeconds(20);
 
@@ -93,22 +89,12 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
         log.info("@# EvChargerRedisServiceImpl.generateAuthCode()");
         log.info("@# chargerId => {}", chargerId);
 
-        /*
-         * 100000 ~ 999999 사이의 6자리 숫자 생성
-         */
         String authCode = String.valueOf(
                 ThreadLocalRandom.current().nextInt(100000, 1000000)
         );
 
         String redisKey = getAuthCodeKey(chargerId);
 
-        /*
-         * Redis 저장
-         *
-         * key   = ev:charger:{chargerId}:auth-code
-         * value = 6자리 인증코드
-         * TTL   = 5분
-         */
         stringRedisTemplate.opsForValue().set(
                 redisKey,
                 authCode,
@@ -155,13 +141,6 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
 
     /*
      * 충전기 현재 상태 저장
-     *
-     * 예:
-     * AVAILABLE
-     * RESERVED
-     * VERIFIED
-     * CHARGING
-     * OFFLINE
      */
     @Override
     public void setChargerStatus(Long chargerId, String status) {
@@ -171,10 +150,6 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
 
         String redisKey = getChargerStatusKey(chargerId);
 
-        /*
-         * 상태값은 현재 상태 캐시이므로 TTL 없이 저장한다.
-         * Redis가 초기화되면 DB 상태를 기준으로 다시 복구할 수 있다.
-         */
         stringRedisTemplate.opsForValue().set(redisKey, status);
 
         log.info("@# redisKey => {}", redisKey);
@@ -214,9 +189,6 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
 
     /*
      * 인증 실패 횟수 증가
-     *
-     * 첫 실패 시 TTL 10분을 설정한다.
-     * 이후 10분 안에 계속 실패하면 count가 증가한다.
      */
     @Override
     public Long increaseVerifyAttempt(Long memberId, Long reservationId) {
@@ -228,9 +200,6 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
 
         Long attemptCount = stringRedisTemplate.opsForValue().increment(redisKey);
 
-        /*
-         * 처음 실패한 경우에만 TTL을 설정한다.
-         */
         if (attemptCount != null && attemptCount == 1L) {
             stringRedisTemplate.expire(redisKey, VERIFY_ATTEMPT_TTL);
         }
@@ -251,7 +220,6 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
         log.info("@# reservationId => {}", reservationId);
 
         String redisKey = getVerifyAttemptKey(memberId, reservationId);
-
         String value = stringRedisTemplate.opsForValue().get(redisKey);
 
         if (value == null) {
@@ -286,12 +254,9 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
     /*
      * 예약 입력 중 충전기 임시 점유 시도
      *
-     * true:
-     * - 아무도 점유하지 않은 충전기
-     * - 또는 같은 사용자가 이미 점유 중인 충전기
-     *
-     * false:
-     * - 다른 사용자가 이미 점유 중인 충전기
+     * 핵심 수정:
+     * - 같은 회원이 기존에 잡고 있던 다른 충전기 key를 정리한다.
+     * - 그래서 한 회원이 여러 충전기를 동시에 "선택중"으로 만드는 문제를 막는다.
      */
     @Override
     public boolean holdChargerForReservation(Long chargerId, Long memberId) {
@@ -300,54 +265,69 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
         log.info("@# memberId => {}", memberId);
 
         String redisKey = getReservationHoldKey(chargerId);
-        String value = String.valueOf(memberId);
+        String currentMemberId = String.valueOf(memberId);
+
+        log.info("@# redisKey => {}", redisKey);
 
         /*
-         * Redis SETNX
-         *
-         * key가 없을 때만 저장한다.
-         * 성공하면 현재 사용자가 해당 충전기를 임시 점유한다.
-         */
-        Boolean success = stringRedisTemplate.opsForValue()
-                .setIfAbsent(redisKey, value, RESERVATION_HOLD_TTL);
-
-        if (Boolean.TRUE.equals(success)) {
-            log.info("@# reservation hold success");
-            log.info("@# redisKey => {}", redisKey);
-            return true;
-        }
-
-        /*
-         * 이미 lock이 있는 경우:
-         * 같은 사용자가 새로고침하거나 다시 접근한 상황이면
-         * TTL만 연장하고 예약 화면 진입을 허용한다.
+         * 1. 해당 충전기가 이미 다른 사용자에게 잡혀 있는지 확인한다.
          */
         String savedMemberId = stringRedisTemplate.opsForValue().get(redisKey);
 
-        if (value.equals(savedMemberId)) {
-            stringRedisTemplate.expire(redisKey, RESERVATION_HOLD_TTL);
+        log.info("@# savedMemberId => {}", savedMemberId);
 
-            log.info("@# reservation hold extended");
-            log.info("@# redisKey => {}", redisKey);
+        if (savedMemberId != null && !currentMemberId.equals(savedMemberId)) {
+            log.info("@# reservation hold failed - selected by other");
+            log.info("@# locked by memberId => {}", savedMemberId);
 
-            return true;
+            return false;
         }
 
         /*
-         * 다른 사용자가 이미 점유 중인 경우
+         * 2. key가 없으면 SETNX로 선점한다.
          */
-        log.info("@# reservation hold failed");
-        log.info("@# redisKey => {}", redisKey);
-        log.info("@# locked by memberId => {}", savedMemberId);
+        if (savedMemberId == null) {
+            Boolean success = stringRedisTemplate.opsForValue()
+                    .setIfAbsent(redisKey, currentMemberId, RESERVATION_HOLD_TTL);
 
-        return false;
+            if (!Boolean.TRUE.equals(success)) {
+                /*
+                 * 동시에 다른 사용자가 잡았을 수 있으므로 다시 확인한다.
+                 */
+                String savedAfterSet = stringRedisTemplate.opsForValue().get(redisKey);
+
+                log.info("@# savedAfterSet => {}", savedAfterSet);
+
+                if (!currentMemberId.equals(savedAfterSet)) {
+                    log.info("@# reservation hold failed after setIfAbsent");
+                    return false;
+                }
+            }
+        }
+
+        /*
+         * 3. 이미 내가 잡고 있거나, 방금 내가 잡은 경우 TTL을 갱신한다.
+         */
+        stringRedisTemplate.expire(redisKey, RESERVATION_HOLD_TTL);
+
+        /*
+         * 4. 현재 회원이 기존에 잡고 있던 다른 충전기 key를 정리한다.
+         *
+         * 예:
+         * - memberId=2가 charger:1, charger:3을 동시에 잡고 있던 상태
+         * - 현재 charger:2를 잡으면 charger:1, charger:3은 삭제
+         * - charger:2만 유지
+         */
+        deleteMyReservationHoldsExcept(memberId, chargerId);
+
+        log.info("@# reservation hold success or extended");
+        log.info("@# redisKey => {}", redisKey);
+
+        return true;
     }
 
     /*
      * 예약 입력 중 충전기 임시 점유 소유자 확인
-     *
-     * 예약 등록 시
-     * 현재 사용자가 해당 충전기의 임시 점유자인지 확인한다.
      */
     @Override
     public boolean isReservationHoldOwner(Long chargerId, Long memberId) {
@@ -356,7 +336,6 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
         log.info("@# memberId => {}", memberId);
 
         String redisKey = getReservationHoldKey(chargerId);
-
         String savedMemberId = stringRedisTemplate.opsForValue().get(redisKey);
 
         boolean isOwner = String.valueOf(memberId).equals(savedMemberId);
@@ -372,7 +351,6 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
      * 예약 입력 중 충전기 임시 점유 해제
      *
      * 본인이 점유한 lock만 삭제한다.
-     * 다른 사용자의 lock을 삭제하지 않기 위한 안전장치다.
      */
     @Override
     public void releaseChargerReservationHold(Long chargerId, Long memberId) {
@@ -381,7 +359,6 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
         log.info("@# memberId => {}", memberId);
 
         String redisKey = getReservationHoldKey(chargerId);
-
         String savedMemberId = stringRedisTemplate.opsForValue().get(redisKey);
 
         if (String.valueOf(memberId).equals(savedMemberId)) {
@@ -397,13 +374,9 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
         log.info("@# redisKey => {}", redisKey);
         log.info("@# savedMemberId => {}", savedMemberId);
     }
-    
+
     /*
      * 다른 사용자가 해당 충전기를 예약 폼에서 선택 중인지 확인
-     *
-     * true:
-     * - Redis key가 존재함
-     * - 저장된 memberId가 현재 로그인 memberId와 다름
      */
     @Override
     public boolean isReservationSelectedByOther(Long chargerId, Long memberId) {
@@ -412,7 +385,6 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
         log.info("@# memberId => {}", memberId);
 
         String redisKey = getReservationHoldKey(chargerId);
-
         String savedMemberId = stringRedisTemplate.opsForValue().get(redisKey);
 
         boolean selectedByOther =
@@ -425,7 +397,16 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
 
         return selectedByOther;
     }
-    
+
+    /*
+     * 예약폼에서 충전기 선택 변경
+     *
+     * 처리 흐름:
+     * 1. 새 충전기가 다른 사용자에게 선점되어 있으면 실패
+     * 2. 새 충전기를 내가 선점
+     * 3. 내가 기존에 잡고 있던 다른 충전기 key 전부 삭제
+     * 4. 새 충전기 key만 유지
+     */
     @Override
     public boolean changeReservationHold(Long oldChargerId, Long newChargerId, Long memberId) {
         log.info("@# EvChargerRedisServiceImpl.changeReservationHold()");
@@ -433,27 +414,21 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
         log.info("@# newChargerId => {}", newChargerId);
         log.info("@# memberId => {}", memberId);
 
-        String oldKey = getReservationHoldKey(oldChargerId);
         String newKey = getReservationHoldKey(newChargerId);
         String currentMemberId = String.valueOf(memberId);
 
-        log.info("@# oldKey => {}", oldKey);
         log.info("@# newKey => {}", newKey);
 
         /*
-         * 같은 충전기를 다시 선택한 경우
-         * 기존 key의 TTL만 연장한다.
+         * 같은 충전기를 다시 선택한 경우도
+         * holdChargerForReservation()을 태워서 TTL 갱신 + 기존 key 정리를 같이 처리한다.
          */
-        if (oldChargerId.equals(newChargerId)) {
-            Boolean extendResult = stringRedisTemplate.expire(newKey, Duration.ofSeconds(20));
-
-            log.info("@# same charger hold extended => {}", extendResult);
-
-            return Boolean.TRUE.equals(extendResult);
+        if (oldChargerId != null && oldChargerId.equals(newChargerId)) {
+            return holdChargerForReservation(newChargerId, memberId);
         }
 
         /*
-         * 새로 선택한 충전기가 이미 다른 사용자에게 선점되어 있는지 확인
+         * 1. 새 충전기가 이미 다른 사용자에게 선점되어 있는지 확인한다.
          */
         String newSavedMemberId = stringRedisTemplate.opsForValue().get(newKey);
 
@@ -465,27 +440,86 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
         }
 
         /*
-         * 기존 충전기 선점 해제
-         * 단, 내가 선점한 key일 때만 삭제한다.
+         * 2. 새 충전기 key가 없으면 SETNX로 선점한다.
          */
-        String oldSavedMemberId = stringRedisTemplate.opsForValue().get(oldKey);
+        if (newSavedMemberId == null) {
+            Boolean success = stringRedisTemplate.opsForValue()
+                    .setIfAbsent(newKey, currentMemberId, RESERVATION_HOLD_TTL);
 
-        log.info("@# oldSavedMemberId => {}", oldSavedMemberId);
+            if (!Boolean.TRUE.equals(success)) {
+                /*
+                 * 동시에 다른 사용자가 잡았을 수 있으므로 다시 확인한다.
+                 */
+                String savedAfterSet = stringRedisTemplate.opsForValue().get(newKey);
 
-        if (oldSavedMemberId != null && oldSavedMemberId.equals(currentMemberId)) {
-            stringRedisTemplate.delete(oldKey);
-            log.info("@# old charger hold deleted");
+                log.info("@# savedAfterSet => {}", savedAfterSet);
+
+                if (!currentMemberId.equals(savedAfterSet)) {
+                    log.info("@# new charger hold failed after setIfAbsent");
+                    return false;
+                }
+            }
         }
 
         /*
-         * 새 충전기 선점
+         * 3. 새 충전기 TTL 갱신
          */
-        stringRedisTemplate.opsForValue()
-                .set(newKey, currentMemberId, Duration.ofSeconds(20));
+        stringRedisTemplate.expire(newKey, RESERVATION_HOLD_TTL);
+
+        /*
+         * 4. 내가 기존에 잡고 있던 다른 충전기 key 전부 삭제
+         *
+         * oldChargerId 하나만 삭제하면,
+         * 이전 테스트나 pagehide 실패로 남은 stale key가 계속 선택중으로 보일 수 있다.
+         */
+        deleteMyReservationHoldsExcept(memberId, newChargerId);
 
         log.info("@# new charger hold success");
         log.info("@# newKey => {}", newKey);
 
         return true;
+    }
+
+    /*
+     * 현재 회원이 잡고 있는 예약 임시 점유 key를 정리한다.
+     *
+     * 목적:
+     * - 한 회원이 여러 충전기를 동시에 선택중으로 만드는 문제 방지
+     *
+     * excludeChargerId:
+     * - 이 충전기 key는 유지하고 나머지만 삭제한다.
+     */
+    private void deleteMyReservationHoldsExcept(Long memberId, Long excludeChargerId) {
+        log.info("@# EvChargerRedisServiceImpl.deleteMyReservationHoldsExcept()");
+        log.info("@# memberId => {}", memberId);
+        log.info("@# excludeChargerId => {}", excludeChargerId);
+
+        String pattern = "ev:reservation:hold:charger:*";
+
+        Set<String> keys = stringRedisTemplate.keys(pattern);
+
+        if (keys == null || keys.isEmpty()) {
+            log.info("@# reservation hold keys empty");
+            return;
+        }
+
+        String currentMemberId = String.valueOf(memberId);
+        String excludeKey = getReservationHoldKey(excludeChargerId);
+
+        for (String key : keys) {
+            String savedMemberId = stringRedisTemplate.opsForValue().get(key);
+
+            if (!currentMemberId.equals(savedMemberId)) {
+                continue;
+            }
+
+            if (key.equals(excludeKey)) {
+                continue;
+            }
+
+            stringRedisTemplate.delete(key);
+
+            log.info("@# deleted my old reservation hold key => {}", key);
+        }
     }
 }

@@ -40,4 +40,6 @@ public class EvChargerDTO {
     
     //충전기 예약 상태 체크
     private boolean reserved;
+    
+    private boolean selectedByOther;
 }
