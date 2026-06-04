@@ -126,12 +126,7 @@
 	        , v.vehicle_nickname as vehicleNickname
 	        , vm.connector_type as vehicleConnectorType
 	
-	        , round(
-	            (
-	                ST_Distance(cs.location, sl.location) / 1000
-	            )::numeric
-	          , 2
-	          ) as distanceKm
+	        , round((ST_Distance(cs.location, sl.location) / 1000)::numeric, 2) as distanceKm
 	
 	    from vehicle v
 	    join vehicle_model vm
@@ -139,7 +134,7 @@
 	    join saved_location sl
 	        on sl.member_id = v.member_id
 	    join charging_station cs
-	        on ST_DWithin(cs.location, sl.location, 10000)
+	        on ST_DWithin(cs.location, sl.location, 30000)
 	    join charger c
 	        on c.station_id = cs.station_id
 	    where v.member_id = #{memberId}
@@ -147,9 +142,17 @@
 	      and v.is_deleted = false
 	      and sl.is_default = true
 	      and cs.station_status = '운영중'
-	      and c.status = '사용가능'
-	      and c.connector_type = vm.connector_type
-	    order by distanceKm asc, c.charging_speed_kw desc
+	      and c.status in ('사용가능', '예약중', '사용중')
+	      and replace(trim(c.connector_type), ' ', '') = replace(trim(vm.connector_type), ' ', '')
+	    order by
+	          case
+	              when c.status = '사용가능' then 1
+	              when c.status = '예약중' then 2
+	              when c.status = '사용중' then 3
+	              else 4
+	          end
+	        , distanceKm asc
+	        , c.charging_speed_kw desc
 	    limit 5
 	
 	</select>
@@ -177,12 +180,7 @@
 	        , c.price_per_kwh as pricePerKwh
 	        , c.connector_type as chargerConnectorType
 	
-	        , round(
-	            (
-	                ST_Distance(cs.location, sl.location) / 1000
-	            )::numeric
-	          , 2
-	          ) as distanceKm
+	        , round((ST_Distance(cs.location, sl.location) / 1000)::numeric, 2) as distanceKm
 	
 	    from vehicle v
 	    join vehicle_model vm
@@ -190,7 +188,7 @@
 	    join saved_location sl
 	        on sl.member_id = v.member_id
 	    join charging_station cs
-	        on ST_DWithin(cs.location, sl.location, 10000)
+	        on ST_DWithin(cs.location, sl.location, 30000)
 	    join charger c
 	        on c.station_id = cs.station_id
 	    where v.member_id = #{memberId}
@@ -198,10 +196,16 @@
 	      and v.is_deleted = false
 	      and sl.is_default = true
 	      and cs.station_status = '운영중'
-	      and c.status = '사용가능'
-	      and c.connector_type = vm.connector_type
+	      and c.status in ('사용가능', '예약중', '사용중')
+	      and replace(trim(c.connector_type), ' ', '') = replace(trim(vm.connector_type), ' ', '')
 	    order by
-	          ST_Distance(cs.location, sl.location) asc
+	          case
+	              when c.status = '사용가능' then 1
+	              when c.status = '예약중' then 2
+	              when c.status = '사용중' then 3
+	              else 4
+	          end
+	        , ST_Distance(cs.location, sl.location) asc
 	        , c.charging_speed_kw desc
 	    limit 1
 	
