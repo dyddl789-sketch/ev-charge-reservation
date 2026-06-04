@@ -15,4 +15,7 @@ public class EvAdminSalesStationRankDTO {
     private Long paymentCount;
     private Double totalKwh;
     private Long avgPaymentAmount;
+
+    // 선택 조회기간 내 전체 매출 대비 비율
+    private Double salesRate;
 }

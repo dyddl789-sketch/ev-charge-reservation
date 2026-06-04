@@ -282,11 +282,6 @@
                                     </td>
 
                                     <td>
-                                        <a href="${pageContext.request.contextPath}/admin/station/detail?stationId=${station.stationId}"
-                                           class="detail-btn">
-                                            상세보기
-                                        </a>
-
                                         <a href="${pageContext.request.contextPath}/admin/station/manage?stationId=${station.stationId}"
                                            class="edit-btn">
                                             수정
