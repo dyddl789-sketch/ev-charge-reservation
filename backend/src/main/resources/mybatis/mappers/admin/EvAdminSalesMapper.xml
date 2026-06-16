@@ -125,54 +125,70 @@
 
     </select>
 
-    <!-- 충전소별 매출 순위 -->
-    <select id="findStationSalesRankList"
-            resultType="com.ev.dto.admin.sales.EvAdminSalesStationRankDTO">
-
-        select
-              row_number() over(
-                  order by sum(cs.actual_cost) desc
-              ) as rankNo
-
-            , st.station_id as stationId
-            , st.station_name as stationName
-
-            , coalesce(
-                sum(cs.actual_cost),
-                0
-              ) as salesAmount
-
-            , count(*) as paymentCount
-
-            , coalesce(
-                sum(cs.actual_kwh),
-                0
-              ) as totalKwh
-
-            , coalesce(
-                round(avg(cs.actual_cost)),
-                0
-              ) as avgPaymentAmount
-
-        from charging_session cs
-        join charger c
-          on cs.charger_id = c.charger_id
-        join charging_station st
-          on c.station_id = st.station_id
-
-        where cs.status = '완료'
-          and cs.actual_start_time::date
-              between #{startDate}::date
-                  and #{endDate}::date
-
-        group by
-              st.station_id
-            , st.station_name
-
-        order by salesAmount desc
-        limit 10
-
-    </select>
+	<!-- 충전소별 매출 순위 -->
+	<select id="findStationSalesRankList"
+	        resultType="com.ev.dto.admin.sales.EvAdminSalesStationRankDTO">
+	
+	    select
+	          row_number() over(
+	              order by station_sales.sales_amount desc
+	          ) as rankNo
+	
+	        , station_sales.station_id as stationId
+	        , station_sales.station_name as stationName
+	        , station_sales.sales_amount as salesAmount
+	        , station_sales.payment_count as paymentCount
+	        , station_sales.total_kwh as totalKwh
+	        , station_sales.avg_payment_amount as avgPaymentAmount
+	
+	        , round(
+	            station_sales.sales_amount * 100.0
+	            / nullif(sum(station_sales.sales_amount) over(), 0),
+	            1
+	          ) as salesRate
+	
+	    from (
+	        select
+	              st.station_id
+	            , st.station_name
+	
+	            , coalesce(
+	                sum(cs.actual_cost),
+	                0
+	              ) as sales_amount
+	
+	            , count(*) as payment_count
+	
+	            , coalesce(
+	                sum(cs.actual_kwh),
+	                0
+	              ) as total_kwh
+	
+	            , coalesce(
+	                round(avg(cs.actual_cost)),
+	                0
+	              ) as avg_payment_amount
+	
+	        from charging_session cs
+	        join charger c
+	          on cs.charger_id = c.charger_id
+	        join charging_station st
+	          on c.station_id = st.station_id
+	
+	        where cs.status = '완료'
+	          and cs.actual_start_time::date
+	              between #{startDate}::date
+	                  and #{endDate}::date
+	
+	        group by
+	              st.station_id
+	            , st.station_name
+	    ) station_sales
+	
+	    order by salesAmount desc
+	    limit 10
+	
+	</select>
 
     <!-- 최근 매출 내역 -->
     <select id="findSalesHistoryList"

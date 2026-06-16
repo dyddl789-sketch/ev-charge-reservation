@@ -104,5 +104,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    where member_id = #{memberId}
 	      and vehicle_id = #{vehicleId}
 	</update>
-
+	
+	<select id="countByPlateNumber"
+	        resultType="int">
+	
+	    select count(*)
+	    from vehicle
+	    where member_id = #{memberId}
+	      and plate_number = #{plateNumber}
+	      and is_deleted = false
+	
+	</select>
 </mapper>

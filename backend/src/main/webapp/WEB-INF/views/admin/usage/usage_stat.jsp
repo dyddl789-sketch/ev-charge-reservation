@@ -217,30 +217,18 @@
         </c:forEach>
     ];
 
-    // ==============================
-    // 공통 차트 옵션
-    // ==============================
-    const commonChartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: true
-            },
-            tooltip: {
-                callbacks: {
-                    label: function (context) {
-                        return context.dataset.label + ': ' + context.raw + '건';
-                    }
-                }
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    precision: 0
-                }
+    Chart.defaults.font.family = "'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif";
+    Chart.defaults.color = '#64748b';
+
+    const commonUsageTooltip = {
+        backgroundColor: '#111827',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        padding: 12,
+        cornerRadius: 10,
+        callbacks: {
+            label: function (context) {
+                return context.dataset.label + ' ' + Number(context.raw || 0).toLocaleString() + '건';
             }
         }
     };
@@ -251,18 +239,70 @@
     const dailyUsageCanvas = document.getElementById('dailyUsageChart');
 
     if (dailyUsageCanvas) {
+        const dailyContext = dailyUsageCanvas.getContext('2d');
+
+        const dailyGradient = dailyContext.createLinearGradient(0, 0, 0, 320);
+        dailyGradient.addColorStop(0, 'rgba(59, 130, 246, 0.32)');
+        dailyGradient.addColorStop(0.6, 'rgba(59, 130, 246, 0.10)');
+        dailyGradient.addColorStop(1, 'rgba(59, 130, 246, 0.00)');
+
         new Chart(dailyUsageCanvas, {
             type: 'line',
             data: {
                 labels: dailyUsageLabels,
                 datasets: [{
-                    label: '일별 이용 건수',
+                    label: '이용 건수',
                     data: dailyUsageData,
-                    tension: 0.35,
+                    borderColor: '#2563eb',
+                    backgroundColor: dailyGradient,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#2563eb',
+                    pointBorderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    borderWidth: 3,
+                    tension: 0.38,
                     fill: true
                 }]
             },
-            options: commonChartOptions
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: commonUsageTooltip
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 8
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        border: {
+                            display: false
+                        },
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.22)'
+                        },
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
         });
     }
 
@@ -272,16 +312,61 @@
     const hourlyUsageCanvas = document.getElementById('hourlyUsageChart');
 
     if (hourlyUsageCanvas) {
+        const hourlyContext = hourlyUsageCanvas.getContext('2d');
+
+        const hourlyGradient = hourlyContext.createLinearGradient(0, 0, 0, 320);
+        hourlyGradient.addColorStop(0, 'rgba(16, 185, 129, 0.90)');
+        hourlyGradient.addColorStop(1, 'rgba(59, 130, 246, 0.85)');
+
         new Chart(hourlyUsageCanvas, {
             type: 'bar',
             data: {
                 labels: hourlyUsageLabels,
                 datasets: [{
-                    label: '시간대별 이용 건수',
-                    data: hourlyUsageData
+                    label: '이용 건수',
+                    data: hourlyUsageData,
+                    backgroundColor: hourlyGradient,
+                    borderColor: 'rgba(255, 255, 255, 0)',
+                    borderWidth: 0,
+                    borderRadius: 14,
+                    borderSkipped: false,
+                    maxBarThickness: 54
                 }]
             },
-            options: commonChartOptions
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: commonUsageTooltip
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                weight: '700'
+                            }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        border: {
+                            display: false
+                        },
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.22)'
+                        },
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
         });
     }
 </script>

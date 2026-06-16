@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/admin/sales_stat.css">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </head>
 <body>
 
@@ -124,7 +125,11 @@
                             <td>
                                 <fmt:formatNumber value="${type.salesAmount}" pattern="#,###" />원
                             </td>
-                            <td>${type.salesRate}%</td>
+							<td>
+							    <span class="sales-rate-badge">
+							        <fmt:formatNumber value="${type.salesRate}" pattern="#,##0.0" />%
+							    </span>
+							</td>
                         </tr>
                     </c:forEach>
 
@@ -155,6 +160,7 @@
                         <th>결제 건수</th>
                         <th>총 충전량</th>
                         <th>평균 결제 금액</th>
+                        <th>비율</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -174,12 +180,15 @@
                             <td>
                                 <fmt:formatNumber value="${station.avgPaymentAmount}" pattern="#,###" />원
                             </td>
+                            <td>
+							    <fmt:formatNumber value="${station.salesRate}" pattern="#,##0.0" />%
+							</td>
                         </tr>
                     </c:forEach>
 
                     <c:if test="${empty salesStat.stationRankList}">
                         <tr>
-                            <td colspan="6" class="empty-cell">
+                            <td colspan="7" class="empty-cell">
                                 조회된 충전소 매출 데이터가 없습니다.
                             </td>
                         </tr>
@@ -240,9 +249,6 @@
 </div>
 
 <script>
-    // ==============================
-    // 일별 매출 차트 데이터
-    // ==============================
     const dailySalesLabels = [
         <c:forEach var="daily" items="${salesStat.dailyList}" varStatus="status">
             "${daily.salesDate}"<c:if test="${!status.last}">,</c:if>
@@ -255,9 +261,6 @@
         </c:forEach>
     ];
 
-    // ==============================
-    // 충전 타입별 매출 차트 데이터
-    // ==============================
     const salesTypeLabels = [
         <c:forEach var="type" items="${salesStat.typeList}" varStatus="status">
             "${type.chargerType}"<c:if test="${!status.last}">,</c:if>
@@ -270,61 +273,136 @@
         </c:forEach>
     ];
 
-    // ==============================
-    // 공통 차트 옵션
-    // ==============================
-    const commonSalesChartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: true
-            },
-            tooltip: {
-                callbacks: {
-                    label: function (context) {
-                        const value = Number(context.raw || 0).toLocaleString();
-                        return context.dataset.label + ': ' + value + '원';
-                    }
-                }
+    const totalSalesAmount = Number("${salesStat.summary.totalSalesAmount}");
+
+    const formatWon = function (value) {
+        return Number(value || 0).toLocaleString() + '원';
+    };
+
+    Chart.defaults.font.family = "'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif";
+    Chart.defaults.color = '#64748b';
+
+    if (typeof ChartDataLabels !== 'undefined') {
+        Chart.register(ChartDataLabels);
+    }
+
+    const centerTextPlugin = {
+        id: 'centerTextPlugin',
+        afterDraw: function (chart) {
+            if (chart.config.type !== 'doughnut') {
+                return;
             }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: function (value) {
-                        return Number(value).toLocaleString() + '원';
-                    }
-                }
-            }
+
+            const ctx = chart.ctx;
+            const chartArea = chart.chartArea;
+            const centerX = (chartArea.left + chartArea.right) / 2;
+            const centerY = (chartArea.top + chartArea.bottom) / 2;
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            ctx.fillStyle = '#64748b';
+            ctx.font = '700 13px Pretendard, Noto Sans KR, sans-serif';
+            ctx.fillText('총 매출', centerX, centerY - 12);
+
+            ctx.fillStyle = '#111827';
+            ctx.font = '900 20px Pretendard, Noto Sans KR, sans-serif';
+            ctx.fillText(formatWon(totalSalesAmount), centerX, centerY + 14);
+
+            ctx.restore();
         }
     };
 
-    // ==============================
-    // 일별 매출 현황 차트
-    // ==============================
-    const dailySalesCanvas = document.getElementById('dailySalesChart');
+    Chart.register(centerTextPlugin);
 
-    if (dailySalesCanvas) {
-        new Chart(dailySalesCanvas, {
+    const salesLineCanvas = document.getElementById('dailySalesChart');
+
+    if (salesLineCanvas) {
+        const lineContext = salesLineCanvas.getContext('2d');
+
+        const salesGradient = lineContext.createLinearGradient(0, 0, 0, 320);
+        salesGradient.addColorStop(0, 'rgba(240, 90, 0, 0.34)');
+        salesGradient.addColorStop(0.55, 'rgba(240, 90, 0, 0.12)');
+        salesGradient.addColorStop(1, 'rgba(240, 90, 0, 0.00)');
+
+        new Chart(salesLineCanvas, {
             type: 'line',
             data: {
                 labels: dailySalesLabels,
                 datasets: [{
                     label: '일별 매출',
                     data: dailySalesData,
-                    tension: 0.35,
+                    borderColor: '#f05a00',
+                    backgroundColor: salesGradient,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#f05a00',
+                    pointBorderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    borderWidth: 3,
+                    tension: 0.4,
                     fill: true
                 }]
             },
-            options: commonSalesChartOptions
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    centerTextPlugin: false,
+                    datalabels: {
+                        display: false
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#111827',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function (context) {
+                                return '매출 ' + formatWon(context.raw);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 8
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        border: {
+                            display: false
+                        },
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.22)'
+                        },
+                        ticks: {
+                            callback: function (value) {
+                                return Number(value).toLocaleString() + '원';
+                            }
+                        }
+                    }
+                }
+            }
         });
     }
 
-    // ==============================
-    // 충전 타입별 매출 비율 차트
-    // ==============================
     const salesTypeCanvas = document.getElementById('salesTypeChart');
 
     if (salesTypeCanvas) {
@@ -334,22 +412,86 @@
                 labels: salesTypeLabels,
                 datasets: [{
                     label: '매출',
-                    data: salesTypeData
+                    data: salesTypeData,
+                    backgroundColor: [
+                        '#f97316',
+                        '#3b82f6',
+                        '#10b981',
+                        '#8b5cf6'
+                    ],
+                    borderColor: '#ffffff',
+                    borderWidth: 6,
+                    hoverOffset: 12,
+                    cutout: '62%'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: 22
+                },
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 18,
+                            font: {
+                                weight: '700'
+                            }
+                        }
                     },
                     tooltip: {
+                        backgroundColor: '#111827',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        padding: 12,
+                        cornerRadius: 10,
                         callbacks: {
                             label: function (context) {
-                                const value = Number(context.raw || 0).toLocaleString();
-                                return context.label + ': ' + value + '원';
+                                const total = context.dataset.data.reduce(function (sum, item) {
+                                    return sum + Number(item || 0);
+                                }, 0);
+
+                                const value = Number(context.raw || 0);
+                                const rate = total === 0 ? 0 : ((value / total) * 100).toFixed(1);
+
+                                return context.label + ' ' + formatWon(value) + ' (' + rate + '%)';
                             }
+                        }
+                    },
+                    datalabels: {
+                        color: '#ffffff',
+                        backgroundColor: 'rgba(15, 23, 42, 0.72)',
+                        borderRadius: 999,
+                        padding: {
+                            top: 6,
+                            bottom: 6,
+                            left: 9,
+                            right: 9
+                        },
+                        font: {
+                            weight: '900',
+                            size: 13
+                        },
+                        formatter: function (value, context) {
+                            const total = context.chart.data.datasets[0].data.reduce(function (sum, item) {
+                                return sum + Number(item || 0);
+                            }, 0);
+
+                            if (total === 0) {
+                                return '';
+                            }
+
+                            const rate = (Number(value || 0) / total) * 100;
+
+                            if (rate < 4) {
+                                return '';
+                            }
+
+                            return rate.toFixed(1) + '%';
                         }
                     }
                 }

@@ -43,6 +43,9 @@ public class EvMemberServiceImpl implements EvMemberService {
     private static final String PROFILE_UPLOAD_URL_PREFIX =
             "/upload/member/profile/";
 
+    private static final long MAX_PROFILE_IMAGE_SIZE =
+            5 * 1024 * 1024;
+
     private static final String EMAIL_CODE_KEY_PREFIX =
             "auth:email-code:";
 
@@ -83,7 +86,6 @@ public class EvMemberServiceImpl implements EvMemberService {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
 
-        // 이메일 인증 여부 최종 확인
         String verifiedKey = EMAIL_VERIFIED_KEY_PREFIX + evMemberDTO.getEmail();
         String verifiedValue = stringRedisTemplate.opsForValue().get(verifiedKey);
 
@@ -91,22 +93,17 @@ public class EvMemberServiceImpl implements EvMemberService {
             throw new IllegalArgumentException("이메일 인증을 완료해 주세요.");
         }
 
-        // 프로필 이미지 저장
         String profileImageUrl = saveProfileImage(profileImage);
         log.info("@# profileImageUrl => {}", profileImageUrl);
 
         evMemberDTO.setProfileImageUrl(profileImageUrl);
-
-        // 비밀번호 암호화
         evMemberDTO.setPassword(passwordEncoder.encode(evMemberDTO.getPassword()));
-
         evMemberDTO.setUserType("USER");
         evMemberDTO.setLoginType("LOCAL");
         evMemberDTO.setStatus("ACTIVE");
 
         evMemberDAO.insertMember(evMemberDTO);
 
-        // 회원가입 완료 후 인증 키 제거
         stringRedisTemplate.delete(verifiedKey);
 
         log.info("@# 회원가입 완료 userId => {}", evMemberDTO.getUserId());
@@ -176,7 +173,6 @@ public class EvMemberServiceImpl implements EvMemberService {
             updateDTO.setPassword(null);
         }
 
-        // 새 이미지가 있으면 변경, 없으면 기존 이미지 유지
         String profileImageUrl = saveProfileImageForUpdate(profileImage);
 
         if (profileImageUrl != null) {
@@ -310,7 +306,7 @@ public class EvMemberServiceImpl implements EvMemberService {
             return DEFAULT_PROFILE_IMAGE_URL;
         }
 
-        validateImageFile(originalName);
+        validateImageFile(profileImage, originalName);
 
         String savedName = saveImageFile(profileImage, originalName);
 
@@ -329,22 +325,33 @@ public class EvMemberServiceImpl implements EvMemberService {
             return null;
         }
 
-        validateImageFile(originalName);
+        validateImageFile(profileImage, originalName);
 
         String savedName = saveImageFile(profileImage, originalName);
 
         return PROFILE_UPLOAD_URL_PREFIX + savedName;
     }
 
-    private void validateImageFile(String originalName) {
+    private void validateImageFile(
+            MultipartFile profileImage,
+            String originalName) {
 
         String lowerName = originalName.toLowerCase();
 
         if (!(lowerName.endsWith(".jpg")
                 || lowerName.endsWith(".jpeg")
                 || lowerName.endsWith(".png")
-                || lowerName.endsWith(".gif"))) {
-            throw new IllegalArgumentException("프로필 이미지는 jpg, jpeg, png, gif 파일만 업로드할 수 있습니다.");
+                || lowerName.endsWith(".gif")
+                || lowerName.endsWith(".webp"))) {
+            throw new IllegalArgumentException(
+                    "프로필 이미지는 jpg, jpeg, png, gif, webp 파일만 업로드할 수 있습니다."
+            );
+        }
+
+        if (profileImage.getSize() > MAX_PROFILE_IMAGE_SIZE) {
+            throw new IllegalArgumentException(
+                    "프로필 이미지는 5MB 이하만 업로드할 수 있습니다."
+            );
         }
     }
 

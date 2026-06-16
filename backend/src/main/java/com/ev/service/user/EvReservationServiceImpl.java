@@ -2,9 +2,6 @@ package com.ev.service.user;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
-
-
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -13,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ev.dao.user.EvReservationDAO;
 import com.ev.dto.reservation.EvReservationChargerDTO;
 import com.ev.dto.reservation.EvReservationDTO;
+import com.ev.dto.station.EvChargerDTO;
 import com.ev.dto.vehicle.EvVehicleDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -164,7 +162,23 @@ public class EvReservationServiceImpl implements EvReservationService {
         }
 
         /*
-         * 4. 예약 시간 중복 체크
+         * 4. Redis 임시 점유 소유자 확인
+         *
+         * 예약 폼에서 내가 실제로 선택 중인 충전기만 예약할 수 있게 한다.
+         * TTL이 만료되었거나, 다른 사용자가 먼저 선점한 경우 예약을 막는다.
+         */
+        boolean holdOwner =
+                evChargerRedisService.isReservationHoldOwner(
+                        reservationDTO.getChargerId(),
+                        reservationDTO.getMemberId()
+                );
+
+        if (!holdOwner) {
+            throw new IllegalArgumentException("충전기 선택 시간이 만료되었습니다. 충전기를 다시 선택해주세요.");
+        }
+
+        /*
+         * 5. 예약 시간 중복 체크
          */
         int overlapCount = reservationDAO.countReservationOverlap(
                 reservationDTO.getChargerId(),
@@ -177,7 +191,7 @@ public class EvReservationServiceImpl implements EvReservationService {
         }
 
         /*
-         * 5. 예상 충전량 계산
+         * 6. 예상 충전량 계산
          */
         double batteryCapacity = vehicle.getBatteryCapacityKwh();
 
@@ -188,21 +202,21 @@ public class EvReservationServiceImpl implements EvReservationService {
         requiredKwh = Math.round(requiredKwh * 100.0) / 100.0;
 
         /*
-         * 6. 예상 충전 시간 계산
+         * 7. 예상 충전 시간 계산
          */
         double estimatedMinutesDouble = requiredKwh / charger.getChargingSpeedKw() * 60;
 
         int estimatedMinutes = (int) Math.ceil(estimatedMinutesDouble);
 
         /*
-         * 7. 예상 금액 계산
+         * 8. 예상 금액 계산
          */
         double estimatedCost = requiredKwh * charger.getPricePerKwh();
 
         estimatedCost = Math.round(estimatedCost);
 
         /*
-         * 8. 예약 기본값 세팅
+         * 9. 예약 기본값 세팅
          */
         reservationDTO.setRequiredKwh(requiredKwh);
         reservationDTO.setEstimatedMinutes(estimatedMinutes);
@@ -215,9 +229,21 @@ public class EvReservationServiceImpl implements EvReservationService {
          */
 
         /*
-         * 9. 예약 등록
+         * 10. 예약 등록
          */
         reservationDAO.insertReservation(reservationDTO);
+
+        /*
+         * 11. 예약 등록 성공 후 Redis 임시 점유 해제
+         *
+         * 이제 실제 예약 데이터가 DB에 들어갔기 때문에
+         * "선택중" Redis key는 유지할 필요가 없다.
+         * 이후 화면 상태는 DB 예약 상태를 기준으로 "예약중"으로 판단한다.
+         */
+        evChargerRedisService.releaseChargerReservationHold(
+                reservationDTO.getChargerId(),
+                reservationDTO.getMemberId()
+        );
 
         log.info("@# created reservationId => {}", reservationDTO.getReservationId());
 
@@ -718,6 +744,71 @@ public class EvReservationServiceImpl implements EvReservationService {
         }
 
         return cost;
+    }
+    
+    @Override
+    public List<EvChargerDTO> getChargerStatus(Long stationId,
+                                               String reservationDate,
+                                               String startTime,
+                                               int estimatedMinutes,
+                                               Long memberId) {
+        log.info("@# EvReservationServiceImpl.getChargerStatus()");
+        log.info("@# stationId => {}", stationId);
+        log.info("@# reservationDate => {}", reservationDate);
+        log.info("@# startTime => {}", startTime);
+        log.info("@# estimatedMinutes => {}", estimatedMinutes);
+        log.info("@# memberId => {}", memberId);
+
+        LocalDateTime startDateTime = LocalDateTime.parse(reservationDate + "T" + startTime);
+        LocalDateTime endDateTime = startDateTime.plusMinutes(estimatedMinutes);
+
+        /*
+         * 1. DB 기준 충전기 상태 조회
+         *
+         * Mapper에서 처리하는 상태:
+         * - 해당 시간대 충전중: 사용중
+         * - 해당 시간대 예약완료/인증완료: 예약중
+         * - 그 외: 사용가능
+         */
+        List<EvChargerDTO> chargerList =
+                reservationDAO.getChargerStatus(stationId, startDateTime, endDateTime);
+
+        /*
+         * 2. Redis 기준 다른 사용자 임시 선점 상태 반영
+         *
+         * 기존 JSP의 selectedByOther 흐름을 Ajax 조회에서도 유지하기 위한 처리다.
+         * 즉, 다른 사용자가 예약 폼에서 선택 중인 충전기는
+         * 새로고침 없이도 "선택중"으로 내려보낸다.
+         */
+        for (EvChargerDTO charger : chargerList) {
+            boolean selectedByOther =
+                    evChargerRedisService.isReservationSelectedByOther(
+                            charger.getChargerId(),
+                            memberId
+                    );
+
+            /*
+             * DB 기준으로 이미 사용중/예약중인 충전기는 DB 상태를 우선한다.
+             * Redis 선점은 아직 예약 등록 전의 임시 상태이므로
+             * 실제 예약/충전 상태보다 우선하면 안 된다.
+             */
+            boolean occupiedByReservation =
+                    "사용중".equals(charger.getStatus())
+                    || "예약중".equals(charger.getStatus());
+
+            if (selectedByOther && !occupiedByReservation) {
+                charger.setStatus("선택중");
+                charger.setReserved(true);
+                charger.setSelectedByOther(true);
+            }
+
+            log.info("@# chargerId => {}", charger.getChargerId());
+            log.info("@# chargerStatus => {}", charger.getStatus());
+            log.info("@# selectedByOther => {}", selectedByOther);
+            log.info("@# reserved => {}", charger.isReserved());
+        }
+
+        return chargerList;
     }
 
 }

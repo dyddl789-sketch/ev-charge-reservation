@@ -10,22 +10,50 @@ import com.ev.dto.vehicle.EvVehicleDTO;
 import com.ev.dto.vehicle.EvVehicleModelDTO;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EvVehicleServiceImpl implements EvVehicleService {
-
+	
+	private final EvAiChatService evAiChatService;
     private final EvVehicleDAO evVehicleDAO;
  // 차량 등록 화면 진입 시 차량 모델 목록 조회
     @Override
     public List<EvVehicleModelDTO> getVehicleModelList() {
         return evVehicleDAO.getVehicleModelList();
     }
-//    내 차량 등록
+    //내 차량등록
     @Override
     @Transactional
     public void registerVehicle(EvVehicleDTO vehicleDTO) {
-    	evVehicleDAO.registerVehicle(vehicleDTO);
+
+        if (vehicleDTO.getModelId() == null) {
+            throw new IllegalArgumentException("차량 모델을 선택해 주세요.");
+        }
+
+        if (vehicleDTO.getPlateNumber() == null
+                || vehicleDTO.getPlateNumber().trim().isEmpty()) {
+            throw new IllegalArgumentException("차량번호를 입력해 주세요.");
+        }
+
+        String plateNumber = vehicleDTO.getPlateNumber()
+                .replaceAll("\\s+", "")
+                .trim();
+
+        vehicleDTO.setPlateNumber(plateNumber);
+
+        int count = evVehicleDAO.countByPlateNumber(
+                vehicleDTO.getMemberId(),
+                plateNumber
+        );
+
+        if (count > 0) {
+            throw new IllegalArgumentException("이미 등록된 차량번호입니다.");
+        }
+
+        evVehicleDAO.registerVehicle(vehicleDTO);
     }
 //    내 차량 목록 조회 
     @Override
@@ -43,6 +71,12 @@ public class EvVehicleServiceImpl implements EvVehicleService {
 
         // 선택 차량 기본 차량 설정
     	evVehicleDAO.updateDefaultVehicle(memberId, vehicleId);
+    	
+        // AI 대화 캐시 삭제
+        evAiChatService.clearChatCache(memberId);
+
+        log.info("@# 대표 차량 변경으로 AI 캐시 삭제 완료");
+    	
 
     }
     
@@ -52,4 +86,6 @@ public class EvVehicleServiceImpl implements EvVehicleService {
     public void deleteVehicle(Long memberId, Long vehicleId) {
         evVehicleDAO.deleteVehicle(memberId, vehicleId);
     }
+    
+    
 }

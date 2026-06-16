@@ -231,3 +231,37 @@
         min-width: 850px;
     }
 }
+/* =========================
+   Chart Polish
+========================= */
+
+.stat-panel {
+    border-radius: 18px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+}
+
+.stat-panel canvas {
+    height: 360px !important;
+}
+
+.stat-panel-header h2 {
+    letter-spacing: -0.4px;
+}
+
+.stat-card {
+    border-radius: 18px;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::after {
+    content: "";
+    position: absolute;
+    right: -28px;
+    top: -28px;
+    width: 86px;
+    height: 86px;
+    background: rgba(240, 90, 0, 0.08);
+    border-radius: 50%;
+}

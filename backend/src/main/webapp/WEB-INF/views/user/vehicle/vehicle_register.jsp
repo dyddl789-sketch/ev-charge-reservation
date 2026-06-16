@@ -31,7 +31,20 @@
         <section class="register-layout">
 
             <form action="/vehicle/register" method="post" class="vehicle-form">
-
+			
+			    <!-- 에러 메시지 -->
+			    <c:if test="${not empty errorMsg}">
+			        <div class="error-message">
+			            ${errorMsg}
+			        </div>
+			    </c:if>
+			
+			    <!-- 성공 메시지 -->
+			    <c:if test="${not empty msg}">
+			        <div class="success-message">
+			            ${msg}
+			        </div>
+			    </c:if>
                 <!-- 차량 모델 선택 -->
                 <div class="form-section">
                     <h2>차량 모델 선택</h2>
@@ -107,10 +120,11 @@
 
                         <div class="form-group">
                             <label for="plateNumber">차량 번호</label>
-                            <input type="text"
-                                   id="plateNumber"
-                                   name="plateNumber"
-                                   placeholder="예: 12가 3456">
+								<input type="text"
+								       id="plateNumber"
+								       name="plateNumber"
+								       placeholder="예: 12가 3456"
+								       required>
                         </div>
 
                         <div class="form-group">

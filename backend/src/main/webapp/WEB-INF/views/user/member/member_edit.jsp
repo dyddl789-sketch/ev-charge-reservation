@@ -48,24 +48,28 @@
               enctype="multipart/form-data"
               id="memberEditForm">
 
-            <div class="profile-section">
-
-                <img src="${empty member.profileImageUrl
-                        ? pageContext.request.contextPath.concat('/images/member/default-profile.png')
-                        : pageContext.request.contextPath.concat(member.profileImageUrl)}"
-                     alt="프로필 이미지"
-                     class="member-profile-image"
-                     id="profilePreview">
-
-                <label class="image-upload-btn">
-                    사진 변경
-                    <input type="file"
-                           name="profileImage"
-                           id="profileImage"
-                           accept="image/*">
-                </label>
-
-            </div>
+			<div class="profile-section">
+			
+			    <img src="${empty member.profileImageUrl
+			            ? pageContext.request.contextPath.concat('/images/member/default-profile.png')
+			            : pageContext.request.contextPath.concat(member.profileImageUrl)}"
+			         alt="프로필 이미지"
+			         class="member-profile-image"
+			         id="profilePreview">
+			
+			    <label class="image-upload-btn">
+			        사진 변경
+			        <input type="file"
+			               name="profileImage"
+			               id="profileImage"
+			               accept="image/*">
+			    </label>
+			
+			    <small class="image-guide">
+			        지원 형식: jpg, jpeg, png, gif, webp / 최대 5MB
+			    </small>
+			
+			</div>
 
             <div class="info-grid">
 

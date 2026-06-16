@@ -232,3 +232,53 @@
         min-width: 900px;
     }
 }
+/* =========================
+   Chart Polish
+========================= */
+
+.sales-panel {
+    border-radius: 18px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+}
+
+.sales-panel canvas {
+    height: 360px !important;
+}
+
+.sales-card {
+    border-radius: 18px;
+    position: relative;
+    overflow: hidden;
+}
+
+.sales-card::after {
+    content: "";
+    position: absolute;
+    right: -28px;
+    top: -28px;
+    width: 86px;
+    height: 86px;
+    background: rgba(240, 90, 0, 0.08);
+    border-radius: 50%;
+}
+
+.sales-table th {
+    background: #f8fafc;
+}
+
+.sales-table tbody tr:hover {
+    background: #fff7ed;
+}
+
+.sales-rate-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 58px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #fff7ed;
+    color: #ea580c;
+    font-weight: 800;
+}

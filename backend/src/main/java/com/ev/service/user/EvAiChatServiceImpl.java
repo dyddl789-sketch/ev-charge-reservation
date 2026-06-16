@@ -957,4 +957,25 @@ public class EvAiChatServiceImpl implements EvAiChatService {
             log.warn("@# ai chat cache append fail => {}", e.getMessage());
         }
     }
+    
+    @Override
+    public void clearChatCache(Long memberId) {
+
+        log.info("@# clearChatCache()");
+        log.info("@# memberId => {}", memberId);
+
+        EvAiChatRoomDTO room =
+                evAiChatDAO.findRoomByMemberId(memberId);
+
+        if (room == null) {
+            return;
+        }
+
+        String cacheKey =
+                "ai:chat:room:" + room.getRoomId();
+
+        stringRedisTemplate.delete(cacheKey);
+
+        log.info("@# AI Redis Cache Deleted => {}", cacheKey);
+    }
 }

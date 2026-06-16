@@ -60,7 +60,7 @@ public class EvVehicleController {
         return "user/vehicle/vehicle_register";
     }
 
-    // 차량 등록 처리
+ // 차량 등록 처리
     @PostMapping("/register")
     public String vehicleRegisterProcess(
             @AuthenticationPrincipal EvUserDetails userDetails,
@@ -71,13 +71,31 @@ public class EvVehicleController {
 
         vehicleDTO.setMemberId(memberId);
 
-        log.info("vehicleDTO={}", vehicleDTO);
+        log.info("@# EvVehicleController.vehicleRegisterProcess()");
+        log.info("@# vehicleDTO => {}", vehicleDTO);
 
-        evVehicleService.registerVehicle(vehicleDTO);
+        try {
 
-        rttr.addFlashAttribute("msg", "차량 등록이 완료되었습니다.");
+            evVehicleService.registerVehicle(vehicleDTO);
 
-        return "redirect:/vehicle/list";
+            rttr.addFlashAttribute(
+                    "msg",
+                    "차량 등록이 완료되었습니다."
+            );
+
+            return "redirect:/vehicle/list";
+
+        } catch (IllegalArgumentException e) {
+
+            log.warn("@# vehicle register failed => {}", e.getMessage());
+
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    e.getMessage()
+            );
+
+            return "redirect:/vehicle/register";
+        }
     }
 
     // 기본차량 설정 ajax방식
