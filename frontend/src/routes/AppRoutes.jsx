@@ -18,9 +18,11 @@ import MyReservationPage from "../pages/public/MyReservationPage";
 import ChargingHistoryPage from "../pages/public/ChargingHistoryPage";
 import AiChatPage from "../pages/public/AiChatPage";
 import CustomerCenterPage from "../pages/public/CustomerCenterPage";
-import ComplaintCreatePage from "../pages/public/ComplaintCreatePage";
+import ComplaintPage from "../pages/public/ComplaintPage";
 import MyComplaintPage from "../pages/public/MyComplaintPage";
+import MyComplaintDetailPage from "../pages/public/MyComplaintDetailPage";
 import NoticePage from "../pages/public/NoticePage";
+import NoticeDetailPage from "../pages/public/NoticeDetailPage";
 import NotFoundPage from "../pages/public/NotFoundPage";
 
 import DashboardPage from "../pages/admin/DashboardPage";
@@ -32,7 +34,7 @@ import AdminStationPage from "../pages/admin/AdminStationPage";
 import AdminChargerPage from "../pages/admin/AdminChargerPage";
 import AdminReservationPage from "../pages/admin/AdminReservationPage";
 import AdminReservationDetailPage from "../pages/admin/AdminReservationDetailPage";
-import ComplaintPage from "../pages/admin/ComplaintPage";
+import AdminComplaintPage from "../pages/admin/ComplaintPage";
 import FaultPage from "../pages/admin/FaultPage";
 import InspectionPage from "../pages/admin/InspectionPage";
 import ApprovalPage from "../pages/admin/ApprovalPage";
@@ -56,7 +58,8 @@ const AppRoutes = () => {
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/vehicles" element={<VehiclePage />} />
           <Route path="/vehicles/register" element={<VehicleRegisterPage />} />
-          <Route path="/stations" element={<StationPage />} />
+          <Route path="/stations" element={<StationMapPage />} />
+          <Route path="/stations/list" element={<StationPage />} />
           <Route path="/stations/map" element={<StationMapPage />} />
           <Route path="/stations/:stationId" element={<StationDetailPage />} />
           <Route path="/reservation" element={<ReservationPage />} />
@@ -65,9 +68,12 @@ const AppRoutes = () => {
           <Route path="/charging-history" element={<ChargingHistoryPage />} />
           <Route path="/ai-chat" element={<AiChatPage />} />
           <Route path="/customer-center" element={<CustomerCenterPage />} />
-          <Route path="/complaint" element={<ComplaintCreatePage />} />
+          <Route path="/complaint" element={<ComplaintPage />} />
           <Route path="/complaints/my" element={<MyComplaintPage />} />
+          <Route path="/complaints/my/:complaintId" element={<MyComplaintDetailPage />} />
           <Route path="/notice" element={<NoticePage />} />
+          <Route path="/notice/:noticeId" element={<NoticeDetailPage />}
+/>
         </Route>
 
         {/* 운영기관 MIS 영역 */}
@@ -82,7 +88,7 @@ const AppRoutes = () => {
           <Route path="chargers" element={<AdminChargerPage />} />
           <Route path="reservations" element={<AdminReservationPage />} />
           <Route path="reservations/:reservationId" element={<AdminReservationDetailPage />} />
-          <Route path="complaints" element={<ComplaintPage />} />
+          <Route path="complaints" element={<AdminComplaintPage />} />
           <Route path="faults" element={<FaultPage />} />
           <Route path="inspections" element={<InspectionPage />} />
           <Route path="approvals" element={<ApprovalPage />} />

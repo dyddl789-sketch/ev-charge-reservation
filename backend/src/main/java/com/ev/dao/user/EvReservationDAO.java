@@ -53,7 +53,19 @@ public interface EvReservationDAO {
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
-
+    
+    /*
+     * 차량 예약 시간 중복 체크
+     *
+     * 같은 차량이 같은 시간대에
+     * 여러 충전기를 동시에 예약하는 것을 막기 위한 검사다.
+     */
+    int countVehicleReservationOverlap(
+            @Param("vehicleId") Long vehicleId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime
+    );
+    
     /*
      * 예약 등록
      */

@@ -1,27 +1,135 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+
+import * as notices from "../../apis/noticeApi";
+import { noticeMockList } from "../../apis/noticeMockData";
+import "../../styles/notice.css";
 
 const NoticePage = () => {
   console.log("NoticePage 렌더링");
 
-  return (
-    <section className="page-section">
-      <div className="section-inner">
-        <div className="page-title-box">
-          <p className="page-subtitle">EV Charge Reservation v2.0</p>
-          <h1>새소식</h1>
-          <p>기존 JSP 화면을 React로 이관할 페이지입니다.</p>
-        </div>
+  const [keyword, setKeyword] = useState("");
+  const [noticeList, setNoticeList] = useState([]);
 
-        <div className="page-placeholder-card">
-          <strong>새소식 화면 준비 영역</strong>
-          <p>라우터와 메뉴 연결을 먼저 완료하고, 다음 단계에서 JSP/CSS/JS 기준으로 실제 화면을 채웁니다.</p>
-          <div className="page-actions">
-            <Link to="/">메인으로</Link>
-            <Link to="/admin/dashboard">MIS 대시보드</Link>
-          </div>
+  useEffect(() => {
+    getNoticeList();
+  }, []);
+
+  // 공지사항 목록 조회
+  const getNoticeList = async () => {
+    console.log("공지사항 목록 조회 실행");
+
+    try {
+      const response = await notices.list();
+      const data = response.data;
+
+      console.log("공지사항 목록 응답", data);
+
+      setNoticeList(data);
+    } catch (error) {
+      console.log("공지사항 목록 조회 실패", error);
+
+      // 백엔드 연결 전에는 게시판 목데이터를 그대로 사용
+      setNoticeList(noticeMockList);
+    }
+  };
+
+  // 공지사항 검색
+  const searchNotice = async () => {
+    console.log("공지사항 검색 실행", keyword);
+
+    if (!keyword.trim()) {
+      getNoticeList();
+      return;
+    }
+
+    try {
+      const response = await notices.search(keyword);
+      const data = response.data;
+
+      console.log("공지사항 검색 응답", data);
+
+      setNoticeList(data);
+    } catch (error) {
+      console.log("공지사항 검색 실패", error);
+
+      // 백엔드 연결 전에는 같은 게시판 목데이터에서 검색
+      const filteredList = noticeMockList.filter((notice) =>
+        notice.title.includes(keyword)
+      );
+
+      setNoticeList(filteredList);
+    }
+  };
+
+  return (
+    <main className="notice-page">
+      <section className="notice-hero">
+        <span>News & Notice</span>
+        <h1>새소식</h1>
+        <p>충전소 점검, 운영 안내, 서비스 공지사항을 확인하세요.</p>
+      </section>
+
+      <section className="notice-search-box">
+        <strong>전체 공지 {noticeList.length}건</strong>
+
+        <div className="notice-search-form">
+          <input
+            type="text"
+            value={keyword}
+            placeholder="공지사항 검색"
+            onChange={(e) => setKeyword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                searchNotice();
+              }
+            }}
+          />
+
+          <button type="button" onClick={searchNotice}>
+            검색
+          </button>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section className="notice-list-box">
+        <table className="notice-table">
+          <thead>
+            <tr>
+              <th>구분</th>
+              <th>제목</th>
+              <th>등록일</th>
+              <th>조회수</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {noticeList.map((notice) => (
+              <tr key={notice.noticeId}>
+                <td>
+                  <span className="notice-badge">공지</span>
+                </td>
+
+                <td className="notice-title-cell">
+                  <Link to={`/notice/${notice.noticeId}`}>{notice.title}</Link>
+                </td>
+
+                <td>{notice.createdAt}</td>
+                <td>{notice.viewCount}</td>
+              </tr>
+            ))}
+
+            {noticeList.length === 0 && (
+              <tr>
+                <td colSpan="4" className="notice-empty">
+                  검색 결과가 없습니다.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+    </main>
   );
 };
 

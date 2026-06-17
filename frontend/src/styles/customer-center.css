@@ -1,0 +1,130 @@
+.customer-center-page {
+  background: #f6f8fb;
+  min-height: 720px;
+  padding: 56px 0 80px;
+}
+
+.customer-center-inner {
+  width: 1160px;
+  max-width: calc(100% - 40px);
+  margin: 0 auto;
+}
+
+.customer-hero {
+  min-height: 180px;
+  background: linear-gradient(135deg, #101b36, #243f90);
+  border-radius: 22px;
+  color: #ffffff;
+  padding: 44px;
+}
+
+.customer-hero p {
+  margin: 0 0 12px;
+  color: #bfdbfe;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.customer-hero h1 {
+  margin: 0 0 16px;
+  font-size: 36px;
+  font-weight: 900;
+}
+
+.customer-hero span {
+  font-size: 16px;
+  color: #e5e7eb;
+}
+
+.customer-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.customer-quick-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 24px;
+  color: #111827;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+}
+
+.customer-quick-card.primary {
+  background: #ff5a00;
+  color: #ffffff;
+  border-color: #ff5a00;
+}
+
+.customer-quick-card strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 19px;
+}
+
+.customer-quick-card p {
+  margin: 0;
+  line-height: 1.6;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.customer-content-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.customer-panel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+}
+
+.customer-panel h2 {
+  margin: 0 0 20px;
+  font-size: 23px;
+}
+
+.faq-list {
+  display: grid;
+  gap: 14px;
+}
+
+.faq-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.faq-item strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #111827;
+}
+
+.faq-item p {
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.notice-panel ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #374151;
+  line-height: 2;
+}
+
+@media (max-width: 900px) {
+  .customer-quick-grid,
+  .customer-content-grid {
+    grid-template-columns: 1fr;
+  }
+}

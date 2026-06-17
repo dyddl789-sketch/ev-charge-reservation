@@ -3,47 +3,76 @@ import { Link } from "react-router-dom";
 const QuickService = () => {
   console.log("QuickService 렌더링");
 
-  const tabs = ["무공해차 구매\n예약자", "충전소\n찾기", "차량\n등록", "충전소\n관리자"];
-
-  const quickServices = [
-    { title: "충전소 찾기", icon: "🌱", link: "/stations" },
-    { title: "충전 예약", icon: "🚘", link: "/reservation" },
-    { title: "차량 등록", icon: "🧾", link: "/vehicles/register" },
-    { title: "내 예약 조회", icon: "💳", link: "/reservation/my" },
-    { title: "AI 충전 비서", icon: "🏛️", link: "/ai-chat" },
-    { title: "전기차 충전요금", icon: "⛽", link: "/charge-fee" },
+  const serviceGroups = [
+    {
+      groupTitle: "충전 서비스",
+      menus: [
+        {
+          title: "충전소 찾기",
+          icon: "🔍",
+          link: "/stations",
+        },
+        {
+          title: "충전 예약",
+          icon: "📅",
+          link: "/reservation",
+        },
+        {
+          title: "내 차량 관리",
+          icon: "🚗",
+          link: "/vehicles",
+        },
+      ],
+    },
+    {
+      groupTitle: "이용 정보",
+      menus: [
+        {
+          title: "내 예약 조회",
+          icon: "📋",
+          link: "/my-reservations",
+        },
+        {
+          title: "민원 접수",
+          icon: "📢",
+          link: "/complaint",
+        },
+        {
+          title: "공지사항",
+          icon: "📰",
+          link: "/notice",
+        },
+      ],
+    },
   ];
 
   return (
     <aside className="quick-service-box">
-      <h2>자주 찾는 서비스</h2>
-
-      <div className="quick-tab-list">
-        {tabs.map((tab, index) => (
-          <button
-            type="button"
-            className={`quick-tab ${index === 0 ? "active" : ""}`}
-            key={index}
-          >
-            {tab.split("\n").map((line, lineIndex) => (
-              <span key={lineIndex}>{line}</span>
-            ))}
-          </button>
-        ))}
+      <div className="quick-service-title-area">
+        <h2>자주 찾는 서비스</h2>
+        <p>전기차 충전 서비스와 이용 정보를 빠르게 확인하세요.</p>
       </div>
 
-      <div className="quick-service-grid">
-        {quickServices.map((service, index) => (
-          <Link to={service.link} className="quick-service-item" key={index}>
-            <div className="quick-service-icon">{service.icon}</div>
-            <p>{service.title}</p>
-          </Link>
+      <div className="quick-service-group-wrap">
+        {serviceGroups.map((group) => (
+          <div className="quick-service-group" key={group.groupTitle}>
+            <h3>{group.groupTitle}</h3>
+
+            <div className="quick-service-grid">
+              {group.menus.map((service) => (
+                <Link
+                  to={service.link}
+                  className="quick-service-item"
+                  key={service.title}
+                >
+                  <div className="quick-service-icon">{service.icon}</div>
+                  <p>{service.title}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
-
-      <button type="button" className="quick-more-button">
-        ˅
-      </button>
     </aside>
   );
 };

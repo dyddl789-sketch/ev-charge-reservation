@@ -153,7 +153,29 @@
            and start_time &lt; #{endTime}
            and end_time &gt; #{startTime}
     </select>
+	
+	<!--
+    차량 예약 시간 중복 체크
 
+    같은 차량이 같은 시간대에
+    여러 충전기를 동시에 예약하는 것을 막는다.
+
+    시간 겹침 공식:
+    기존 시작 시간 < 새 종료 시간
+    AND
+    기존 종료 시간 > 새 시작 시간
+
+    취소/완료/노쇼는 제외하고,
+    실제로 점유 중인 예약 상태만 체크한다.
+	-->
+	<select id="countVehicleReservationOverlap" resultType="int">
+	    select count(*)
+	      from reservation
+	     where vehicle_id = #{vehicleId}
+	       and status in ('예약완료', '인증완료', '충전중')
+	       and start_time &lt; #{endTime}
+	       and end_time &gt; #{startTime}
+	</select>
 
     <!--
         예약 등록
