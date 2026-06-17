@@ -1,87 +1,97 @@
 import { Link } from "react-router-dom";
-
-import "../../styles/customer-center.css";
+import CustomerSidebar from "../../components/customer/CustomerSidebar";
+import "../../styles/complaint.css";
 
 const CustomerCenterPage = () => {
   console.log("CustomerCenterPage 렌더링");
 
-  const faqList = [
-    {
-      question: "예약한 충전기가 사용 중이면 어떻게 하나요?",
-      answer:
-        "예약 상세 화면에서 상태를 확인한 뒤 고객센터 민원 접수를 통해 운영기관에 문의할 수 있습니다.",
-    },
-    {
-      question: "충전소 장애를 신고할 수 있나요?",
-      answer:
-        "민원 접수에서 시설장애 유형을 선택하면 운영기관 MIS의 민원관리와 장애관리로 연계됩니다.",
-    },
-    {
-      question: "AI 충전 비서는 어떤 기능을 제공하나요?",
-      answer:
-        "대표 차량, 충전기 출력, 배터리 잔량을 기준으로 충전 시간과 비용을 계산하고 충전소를 추천합니다.",
-    },
-  ];
-
   return (
-    <section className="customer-center-page">
-      <div className="customer-center-inner">
-        <div className="customer-hero">
-          <p>Customer Center</p>
+    <main className="customer-complaint-page">
+      <CustomerSidebar />
+
+      <section className="customer-main">
+        <div className="customer-title">
           <h1>고객센터</h1>
-          <span>
-            전기차 충전 예약, 결제, 충전기 장애 관련 문의를 빠르게 접수하고 확인할 수 있습니다.
-          </span>
+          <p>
+            전기차 충전 예약, 결제, 충전기 장애 관련 문의를 접수하고 처리
+            현황을 확인할 수 있습니다.
+          </p>
         </div>
 
-        <div className="customer-quick-grid">
-          <Link to="/complaint" className="customer-quick-card primary">
-            <strong>민원 접수</strong>
+        <section className="customer-card-grid three">
+          <Link to="/complaint" className="customer-service-card primary">
+            <h3>민원 접수</h3>
             <p>예약, 결제, 시설장애 등 불편사항을 접수합니다.</p>
           </Link>
 
-          <Link to="/complaints/my" className="customer-quick-card">
-            <strong>내 민원 내역</strong>
+          <Link to="/complaints/my" className="customer-service-card">
+            <h3>내 민원 내역</h3>
             <p>접수한 민원의 처리 상태와 진행 상황을 확인합니다.</p>
           </Link>
 
-          <Link to="/notice" className="customer-quick-card">
-            <strong>새소식</strong>
-            <p>운영기관 공지사항과 점검 안내를 확인합니다.</p>
+          <Link to="/customer-center/faq" className="customer-service-card">
+            <h3>자주 묻는 질문</h3>
+            <p>예약, 결제, 장애 신고 관련 해결 방법을 확인합니다.</p>
           </Link>
+        </section>
 
-          <Link to="/ai-chat" className="customer-quick-card">
-            <strong>AI 충전 비서</strong>
-            <p>충전소 추천과 충전 시간 계산을 문의합니다.</p>
-          </Link>
-        </div>
-
-        <div className="customer-content-grid">
-          <article className="customer-panel">
+        <section className="customer-content-grid">
+          <div className="customer-content-box">
             <h2>자주 묻는 질문</h2>
 
-            <div className="faq-list">
-              {faqList.map((faq) => (
-                <div className="faq-item" key={faq.question}>
-                  <strong>{faq.question}</strong>
-                  <p>{faq.answer}</p>
-                </div>
-              ))}
+            <div className="faq-item">
+              <strong>예약한 충전기가 사용 중이면 어떻게 하나요?</strong>
+              <p>
+                예약 상세 화면에서 상태를 확인한 뒤 민원 접수를 통해
+                운영기관에 문의할 수 있습니다.
+              </p>
             </div>
-          </article>
 
-          <article className="customer-panel notice-panel">
+            <div className="faq-item">
+              <strong>충전소 장애를 신고할 수 있나요?</strong>
+              <p>
+                민원 접수에서 시설장애 유형을 선택하면 민원관리와
+                장애관리로 연계됩니다.
+              </p>
+            </div>
+
+            <Link to="/customer-center/faq" className="faq-more-link">
+              FAQ 전체보기
+            </Link>
+          </div>
+
+          <div className="customer-content-box">
             <h2>이용 안내</h2>
-            <ul>
+
+            <ul className="guide-list">
               <li>민원 접수 후 운영기관 담당자가 확인합니다.</li>
               <li>시설 장애 민원은 장애관리와 점검관리로 연계됩니다.</li>
               <li>처리 결과는 내 민원 내역에서 확인할 수 있습니다.</li>
-              <li>긴급 장애는 우선순위 HIGH 또는 URGENT로 접수하세요.</li>
+              <li>긴급 장애는 우선순위를 HIGH 또는 URGENT로 접수하세요.</li>
             </ul>
-          </article>
+          </div>
+        </section>
+      </section>
+
+      <aside className="complaint-guide">
+        <div className="guide-card">
+          <h3>민원 접수 안내</h3>
+          <p>정확한 접수를 위해 상세하게 작성해 주세요.</p>
+          <p>충전기명이 있으면 처리에 도움이 됩니다.</p>
         </div>
-      </div>
-    </section>
+
+        <div className="guide-card">
+          <h3>민원 처리 절차</h3>
+          <ol className="process-list">
+            <li><span>1</span>민원 접수</li>
+            <li><span>2</span>AI 자동 분류</li>
+            <li><span>3</span>담당자 배정</li>
+            <li><span>4</span>처리 진행</li>
+            <li><span>5</span>처리 완료</li>
+          </ol>
+        </div>
+      </aside>
+    </main>
   );
 };
 

@@ -24,6 +24,8 @@ import MyComplaintDetailPage from "../pages/public/MyComplaintDetailPage";
 import NoticePage from "../pages/public/NoticePage";
 import NoticeDetailPage from "../pages/public/NoticeDetailPage";
 import NotFoundPage from "../pages/public/NotFoundPage";
+import CustomerFaqPage from "../pages/public/CustomerFaqPage";
+
 
 import DashboardPage from "../pages/admin/DashboardPage";
 import MemberPage from "../pages/admin/MemberPage";
@@ -68,6 +70,7 @@ const AppRoutes = () => {
           <Route path="/charging-history" element={<ChargingHistoryPage />} />
           <Route path="/ai-chat" element={<AiChatPage />} />
           <Route path="/customer-center" element={<CustomerCenterPage />} />
+          <Route path="/customer-center/faq" element={<CustomerFaqPage />} />
           <Route path="/complaint" element={<ComplaintPage />} />
           <Route path="/complaints/my" element={<MyComplaintPage />} />
           <Route path="/complaints/my/:complaintId" element={<MyComplaintDetailPage />} />
