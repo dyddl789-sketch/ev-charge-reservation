@@ -7,9 +7,7 @@ const adminMenus = [
   },
   {
     title: "회원관리",
-    children: [
-      { title: "회원 목록", path: "/admin/members" },
-    ],
+    children: [{ title: "회원 목록", path: "/admin/members" }],
   },
   {
     title: "인사관리",
@@ -27,9 +25,7 @@ const adminMenus = [
   },
   {
     title: "예약관리",
-    children: [
-      { title: "예약 현황", path: "/admin/reservations" },
-    ],
+    children: [{ title: "예약 현황", path: "/admin/reservations" }],
   },
   {
     title: "민원관리",
@@ -71,16 +67,19 @@ const AdminSidebar = () => {
             {menu.children ? (
               <>
                 <div className="admin-menu-title">{menu.title}</div>
+
                 <div className="admin-submenu">
                   {menu.children.map((child) => (
-                    <NavLink key={child.path} to={child.path}>
+                    <NavLink key={child.path} to={child.path} end>
                       {child.title}
                     </NavLink>
                   ))}
                 </div>
               </>
             ) : (
-              <NavLink to={menu.path}>{menu.title}</NavLink>
+              <NavLink to={menu.path} end>
+                {menu.title}
+              </NavLink>
             )}
           </div>
         ))}
