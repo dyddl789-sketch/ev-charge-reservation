@@ -1,6 +1,4 @@
 import { useState } from "react";
-import CustomerSidebar from "../../components/customer/CustomerSidebar";
-import "../../styles/complaint.css";
 
 const CustomerFaqPage = () => {
   console.log("CustomerFaqPage 렌더링");
@@ -42,45 +40,36 @@ const CustomerFaqPage = () => {
 
   const toggleFaq = (id) => {
     console.log("FAQ 열기/닫기", id);
+
     setOpenId(openId === id ? null : id);
   };
 
   return (
-    <main className="customer-complaint-page">
-      <CustomerSidebar />
+    <section className="complaint-form-area">
+      <div className="complaint-title-box">
+        <h1>자주 묻는 질문</h1>
+        <p>
+          전기차 충전 서비스 이용 중 자주 묻는 질문을 확인할 수 있습니다.
+        </p>
+      </div>
 
-      <section className="complaint-form-area">
-        <div className="complaint-title-box">
-          <h1>자주 묻는 질문</h1>
-          <p>전기차 충전 서비스 이용 중 자주 묻는 질문을 확인할 수 있습니다.</p>
-        </div>
+      <div className="faq-list-box">
+        {faqList.map((faq) => (
+          <div className="faq-accordion-item" key={faq.id}>
+            <button type="button" onClick={() => toggleFaq(faq.id)}>
+              <span>Q. {faq.question}</span>
+              <strong>{openId === faq.id ? "−" : "+"}</strong>
+            </button>
 
-        <div className="faq-list-box">
-          {faqList.map((faq) => (
-            <div className="faq-accordion-item" key={faq.id}>
-              <button type="button" onClick={() => toggleFaq(faq.id)}>
-                <span>Q. {faq.question}</span>
-                <strong>{openId === faq.id ? "−" : "+"}</strong>
-              </button>
-
-              {openId === faq.id && (
-                <div className="faq-answer">
-                  <p>{faq.answer}</p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <aside className="complaint-guide">
-        <div className="guide-card">
-          <h3>FAQ 안내</h3>
-          <p>예약, 결제, 충전기 장애 관련 자주 묻는 질문을 제공합니다.</p>
-          <p>해결되지 않는 문제는 민원 접수를 이용해 주세요.</p>
-        </div>
-      </aside>
-    </main>
+            {openId === faq.id && (
+              <div className="faq-answer">
+                <p>{faq.answer}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 };
 

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import * as complaintApi from "../../apis/complaintApi";
-import "../../styles/complaint.css";
 
 const MyComplaintPage = () => {
   console.log("MyComplaintPage 렌더링");
@@ -33,11 +32,15 @@ const MyComplaintPage = () => {
 
     try {
       setLoading(true);
+
       const response = await complaintApi.getMyComplaints();
+
       console.log("내 민원 목록 응답", response);
+
       setComplaints(response.data || []);
     } catch (error) {
       console.log("내 민원 목록 조회 실패 - mock 사용", error);
+
       setComplaints(mockComplaints);
     } finally {
       setLoading(false);
@@ -49,20 +52,16 @@ const MyComplaintPage = () => {
   }, []);
 
   return (
-    <main className="complaint-page">
-      <section className="complaint-hero">
-        <div>
-          <p className="eyebrow">My Complaints</p>
-          <h1>내 민원 내역</h1>
-          <p>접수한 민원의 처리 상태와 진행 상황을 확인할 수 있습니다.</p>
-        </div>
-        <Link to="/complaint" className="outline-link-btn">
-          민원 접수
-        </Link>
-      </section>
+    <section className="complaint-form-area">
+      <div className="complaint-title-box">
+        <h1>내 민원 내역</h1>
+        <p>접수한 민원의 처리 상태와 진행 상황을 확인할 수 있습니다.</p>
+      </div>
 
       <section className="complaint-list-card">
-        {loading && <div className="empty-box">민원 목록을 불러오는 중입니다.</div>}
+        {loading && (
+          <div className="empty-box">민원 목록을 불러오는 중입니다.</div>
+        )}
 
         {!loading && complaints.length === 0 && (
           <div className="empty-box">접수한 민원이 없습니다.</div>
@@ -80,6 +79,7 @@ const MyComplaintPage = () => {
                 <th>접수일</th>
               </tr>
             </thead>
+
             <tbody>
               {complaints.map((item) => (
                 <tr key={item.complaintId}>
@@ -103,7 +103,7 @@ const MyComplaintPage = () => {
           </table>
         )}
       </section>
-    </main>
+    </section>
   );
 };
 

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import PublicLayout from "../layouts/PublicLayout";
 import AdminLayout from "../layouts/AdminLayout";
+import CustomerLayout from "../layouts/CustomerLayout";
 
 import MainPage from "../pages/public/MainPage";
 import LoginPage from "../pages/public/LoginPage";
@@ -18,13 +19,13 @@ import MyReservationPage from "../pages/public/MyReservationPage";
 import ChargingHistoryPage from "../pages/public/ChargingHistoryPage";
 import AiChatPage from "../pages/public/AiChatPage";
 import CustomerCenterPage from "../pages/public/CustomerCenterPage";
+import CustomerFaqPage from "../pages/public/CustomerFaqPage";
 import ComplaintPage from "../pages/public/ComplaintPage";
 import MyComplaintPage from "../pages/public/MyComplaintPage";
 import MyComplaintDetailPage from "../pages/public/MyComplaintDetailPage";
 import NoticePage from "../pages/public/NoticePage";
 import NoticeDetailPage from "../pages/public/NoticeDetailPage";
 import NotFoundPage from "../pages/public/NotFoundPage";
-import CustomerFaqPage from "../pages/public/CustomerFaqPage";
 
 
 import DashboardPage from "../pages/admin/DashboardPage";
@@ -69,11 +70,13 @@ const AppRoutes = () => {
           <Route path="/my-reservations" element={<MyReservationPage />} />
           <Route path="/charging-history" element={<ChargingHistoryPage />} />
           <Route path="/ai-chat" element={<AiChatPage />} />
+        <Route element={<CustomerLayout />}>
           <Route path="/customer-center" element={<CustomerCenterPage />} />
           <Route path="/customer-center/faq" element={<CustomerFaqPage />} />
           <Route path="/complaint" element={<ComplaintPage />} />
           <Route path="/complaints/my" element={<MyComplaintPage />} />
           <Route path="/complaints/my/:complaintId" element={<MyComplaintDetailPage />} />
+        </Route>
           <Route path="/notice" element={<NoticePage />} />
           <Route path="/notice/:noticeId" element={<NoticeDetailPage />}
 />

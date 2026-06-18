@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import * as complaintApi from "../../apis/complaintApi";
-import "../../styles/complaint.css";
 
 const MyComplaintDetailPage = () => {
   console.log("MyComplaintDetailPage 렌더링");
@@ -18,8 +17,18 @@ const MyComplaintDetailPage = () => {
     content: "예약 후 인증코드를 입력했지만 인증이 되지 않습니다.",
     createdAt: "2026-06-17 10:20",
     histories: [
-      { historyId: 1, actionType: "접수", memo: "민원이 접수되었습니다.", createdAt: "2026-06-17 10:20" },
-      { historyId: 2, actionType: "배정", memo: "운영팀 담당자에게 배정되었습니다.", createdAt: "2026-06-17 10:40" },
+      {
+        historyId: 1,
+        actionType: "접수",
+        memo: "민원이 접수되었습니다.",
+        createdAt: "2026-06-17 10:20",
+      },
+      {
+        historyId: 2,
+        actionType: "배정",
+        memo: "운영팀 담당자에게 배정되었습니다.",
+        createdAt: "2026-06-17 10:40",
+      },
     ],
   };
 
@@ -28,10 +37,13 @@ const MyComplaintDetailPage = () => {
 
     try {
       const response = await complaintApi.getMyComplaintDetail(complaintId);
+
       console.log("내 민원 상세 응답", response);
+
       setComplaint(response.data);
     } catch (error) {
       console.log("내 민원 상세 조회 실패 - mock 사용", error);
+
       setComplaint(mockComplaint);
     }
   };
@@ -41,21 +53,19 @@ const MyComplaintDetailPage = () => {
   }, [complaintId]);
 
   if (!complaint) {
-    return <main className="complaint-page">민원 정보를 불러오는 중입니다.</main>;
+    return (
+      <section className="complaint-form-area">
+        <div className="empty-box">민원 정보를 불러오는 중입니다.</div>
+      </section>
+    );
   }
 
   return (
-    <main className="complaint-page">
-      <section className="complaint-hero">
-        <div>
-          <p className="eyebrow">Complaint Detail</p>
-          <h1>민원 상세</h1>
-          <p>접수한 민원의 상세 내용과 처리 이력을 확인합니다.</p>
-        </div>
-        <Link to="/complaints/my" className="outline-link-btn">
-          목록으로
-        </Link>
-      </section>
+    <section className="complaint-form-area">
+      <div className="complaint-title-box">
+        <h1>민원 상세</h1>
+        <p>접수한 민원의 상세 내용과 처리 이력을 확인합니다.</p>
+      </div>
 
       <section className="complaint-detail-card">
         <div className="detail-head">
@@ -63,7 +73,10 @@ const MyComplaintDetailPage = () => {
             <span className="type-chip">{complaint.complaintType}</span>
             <h2>{complaint.title}</h2>
           </div>
-          <span className={`status-badge ${complaint.status}`}>{complaint.status}</span>
+
+          <span className={`status-badge ${complaint.status}`}>
+            {complaint.status}
+          </span>
         </div>
 
         <div className="detail-meta">
@@ -79,6 +92,7 @@ const MyComplaintDetailPage = () => {
 
         <div className="history-area">
           <h3>처리 이력</h3>
+
           {(complaint.histories || []).map((history) => (
             <div className="history-item" key={history.historyId}>
               <strong>{history.actionType}</strong>
@@ -87,8 +101,14 @@ const MyComplaintDetailPage = () => {
             </div>
           ))}
         </div>
+
+        <div className="complaint-btn-area">
+          <Link to="/complaints/my" className="cancel-btn link-btn">
+            목록으로
+          </Link>
+        </div>
       </section>
-    </main>
+    </section>
   );
 };
 
