@@ -1,5 +1,5 @@
 import { Link, Outlet } from "react-router-dom";
-import Sidebar from "../components/common/Sidebar";
+import AdminSidebar from "../components/admin/AdminSidebar";
 import "../styles/admin.css";
 
 const AdminLayout = () => {
@@ -7,7 +7,7 @@ const AdminLayout = () => {
 
   return (
     <div className="admin-layout">
-      <Sidebar />
+      <AdminSidebar />
 
       <div className="admin-content-wrap">
         <header className="admin-topbar">
@@ -17,8 +17,11 @@ const AdminLayout = () => {
           </div>
 
           <div className="admin-topbar-actions">
-            <Link to="/">사용자 메인</Link>
-            <button type="button" onClick={() => console.log("관리자 로그아웃 클릭")}>로그아웃</button>
+            <Link to="/admin/dashboard">대시보드</Link>
+            <Link to="/">사용자 화면</Link>
+            <button type="button" onClick={() => console.log("관리자 로그아웃 클릭")}>
+              로그아웃
+            </button>
           </div>
         </header>
 
