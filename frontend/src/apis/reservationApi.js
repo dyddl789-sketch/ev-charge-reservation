@@ -86,3 +86,53 @@ export const chargerStatus = ({ stationId, reservationDate, startTime, estimated
     },
   });
 };
+
+// 내 예약 목록 조회(JSON REST 추가 전에는 Mock fallback 사용)
+export const myList = (month = "") => {
+  console.log("reservation myList 요청", month);
+  return api.get("/reservation/my", {
+    params: month ? { month } : {},
+    headers: { Accept: "application/json" },
+  });
+};
+
+// 충전 이용 내역 조회(JSON REST 추가 전에는 Mock fallback 사용)
+export const historyList = (month = "") => {
+  console.log("reservation historyList 요청", month);
+  return api.get("/reservation/history", {
+    params: month ? { month } : {},
+    headers: { Accept: "application/json" },
+  });
+};
+
+// 예약 취소
+export const cancel = (reservationId) => {
+  console.log("reservation cancel 요청", reservationId);
+  return api.post("/reservation/cancel", new URLSearchParams({ reservationId }), {
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+  });
+};
+
+// 예약 인증코드 발급
+export const issueAuthCode = (reservationId) => {
+  console.log("reservation issueAuthCode 요청", reservationId);
+  return api.post("/reservation/auth-code/issue", new URLSearchParams({ reservationId }), {
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+  });
+};
+
+// 예약 인증 처리
+export const verify = (reservationId, authCode) => {
+  console.log("reservation verify 요청", reservationId);
+  return api.post("/reservation/verify", new URLSearchParams({ reservationId, authCode }), {
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+  });
+};
+
+// 충전 영수증 이메일 발송
+export const sendReceiptEmail = (reservationId) => {
+  console.log("reservation sendReceiptEmail 요청", reservationId);
+  return api.post("/reservation/receipt/email", new URLSearchParams({ reservationId }), {
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+  });
+};

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import PublicLayout from "../layouts/PublicLayout";
 import AdminLayout from "../layouts/AdminLayout";
 import CustomerLayout from "../layouts/CustomerLayout";
+import MyPageLayout from "../layouts/MyPageLayout";
 
 import MainPage from "../pages/public/MainPage";
 import LoginPage from "../pages/public/LoginPage";
@@ -58,17 +59,19 @@ const AppRoutes = () => {
           <Route path="/main" element={<MainPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/join" element={<JoinPage />} />
-          <Route path="/mypage" element={<MyPage />} />
-          <Route path="/vehicles" element={<VehiclePage />} />
-          <Route path="/vehicles/register" element={<VehicleRegisterPage />} />
+          <Route element={<MyPageLayout />}>
+            <Route path="/mypage" element={<MyPage />} />
+            <Route path="/vehicles" element={<VehiclePage />} />
+            <Route path="/vehicles/register" element={<VehicleRegisterPage />} />
+            <Route path="/my-reservations" element={<MyReservationPage />} />
+            <Route path="/charging-history" element={<ChargingHistoryPage />} />
+          </Route>
           <Route path="/stations" element={<StationMapPage />} />
           <Route path="/stations/list" element={<StationPage />} />
           <Route path="/stations/map" element={<StationMapPage />} />
           <Route path="/stations/:stationId" element={<StationDetailPage />} />
           <Route path="/reservation" element={<ReservationPage />} />
           <Route path="/reservation/complete" element={<ReservationCompletePage />} />
-          <Route path="/my-reservations" element={<MyReservationPage />} />
-          <Route path="/charging-history" element={<ChargingHistoryPage />} />
           <Route path="/ai-chat" element={<AiChatPage />} />
         <Route element={<CustomerLayout />}>
           <Route path="/customer-center" element={<CustomerCenterPage />} />

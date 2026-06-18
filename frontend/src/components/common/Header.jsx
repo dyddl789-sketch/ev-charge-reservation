@@ -47,7 +47,6 @@ const Header = () => {
             </Link>
 
             <div className="nav-dropdown-menu">
-              <Link to="/mypage">마이페이지 홈</Link>
               <Link to="/mypage">회원정보 변경</Link>
               <Link to="/vehicles">내 차량 관리</Link>
               <Link to="/my-reservations">내 예약 조회</Link>
