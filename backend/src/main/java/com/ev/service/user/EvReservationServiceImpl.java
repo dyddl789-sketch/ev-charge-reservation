@@ -69,10 +69,11 @@ public class EvReservationServiceImpl implements EvReservationService {
      * 2. 예약 날짜 세팅
      * 3. 차량 정보 조회
      * 4. 충전기 정보 조회
-     * 5. 예약 시간 중복 체크
-     * 6. 예상 충전량 / 예상 시간 / 예상 금액 계산
-     * 7. 예약 상태 세팅
-     * 8. 예약 insert
+     * 5. 충전기 예약 시간 중복 체크
+     * 6. 차량 예약 시간 중복 체크
+     * 7. 예상 충전량 / 예상 시간 / 예상 금액 계산
+     * 8. 예약 상태 세팅
+     * 9. 예약 insert
      *
      * 중요:
      * - 인증코드는 reservation 테이블에 저장하지 않는다.
@@ -105,7 +106,16 @@ public class EvReservationServiceImpl implements EvReservationService {
         if (reservationDTO.getStartTime() == null || reservationDTO.getEndTime() == null) {
             throw new IllegalArgumentException("예약 시간을 선택하세요.");
         }
+        
+        /*
+         * 현재 시간보다 이전 시간으로 예약할 수 없다.
+         */
+        LocalDateTime now = LocalDateTime.now();
 
+        if (reservationDTO.getStartTime().isBefore(now)) {
+            throw new IllegalArgumentException("현재 시간보다 이전 시간으로 예약할 수 없습니다.");
+        }
+        
         /*
          * 종료 시간이 시작 시간보다 늦어야 한다.
          */
@@ -178,7 +188,9 @@ public class EvReservationServiceImpl implements EvReservationService {
         }
 
         /*
-         * 5. 예약 시간 중복 체크
+         * 5. 충전기 예약 시간 중복 체크
+         *
+         * 같은 충전기에 같은 시간대 예약이 이미 있으면 예약할 수 없다.
          */
         int overlapCount = reservationDAO.countReservationOverlap(
                 reservationDTO.getChargerId(),
@@ -191,7 +203,23 @@ public class EvReservationServiceImpl implements EvReservationService {
         }
 
         /*
-         * 6. 예상 충전량 계산
+         * 6. 차량 예약 시간 중복 체크
+         *
+         * 같은 차량이 같은 시간대에
+         * 여러 충전기를 동시에 예약하는 것을 막는다.
+         */
+        int vehicleOverlapCount = reservationDAO.countVehicleReservationOverlap(
+                reservationDTO.getVehicleId(),
+                reservationDTO.getStartTime(),
+                reservationDTO.getEndTime()
+        );
+
+        if (vehicleOverlapCount > 0) {
+            throw new IllegalArgumentException("선택한 차량은 해당 시간대에 이미 예약이 있습니다.");
+        }
+
+        /*
+         * 7. 예상 충전량 계산
          */
         double batteryCapacity = vehicle.getBatteryCapacityKwh();
 
@@ -202,21 +230,21 @@ public class EvReservationServiceImpl implements EvReservationService {
         requiredKwh = Math.round(requiredKwh * 100.0) / 100.0;
 
         /*
-         * 7. 예상 충전 시간 계산
+         * 8. 예상 충전 시간 계산
          */
         double estimatedMinutesDouble = requiredKwh / charger.getChargingSpeedKw() * 60;
 
         int estimatedMinutes = (int) Math.ceil(estimatedMinutesDouble);
 
         /*
-         * 8. 예상 금액 계산
+         * 9. 예상 금액 계산
          */
         double estimatedCost = requiredKwh * charger.getPricePerKwh();
 
         estimatedCost = Math.round(estimatedCost);
 
         /*
-         * 9. 예약 기본값 세팅
+         * 10. 예약 기본값 세팅
          */
         reservationDTO.setRequiredKwh(requiredKwh);
         reservationDTO.setEstimatedMinutes(estimatedMinutes);
@@ -229,12 +257,12 @@ public class EvReservationServiceImpl implements EvReservationService {
          */
 
         /*
-         * 10. 예약 등록
+         * 11. 예약 등록
          */
         reservationDAO.insertReservation(reservationDTO);
 
         /*
-         * 11. 예약 등록 성공 후 Redis 임시 점유 해제
+         * 12. 예약 등록 성공 후 Redis 임시 점유 해제
          *
          * 이제 실제 예약 데이터가 DB에 들어갔기 때문에
          * "선택중" Redis key는 유지할 필요가 없다.
@@ -487,17 +515,15 @@ public class EvReservationServiceImpl implements EvReservationService {
      * 기존 내 예약 목록에서 status가 '완료'인 예약만 필터링한다.
      */
     @Override
-    public List<EvReservationDTO> getChargingHistoryList(Long memberId, LocalDateTime startDate, LocalDateTime endDate) {
-        log.info("@# EvReservationServiceImpl.getChargingHistoryList()");
-        log.info("@# memberId => {}", memberId);
-
+    public List<EvReservationDTO> getChargingHistoryList(Long memberId,
+                                                         LocalDateTime startDate,
+                                                         LocalDateTime endDate) {
         log.info("@# EvReservationServiceImpl.getChargingHistoryList()");
         log.info("@# memberId => {}", memberId);
         log.info("@# startDate => {}", startDate);
         log.info("@# endDate => {}", endDate);
 
         return reservationDAO.getChargingHistoryList(memberId, startDate, endDate);
-
     }
     
     

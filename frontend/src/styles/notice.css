@@ -1,0 +1,131 @@
+.notice-page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 48px 20px 90px;
+}
+
+.notice-hero {
+  background: linear-gradient(135deg, #111b3f, #263f91);
+  color: #ffffff;
+  border-radius: 22px;
+  padding: 46px 40px;
+  margin-bottom: 28px;
+}
+
+.notice-hero span {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: #bfdbfe;
+  margin-bottom: 14px;
+}
+
+.notice-hero h1 {
+  margin: 0 0 18px;
+  font-size: 38px;
+  font-weight: 900;
+}
+
+.notice-hero p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* 검색 영역 */
+.notice-search-box {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 20px 24px;
+  margin-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notice-search-box strong {
+  font-size: 16px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.notice-search-form {
+  display: flex;
+  gap: 8px;
+}
+
+.notice-search-form input {
+  width: 260px;
+  height: 42px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+
+.notice-search-form button {
+  width: 76px;
+  height: 42px;
+  border: none;
+  border-radius: 10px;
+  background: #ff5a00;
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* 목록 영역 */
+.notice-list-box {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
+}
+
+.notice-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.notice-table th {
+  height: 48px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: left;
+  padding: 0 14px;
+}
+
+.notice-table td {
+  height: 58px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+  padding: 0 14px;
+  color: #334155;
+}
+
+.notice-title-cell a {
+  color: #111827;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.notice-title-cell a:hover {
+  color: #2563eb;
+}
+
+.notice-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 900;
+}

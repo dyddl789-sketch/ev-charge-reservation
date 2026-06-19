@@ -102,6 +102,68 @@
   color: #005bac;
 }
 
+
+/* =========================
+   Header Dropdown Menu
+========================= */
+
+.nav-dropdown {
+  position: relative;
+  height: 82px;
+  display: flex;
+  align-items: center;
+}
+
+.nav-main-link {
+  height: 82px;
+  display: flex;
+  align-items: center;
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: 82px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: 190px;
+
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-top: 0;
+
+  border-radius: 0 0 12px 12px;
+
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+
+  overflow: hidden;
+
+  display: none;
+
+  z-index: 999;
+}
+
+.nav-dropdown:hover .nav-dropdown-menu {
+  display: block;
+}
+
+.nav-dropdown-menu a {
+  display: block;
+
+  padding: 14px 18px;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  color: #334155;
+
+  transition: all 0.2s ease;
+}
+
+.nav-dropdown-menu a:hover {
+  background: #f8fafc;
+  color: #005bac;
+}
 /* =========================
    Footer
 ========================= */

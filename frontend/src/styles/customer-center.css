@@ -1,0 +1,667 @@
+/* =========================
+   Customer Center Layout
+========================= */
+
+.customer-complaint-page {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 36px 20px 90px;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr) 280px;
+  gap: 24px;
+  background: #f8fafc;
+}
+
+/* =========================
+   Left Sidebar
+========================= */
+
+.customer-side {
+  height: fit-content;
+  background: #ffffff;
+  border: 1px solid #dbe3ef;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+}
+
+.customer-side h2 {
+  margin: 0;
+  padding: 22px 20px;
+  background: linear-gradient(135deg, #0046a8, #0068d9);
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.customer-side nav {
+  padding: 12px;
+}
+
+.customer-side nav a {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 10px;
+  color: #1f2937;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.customer-side nav a:hover,
+.customer-side nav a.active {
+  background: #e4f1ff;
+  color: #0057c8;
+}
+
+.customer-help-box {
+  margin: 16px;
+  padding: 18px;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: #f8fbff;
+}
+
+.customer-help-box h3 {
+  margin: 0 0 12px;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.customer-help-box p {
+  margin: 0 0 10px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.customer-help-box strong {
+  display: block;
+  margin: 12px 0 8px;
+  color: #0057c8;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.customer-help-box span,
+.customer-help-box small {
+  display: block;
+  margin-bottom: 6px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* =========================
+   Right Guide
+========================= */
+
+.complaint-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.guide-card {
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #dbe3ef;
+  border-radius: 14px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+}
+
+.guide-card h3 {
+  margin: 0 0 14px;
+  color: #0057c8;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.guide-card p {
+  margin: 8px 0;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.process-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.process-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 800;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.process-list li:last-child {
+  border-bottom: none;
+}
+
+.process-list span {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #eaf3ff;
+  color: #0057c8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+/* =========================
+   Customer Home
+========================= */
+
+.customer-main,
+.complaint-form-area {
+  min-width: 0;
+}
+
+.customer-title,
+.complaint-title-box {
+  margin-bottom: 18px;
+}
+
+.customer-title h1,
+.complaint-title-box h1 {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.customer-title p,
+.complaint-title-box p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.customer-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.customer-card-grid.three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.customer-service-card {
+  display: block;
+  padding: 24px;
+  border: 1px solid #dbe4ee;
+  border-radius: 14px;
+  background: #ffffff;
+  text-decoration: none;
+  color: #0f172a;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.customer-service-card.primary {
+  background: #0057c8;
+  color: #ffffff;
+}
+
+.customer-service-card h3 {
+  font-size: 19px;
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+.customer-service-card p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: inherit;
+}
+
+.customer-content-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 0.8fr;
+  gap: 24px;
+}
+
+.customer-content-box {
+  padding: 24px;
+  border: 1px solid #dbe4ee;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.customer-content-box h2 {
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+  margin-bottom: 18px;
+}
+
+.faq-item {
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+.faq-item strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 900;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.faq-item p,
+.guide-list li {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #475569;
+}
+
+.guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-left: 18px;
+}
+
+.faq-more-link {
+  display: inline-flex;
+  margin-top: 8px;
+  color: #0057c8;
+  font-size: 14px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+/* =========================
+   FAQ Page
+========================= */
+
+.faq-list-box {
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid #dbe3ef;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.faq-accordion-item {
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.faq-accordion-item button {
+  width: 100%;
+  min-height: 58px;
+  padding: 0 20px;
+  border: none;
+  background: #ffffff;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+}
+
+.faq-accordion-item button span {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.faq-accordion-item button strong {
+  color: #0057c8;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.faq-answer {
+  padding: 18px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fbff;
+}
+
+.faq-answer p {
+  margin: 0;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.8;
+}
+
+/* =========================
+   Complaint Form
+========================= */
+
+.complaint-form {
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #dbe3ef;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.complaint-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.complaint-row.align-start {
+  align-items: start;
+}
+
+.complaint-row > label {
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.complaint-row b {
+  color: #ef4444;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #0057c8;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.radio-group,
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+
+.radio-group label,
+.checkbox-group label {
+  display: inline-flex;
+  align-items: center;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.radio-group input,
+.checkbox-group input {
+  margin-right: 7px;
+  accent-color: #0057c8;
+}
+
+.complaint-row input,
+.complaint-row select,
+.complaint-row textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.complaint-row input,
+.complaint-row select {
+  height: 44px;
+  padding: 0 14px;
+}
+
+.complaint-row textarea {
+  min-height: 120px;
+  padding: 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.input-with-btn {
+  display: flex;
+  gap: 8px;
+}
+
+.input-with-btn input {
+  flex: 1;
+}
+
+.input-with-btn button {
+  width: 72px;
+  height: 44px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.input-count-box,
+.textarea-count-box {
+  position: relative;
+}
+
+.input-count-box span,
+.textarea-count-box span {
+  position: absolute;
+  right: 13px;
+  bottom: 10px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.complaint-btn-area {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.complaint-btn-area button,
+.link-btn {
+  width: 136px;
+  height: 48px;
+  border-radius: 9px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+.submit-btn {
+  border: none;
+  background: #0057c8;
+  color: #ffffff;
+}
+
+/* =========================
+   Complaint List / Detail
+========================= */
+
+.complaint-list-card,
+.complaint-detail-card {
+  padding: 30px;
+  background: #ffffff;
+  border: 1px solid #dbe3ef;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.complaint-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.complaint-table th,
+.complaint-table td {
+  padding: 14px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.complaint-table th {
+  background: #f8fafc;
+  font-weight: 900;
+}
+
+.title-cell a {
+  color: #0057c8;
+  font-weight: 900;
+}
+
+.status-badge {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eaf3ff;
+  color: #0057c8;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.detail-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.type-chip {
+  display: inline-flex;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.detail-content,
+.history-area {
+  margin-top: 24px;
+}
+
+.detail-content h3,
+.history-area h3 {
+  font-size: 18px;
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+.history-item {
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.empty-box {
+  padding: 40px;
+  text-align: center;
+  color: #64748b;
+  font-weight: 800;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1180px) {
+  .customer-complaint-page {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .complaint-guide {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .customer-card-grid,
+  .customer-card-grid.three,
+  .customer-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .customer-complaint-page {
+    grid-template-columns: 1fr;
+    padding: 28px 16px 70px;
+  }
+
+  .complaint-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .complaint-guide {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .complaint-form {
+    padding: 22px 18px;
+  }
+
+  .radio-group,
+  .checkbox-group,
+  .input-with-btn,
+  .complaint-btn-area {
+    flex-direction: column;
+  }
+
+  .input-with-btn button,
+  .complaint-btn-area button {
+    width: 100%;
+  }
+}

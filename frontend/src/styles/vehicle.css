@@ -1,0 +1,44 @@
+.vehicle-page { background: #f5f7fb; min-height: 100vh; }
+.vehicle-main { max-width: 1180px; margin: 0 auto; padding: 48px 20px 70px; }
+.page-title { display: flex; justify-content: space-between; gap: 20px; align-items: flex-end; margin-bottom: 26px; }
+.page-title h1 { margin: 0 0 8px; font-size: 34px; color: #111827; }
+.page-title p { margin: 0; color: #6b7280; }
+.add-btn, .outline-link-btn { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 18px; border-radius: 12px; text-decoration: none; font-weight: 800; }
+.add-btn { background: #f05a00; color: #fff; }
+.outline-link-btn { border: 1px solid #d1d5db; color: #374151; background: #fff; }
+.vehicle-summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 26px; }
+.summary-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; padding: 22px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06); }
+.summary-card span { display: block; color: #6b7280; font-size: 14px; margin-bottom: 8px; }
+.summary-card strong { color: #111827; font-size: 26px; }
+.vehicle-list { display: flex; flex-direction: column; gap: 18px; }
+.vehicle-card { display: grid; grid-template-columns: 230px 1fr; gap: 24px; background: #fff; border: 1px solid #e5e7eb; border-radius: 22px; padding: 22px; box-shadow: 0 14px 35px rgba(15, 23, 42, 0.06); }
+.vehicle-card.main-vehicle { border-color: #f05a00; box-shadow: 0 18px 40px rgba(240, 90, 0, 0.12); }
+.vehicle-image { background: #f3f4f6; border-radius: 18px; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 150px; }
+.vehicle-image img { width: 100%; height: 100%; object-fit: cover; }
+.vehicle-image.large { height: 220px; }
+.vehicle-title-row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.vehicle-title-row h2 { margin: 8px 0 0; color: #111827; }
+.badge { display: inline-block; padding: 5px 10px; border-radius: 999px; background: #fff7ed; color: #f05a00; font-size: 12px; font-weight: 800; }
+.vehicle-status { padding: 6px 10px; border-radius: 999px; background: #f3f4f6; color: #374151; font-size: 13px; font-weight: 800; }
+.vehicle-desc { color: #6b7280; margin: 10px 0 18px; }
+.vehicle-data { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.vehicle-data div { background: #f9fafb; border-radius: 14px; padding: 14px; }
+.vehicle-data span { display: block; color: #6b7280; font-size: 13px; margin-bottom: 6px; }
+.vehicle-data strong { color: #111827; }
+.card-buttons, .form-buttons { display: flex; gap: 10px; margin-top: 20px; }
+.outline-btn, .danger-btn, .submit-btn, .cancel-btn { height: 42px; padding: 0 16px; border-radius: 11px; font-weight: 800; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+.outline-btn { border: 1px solid #d1d5db; background: #fff; color: #374151; }
+.active-btn { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+.danger-btn { border: none; background: #fee2e2; color: #dc2626; }
+.submit-btn { border: none; background: #f05a00; color: #fff; }
+.cancel-btn { border: 1px solid #d1d5db; color: #374151; background: #fff; }
+.empty-box { background: #fff; border: 1px dashed #d1d5db; border-radius: 18px; padding: 40px; text-align: center; color: #6b7280; }
+.vehicle-register-layout { display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
+.vehicle-form-card, .vehicle-preview-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 22px; padding: 26px; box-shadow: 0 14px 35px rgba(15, 23, 42, 0.06); }
+.form-section { margin-bottom: 24px; }
+.form-section h3 { margin: 0 0 16px; color: #111827; }
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.form-group label { display: block; font-weight: 800; color: #374151; margin-bottom: 8px; }
+.form-group input, .form-group select, .vehicle-form-card input, .vehicle-form-card select { width: 100%; height: 46px; border: 1px solid #d1d5db; border-radius: 12px; padding: 0 14px; box-sizing: border-box; }
+.check-row { display: flex; gap: 8px; align-items: center; font-weight: 800; color: #374151; }
+@media (max-width: 900px) { .vehicle-card, .vehicle-register-layout { grid-template-columns: 1fr; } .vehicle-data, .vehicle-summary, .form-grid { grid-template-columns: 1fr; } .page-title { flex-direction: column; align-items: flex-start; } }
