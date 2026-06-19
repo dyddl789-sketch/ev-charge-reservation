@@ -389,4 +389,19 @@ public class EvMemberServiceImpl implements EvMemberService {
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
     }
+    
+    @Override
+    @Transactional
+    public void deleteMember(Long memberId) {
+        log.info("@# EvMemberServiceImpl.deleteMember()");
+        log.info("@# memberId => {}", memberId);
+
+        EvMemberDTO member = evMemberDAO.findByMemberId(memberId);
+
+        if (member == null) {
+            throw new IllegalArgumentException("회원 정보를 찾을 수 없습니다.");
+        }
+
+        evMemberDAO.deleteMember(memberId);
+    }
 }

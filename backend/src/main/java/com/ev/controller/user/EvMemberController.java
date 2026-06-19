@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import com.ev.dto.member.EvMemberDTO;
 import com.ev.dto.member.EvMemberUpdateDTO;
@@ -38,23 +41,17 @@ public class EvMemberController {
         return "user/member/join";
     }
 
- // 회원가입 처리
     @PostMapping("/join")
-    public String joinProcess(
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> joinProcess(
             EvMemberDTO memberDTO,
             @RequestParam("emailId") String emailId,
             @RequestParam("emailDomain") String emailDomain,
-            @RequestParam("emailDomainDirect") String emailDomainDirect,
-            @RequestParam("profileImage") MultipartFile profileImage,
-            RedirectAttributes rttr) {
+            @RequestParam(value = "emailDomainDirect", required = false) String emailDomainDirect,
+            @RequestParam(value = "profileImage", required = false) MultipartFile profileImage) {
 
-        log.info("@# EvMemberController.joinProcess()");
+        log.info("@# REST EvMemberController.joinProcess()");
         log.info("@# memberDTO => {}", memberDTO);
-
-        // 프로필 이미지 업로드 확인용 로그
-        log.info("@# profileImage empty => {}", profileImage.isEmpty());
-        log.info("@# profileImage originalName => {}", profileImage.getOriginalFilename());
-        log.info("@# profileImage size => {}", profileImage.getSize());
 
         try {
             String domain = "direct".equals(emailDomain)
@@ -65,17 +62,26 @@ public class EvMemberController {
 
             evMemberService.join(memberDTO, profileImage);
 
-            rttr.addFlashAttribute("msg", "회원가입이 완료되었습니다.");
-            return "redirect:/login";
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "회원가입이 완료되었습니다."
+            ));
 
         } catch (IllegalArgumentException e) {
-            rttr.addFlashAttribute("errorMsg", e.getMessage());
-            return "redirect:/member/join";
+            log.warn("@# 회원가입 검증 실패 => {}", e.getMessage());
+
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", e.getMessage()
+            ));
 
         } catch (Exception e) {
             log.error("@# 회원가입 처리 중 오류", e);
-            rttr.addFlashAttribute("errorMsg", "회원가입 처리 중 오류가 발생했습니다.");
-            return "redirect:/member/join";
+
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "success", false,
+                    "message", "회원가입 처리 중 오류가 발생했습니다."
+            ));
         }
     }
 
@@ -165,15 +171,21 @@ public class EvMemberController {
         return "user/member/member_edit";
     }
 
-    // 회원정보 수정 처리
     @PostMapping("/mypage/edit")
-    public String editProcess(
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> editProcess(
             EvMemberUpdateDTO updateDTO,
-            @RequestParam("profileImage") MultipartFile profileImage,
-            @AuthenticationPrincipal EvUserDetails userDetails,
-            RedirectAttributes rttr) {
+            @RequestParam(value = "profileImage", required = false) MultipartFile profileImage,
+            @AuthenticationPrincipal EvUserDetails userDetails) {
 
-        log.info("@# EvMemberController.editProcess()");
+        log.info("@# REST EvMemberController.editProcess()");
+
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "success", false,
+                    "message", "로그인이 필요합니다."
+            ));
+        }
 
         try {
             updateDTO.setMemberId(userDetails.getMemberId());
@@ -183,7 +195,6 @@ public class EvMemberController {
             EvMemberDTO updatedMember =
                     evMemberService.findByMemberId(userDetails.getMemberId());
 
-            // Security 로그인 정보 즉시 갱신
             EvUserDetails updatedUserDetails =
                     new EvUserDetails(updatedMember);
 
@@ -196,18 +207,26 @@ public class EvMemberController {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            rttr.addFlashAttribute("msg", "회원정보가 수정되었습니다.");
-
-            return "redirect:/member/mypage/edit";
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "회원정보가 수정되었습니다."
+            ));
 
         } catch (IllegalArgumentException e) {
-            rttr.addFlashAttribute("errorMsg", e.getMessage());
-            return "redirect:/member/mypage/edit";
+            log.warn("@# 회원정보 수정 검증 실패 => {}", e.getMessage());
+
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", e.getMessage()
+            ));
 
         } catch (Exception e) {
             log.error("@# 회원정보 수정 오류", e);
-            rttr.addFlashAttribute("errorMsg", "회원정보 수정 중 오류가 발생했습니다.");
-            return "redirect:/member/mypage/edit";
+
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "success", false,
+                    "message", "회원정보 수정 중 오류가 발생했습니다."
+            ));
         }
     }
     
@@ -255,4 +274,39 @@ public class EvMemberController {
 
         return Map.of("available", available);
     }
+    
+ // 회원탈퇴
+    @DeleteMapping("/{memberId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteMember(
+            @PathVariable("memberId") Long memberId,
+            @AuthenticationPrincipal EvUserDetails userDetails) {
+
+        log.info("@# REST EvMemberController.deleteMember()");
+        log.info("@# memberId => {}", memberId);
+
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "success", false,
+                    "message", "로그인이 필요합니다."
+            ));
+        }
+
+        if (!memberId.equals(userDetails.getMemberId())) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "success", false,
+                    "message", "본인 계정만 탈퇴할 수 있습니다."
+            ));
+        }
+
+        evMemberService.deleteMember(memberId);
+
+        SecurityContextHolder.clearContext();
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "회원탈퇴가 완료되었습니다."
+        ));
+    }
 }
+

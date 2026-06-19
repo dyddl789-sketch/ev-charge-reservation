@@ -51,4 +51,6 @@ public interface EvMemberDAO {
     void updateMember(EvMemberUpdateDTO updateDTO);
  // 닉네임 중복 확인
     int countByNickname(String nickname);
+ // 회원탈퇴
+    void deleteMember(Long memberId);
 }

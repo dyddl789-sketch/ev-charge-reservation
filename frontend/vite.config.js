@@ -15,6 +15,10 @@ export default defineConfig({
         target: "http://localhost:8383",
         changeOrigin: true,
       },
+      "/upload": {
+        target: "http://localhost:8383",
+        changeOrigin: true,
+      },
       "/oauth2": {
         target: "http://localhost:8383",
         changeOrigin: true,

@@ -1,58 +1,71 @@
 import api from "./api";
 
 // 회원가입
-export const join = (data) => {
-  console.log("회원가입 요청", data);
-  return api.post("/member/join", data);
+export const join = (formData) => {
+  console.log("회원가입 요청", formData);
+
+  return api.post("/member/join", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 };
 
 // 아이디 중복확인
-export const checkUserId = (userId) => {
+export const checkUserId = async (userId) => {
   console.log("아이디 중복확인 요청", userId);
-  return api.get("/member/check-user-id", { params: { userId } });
+  const response = await api.get("/member/check-user-id", { params: { userId } });
+  return response.data;
 };
 
 // 닉네임 중복확인
-export const checkNickname = (nickname) => {
+export const checkNickname = async (nickname) => {
   console.log("닉네임 중복확인 요청", nickname);
-  return api.get("/member/check-nickname", { params: { nickname } });
+  const response = await api.get("/member/check-nickname", { params: { nickname } });
+  return response.data;
 };
 
 // 이메일 중복확인
-export const checkEmail = (email) => {
+export const checkEmail = async (email) => {
   console.log("이메일 중복확인 요청", email);
-  return api.get("/member/check-email", { params: { email } });
+  const response = await api.get("/member/check-email", { params: { email } });
+  return response.data;
 };
 
 // 휴대폰 중복확인
-export const checkPhone = (phone) => {
+export const checkPhone = async (phone) => {
   console.log("휴대폰 중복확인 요청", phone);
-  return api.get("/member/check-phone", { params: { phone } });
+  const response = await api.get("/member/check-phone", { params: { phone } });
+  return response.data;
 };
 
 // 이메일 인증코드 발송
-export const sendEmailCode = (email) => {
+export const sendEmailCode = async (email) => {
   console.log("이메일 인증코드 발송 요청", email);
-  return api.post("/member/email-code/send", new URLSearchParams({ email }), {
+
+  const response = await api.post("/member/email-code/send", new URLSearchParams({ email }), {
     headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
   });
+
+  return response.data;
 };
 
 // 이메일 인증
-export const verifyEmailCode = (email, code) => {
+export const verifyEmailCode = async (email, code) => {
   console.log("이메일 인증 요청", email);
-  return api.post("/member/email-code/verify", new URLSearchParams({ email, code }), {
+
+  const response = await api.post("/member/email-code/verify", new URLSearchParams({ email, code }), {
     headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
   });
+
+  return response.data;
 };
 
-// 회원정보 조회(JSON API 추가 전에는 실패할 수 있음)
+// 회원정보 조회
 export const info = () => {
   console.log("회원정보 조회 요청");
-  return api.get("/member/me");
+  return api.get("/auth/me");
 };
 
-// 회원정보 수정: 기존 백엔드 POST /member/mypage/edit 기준
+// 회원정보 수정
 export const update = (data) => {
   console.log("회원정보 수정 요청", data);
 

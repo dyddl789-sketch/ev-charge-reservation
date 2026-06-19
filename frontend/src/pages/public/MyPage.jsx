@@ -74,6 +74,28 @@ const MyPage = () => {
     setPreviewUrl(URL.createObjectURL(file));
   };
 
+  const getProfileImageUrl = (profileImageUrl) => {
+    console.log("프로필 이미지 URL", profileImageUrl);
+
+    if (!profileImageUrl) {
+      return "/images/member/profile/default-profile.png";
+    }
+
+    if (profileImageUrl.startsWith("blob:")) {
+      return profileImageUrl;
+    }
+
+    if (profileImageUrl.startsWith("http")) {
+      return profileImageUrl;
+    }
+
+    if (profileImageUrl.startsWith("/")) {
+      return profileImageUrl;
+    }
+
+    return `/${profileImageUrl}`;
+  };
+
   const submitMember = async (e) => {
     e.preventDefault();
     console.log("회원정보 수정 submit", form);
@@ -90,10 +112,60 @@ const MyPage = () => {
 
     try {
       await memberApi.update(form);
+
       alert("회원정보가 수정되었습니다.");
+
+      window.dispatchEvent(new Event("auth-change"));
+
+      await getMemberInfo();
     } catch (error) {
       console.log("회원정보 수정 오류", error);
-      alert("회원정보 수정 중 오류가 발생했습니다. 백엔드 REST 전환 후 다시 확인해 주세요.");
+
+      const message =
+        error.response?.data?.message || "회원정보 수정 중 오류가 발생했습니다.";
+
+      alert(message);
+    }
+  };
+
+  const deleteMember = async () => {
+    console.log("회원탈퇴 클릭", member);
+
+    if (!member.memberId) {
+      alert("회원 정보를 불러온 후 다시 시도해 주세요.");
+      return;
+    }
+
+    const firstConfirm = window.confirm("정말 회원탈퇴를 진행하시겠습니까?");
+    if (!firstConfirm) {
+      return;
+    }
+
+    const secondConfirm = window.confirm(
+      "회원탈퇴 시 계정 정보가 비활성화되며, 다시 로그인할 수 없습니다. 계속하시겠습니까?"
+    );
+
+    if (!secondConfirm) {
+      return;
+    }
+
+    try {
+      await memberApi.remove(member.memberId);
+
+      localStorage.removeItem("ACCESS_TOKEN");
+      localStorage.removeItem("REFRESH_TOKEN");
+
+      window.dispatchEvent(new Event("auth-change"));
+
+      alert("회원탈퇴가 완료되었습니다.");
+      window.location.href = "/";
+    } catch (error) {
+      console.log("회원탈퇴 오류", error);
+
+      const message =
+        error.response?.data?.message || "회원탈퇴 중 오류가 발생했습니다.";
+
+      alert(message);
     }
   };
 
@@ -108,7 +180,7 @@ const MyPage = () => {
       <section className="mypage-card">
         <div className="profile-edit-area">
           <div className="profile-preview">
-            <img src={previewUrl} alt="프로필 이미지" />
+            <img src={getProfileImageUrl(previewUrl)} alt="프로필 이미지" />
           </div>
 
           <label className="profile-file-label">
@@ -189,6 +261,10 @@ const MyPage = () => {
           </div>
 
           <div className="mypage-actions">
+            <button type="button" className="mypage-danger-btn" onClick={deleteMember}>
+              회원탈퇴
+            </button>
+
             <button type="submit" className="mypage-primary-btn">
               수정하기
             </button>

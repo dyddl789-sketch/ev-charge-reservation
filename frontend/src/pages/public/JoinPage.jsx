@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  join,
   checkEmail,
   checkNickname,
   checkPhone,
@@ -348,56 +349,67 @@ const JoinPage = () => {
     setProfilePreview(URL.createObjectURL(file));
   };
 
-  const handleSubmit = (event) => {
-    console.log("회원가입 submit 검증 시작");
+const handleSubmit = async (event) => {
+  event.preventDefault();
 
-    const currentUserId = form.userId.trim();
-    const currentNickname = form.nickname.trim();
+  console.log("회원가입 submit 검증 시작");
 
-    if (!checkState.userId.checked || checkState.userId.value !== currentUserId) {
-      alert("아이디 중복확인을 해주세요.");
-      event.preventDefault();
-      return;
-    }
+  const currentUserId = form.userId.trim();
+  const currentNickname = form.nickname.trim();
 
-    if (!checkPasswordRule()) {
-      alert("비밀번호 형식을 확인해 주세요.");
-      event.preventDefault();
-      return;
-    }
+  if (!checkState.userId.checked || checkState.userId.value !== currentUserId) {
+    alert("아이디 중복확인을 해주세요.");
+    return;
+  }
 
-    if (!checkPasswordConfirm()) {
-      alert("비밀번호 확인을 다시 입력해 주세요.");
-      event.preventDefault();
-      return;
-    }
+  if (!checkPasswordRule()) {
+    alert("비밀번호 형식을 확인해 주세요.");
+    return;
+  }
 
-    if (!checkState.nickname.checked || checkState.nickname.value !== currentNickname) {
-      alert("닉네임 중복확인을 완료해 주세요.");
-      event.preventDefault();
-      return;
-    }
+  if (!checkPasswordConfirm()) {
+    alert("비밀번호 확인을 다시 입력해 주세요.");
+    return;
+  }
 
-    if (!checkState.email.checked || checkState.email.value !== fullEmail) {
-      alert("사용 가능한 이메일인지 확인해 주세요.");
-      event.preventDefault();
-      return;
-    }
+  if (!checkState.nickname.checked || checkState.nickname.value !== currentNickname) {
+    alert("닉네임 중복확인을 완료해 주세요.");
+    return;
+  }
 
-    if (!checkState.emailVerified.checked || checkState.emailVerified.value !== fullEmail) {
-      alert("이메일 인증을 완료해 주세요.");
-      event.preventDefault();
-      return;
-    }
+  if (!checkState.email.checked || checkState.email.value !== fullEmail) {
+    alert("사용 가능한 이메일인지 확인해 주세요.");
+    return;
+  }
 
-    if (!checkState.phone.checked || checkState.phone.value !== fullPhone) {
-      alert("사용 가능한 휴대폰 번호인지 확인해 주세요.");
-      event.preventDefault();
-      return;
-    }
+  if (!checkState.emailVerified.checked || checkState.emailVerified.value !== fullEmail) {
+    alert("이메일 인증을 완료해 주세요.");
+    return;
+  }
 
-    console.log("회원가입 submit 통과 => backend /member/join 전송");
-  };
+  if (!checkState.phone.checked || checkState.phone.value !== fullPhone) {
+    alert("사용 가능한 휴대폰 번호인지 확인해 주세요.");
+    return;
+  }
+
+  try {
+    const formData = new FormData(event.currentTarget);
+
+    console.log("회원가입 API 전송");
+
+    await join(formData);
+
+    alert("회원가입이 완료되었습니다.");
+    window.location.href = "/login";
+  } catch (error) {
+    console.log("회원가입 오류", error);
+
+    const message =
+      error.response?.data?.message || "회원가입 처리 중 오류가 발생했습니다.";
+
+    alert(message);
+  }
+};
 
   const Message = ({ name }) => {
     const message = messages[name];

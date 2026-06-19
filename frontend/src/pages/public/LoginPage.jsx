@@ -1,16 +1,45 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import * as authApi from "../../apis/authApi";
 import "../../styles/auth.css";
 
 const LoginPage = () => {
   console.log("LoginPage 렌더링");
 
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
   const authMsg = searchParams.get("authMsg");
   const error = searchParams.get("error");
   const logout = searchParams.get("logout");
 
-  const handleSubmit = () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     console.log("로그인 form submit");
+
+    const formData = new FormData(e.currentTarget);
+
+    const loginData = {
+      userId: formData.get("userId"),
+      password: formData.get("password"),
+    };
+
+    console.log("로그인 요청 데이터", loginData);
+
+    try {
+      const response = await authApi.login(loginData);
+      console.log("로그인 성공 응답", response.data);
+
+      localStorage.setItem("ACCESS_TOKEN", response.data.accessToken);
+      localStorage.setItem("REFRESH_TOKEN", response.data.refreshToken);
+
+      // Header 로그인 상태 갱신용 이벤트
+      window.dispatchEvent(new Event("auth-change"));
+
+      navigate("/");
+    } catch (error) {
+      console.log("로그인 실패", error);
+      alert("아이디 또는 비밀번호를 확인해 주세요.");
+    }
   };
 
   return (
@@ -38,8 +67,7 @@ const LoginPage = () => {
             {logout && <div className="success-message">로그아웃되었습니다.</div>}
           </div>
 
-          {/* 기존 Spring Security /login form 처리와 연결 */}
-          <form action="/login" method="post" className="login-form" onSubmit={handleSubmit}>
+          <form className="login-form" onSubmit={handleSubmit}>
             <div className="input-box">
               <span className="input-icon">👤</span>
               <input type="text" name="userId" placeholder="아이디" autoComplete="username" />
@@ -48,15 +76,6 @@ const LoginPage = () => {
             <div className="input-box">
               <span className="input-icon">🔒</span>
               <input type="password" name="password" placeholder="비밀번호" autoComplete="current-password" />
-            </div>
-
-            <div className="login-options">
-              <label>
-                <input type="checkbox" name="rememberId" />
-                아이디 저장
-              </label>
-
-              <Link to="/member/find">아이디/비밀번호 찾기</Link>
             </div>
 
             <button type="submit" className="login-btn">
