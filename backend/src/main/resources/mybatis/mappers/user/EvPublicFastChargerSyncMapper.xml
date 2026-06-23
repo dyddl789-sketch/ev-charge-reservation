@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.user.EvPublicFastChargerSyncDAO">
+
+    <!--
+        환경부 API 충전소 저장/수정
+
+        external_station_id가 이미 있으면 update
+        없으면 insert
+    -->
+    <select id="upsertStation" resultType="long">
+        insert into charging_station (
+              external_station_id
+            , station_name
+            , address
+            , latitude
+            , longitude
+            , location
+            , operator_name
+            , station_status
+            , source_type
+            , use_time
+            , detail_location
+            , contact_phone
+            , parking_free
+            , is_deleted
+            , updated_at
+        )
+        values (
+              #{item.externalStationId}
+            , #{item.stationName}
+            , #{item.address}
+            , #{item.latitude}
+            , #{item.longitude}
+            , ST_SetSRID(
+                  ST_MakePoint(
+                      #{item.longitude}::double precision,
+                      #{item.latitude}::double precision
+                  ),
+                  4326
+              )::geography
+            , #{item.operatorName}
+            , '운영중'
+            , 'PUBLIC_API'
+            , #{item.useTime}
+            , #{item.detailLocation}
+            , null
+            , null
+            , false
+            , current_timestamp
+        )
+        on conflict (external_station_id)
+        do update set
+              station_name = excluded.station_name
+            , address = excluded.address
+            , latitude = excluded.latitude
+            , longitude = excluded.longitude
+            , location = excluded.location
+            , operator_name = excluded.operator_name
+            , station_status = '운영중'
+            , source_type = 'PUBLIC_API'
+            , use_time = excluded.use_time
+            , detail_location = excluded.detail_location
+            , is_deleted = false
+            , updated_at = current_timestamp
+        returning station_id
+    </select>
+
+    <!--
+        환경부 API 충전기 저장/수정
+
+        external_charger_id가 이미 있으면 update
+        없으면 insert
+    -->
+    <insert id="upsertCharger">
+        insert into charger (
+              station_id
+            , external_charger_id
+            , charger_name
+            , charger_type
+            , connector_type
+            , charging_speed_kw
+            , price_per_kwh
+            , status
+            , charger_code
+            , last_status_checked_at
+            , is_deleted
+            , updated_at
+        )
+        values (
+              #{stationId}
+            , #{item.externalChargerId}
+            , concat('충전기 ', split_part(#{item.externalChargerId}, '-', 2))
+            , case
+                when #{item.chargingSpeedKw} >= 100 then '초급속'
+                when #{item.chargingSpeedKw} >= 50 then '급속'
+                else '완속'
+              end
+            , #{item.connectorType}
+            , #{item.chargingSpeedKw}
+            , 347.20
+            , '사용가능'
+            , split_part(#{item.externalChargerId}, '-', 2)
+            , current_timestamp
+            , false
+            , current_timestamp
+        )
+        on conflict (external_charger_id)
+        do update set
+              station_id = excluded.station_id
+            , charger_name = excluded.charger_name
+            , charger_type = excluded.charger_type
+            , connector_type = excluded.connector_type
+            , charging_speed_kw = excluded.charging_speed_kw
+            , status = excluded.status
+            , charger_code = excluded.charger_code
+            , last_status_checked_at = current_timestamp
+            , is_deleted = false
+            , updated_at = current_timestamp
+    </insert>
+
+</mapper>

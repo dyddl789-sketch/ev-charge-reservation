@@ -13,9 +13,9 @@ const QuickService = () => {
           link: "/stations",
         },
         {
-          title: "충전 예약",
-          icon: "📅",
-          link: "/reservation",
+          title: "AI 충전 비서",
+          icon: "🤖",
+          link: "/ai-chat",
         },
         {
           title: "내 차량 관리",

@@ -224,3 +224,202 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================
+   AI Reservation Extension
+========================= */
+.ai-reservation-box {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: #f8fbff;
+}
+
+.ai-reservation-box strong {
+  display: block;
+  margin-bottom: 12px;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.ai-reservation-box label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ai-reservation-box input {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  outline: none;
+}
+
+.ai-reservation-box input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.ai-soc-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-candidate-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.ai-candidate-card {
+  padding: 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.ai-candidate-card strong,
+.ai-candidate-card span {
+  display: block;
+}
+
+.ai-candidate-card strong {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.ai-candidate-card span {
+  margin-top: 4px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.ai-candidate-card button {
+  margin-top: 10px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.reservation-help {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4 !important;
+}
+
+/* =========================
+   Chat Window Layout Patch
+========================= */
+.ai-chat-page {
+  min-height: calc(100vh - 120px);
+  padding: 36px 0 54px;
+}
+
+.ai-chat-hero.compact {
+  min-height: 120px;
+  padding: 30px 36px;
+}
+
+.ai-chat-hero.compact h1 {
+  margin-bottom: 10px;
+  font-size: 32px;
+}
+
+.ai-chat-layout.chat-window-layout {
+  grid-template-columns: 300px minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.ai-guide-panel-compact {
+  max-height: 760px;
+  overflow-y: auto;
+}
+
+.ai-chat-card.ai-chat-window-card {
+  height: 760px;
+  min-height: 0;
+  max-height: calc(100vh - 210px);
+}
+
+.chat-window-header {
+  flex: 0 0 auto;
+  min-height: 58px;
+  padding: 16px 22px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #ffffff;
+}
+
+.chat-window-header strong {
+  display: block;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.chat-window-header span {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.chat-window-header em {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #2563eb;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.chat-message-list.chat-window-message-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  padding: 24px;
+  background: #fbfdff;
+}
+
+.chat-input-form.chat-window-input-form {
+  flex: 0 0 auto;
+  background: #ffffff;
+}
+
+.chat-input-form.chat-window-input-form input {
+  height: 48px;
+  border: 2px solid #111827;
+}
+
+.ai-guide-panel-compact .ai-reservation-box label:first-of-type {
+  margin-top: 0;
+}
+
+@media (max-width: 900px) {
+  .ai-chat-card.ai-chat-window-card {
+    height: 680px;
+    max-height: none;
+  }
+}

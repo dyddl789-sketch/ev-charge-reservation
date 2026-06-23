@@ -12,12 +12,12 @@ const BannerSlider = () => {
 
   const banners = [
     {
-      title: "빠르고 편리한\n충전 예약 서비스",
-      desc: "원하는 시간과 장소를 쉽고 빠르게 예약하고 스마트하게 충전을 관리하세요.",
-      buttonText: "예약 서비스 보기",
-      link: "/reservation",
+      title: "지도에서 선택하는\n충전소 찾기 서비스",
+      desc: "충전소를 먼저 찾고, 선택한 충전소에서 바로 예약을 진행하세요.",
+      buttonText: "충전소 찾기",
+      link: "/stations",
       bgClass: "banner-reservation",
-      badge: "RESERVATION",
+      badge: "STATION SEARCH",
     },
     {
       title: "내 차량 등록하고\n맞춤 충전소 추천받기",

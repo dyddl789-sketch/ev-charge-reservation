@@ -256,12 +256,13 @@ const ReservationPage = () => {
         estimatedCost: summary.estimatedCost,
       });
 
-      console.log("예약 등록 응답", response);
-      alert("예약이 완료되었습니다.");
-      navigate("/reservation/complete");
+      console.log("예약 등록 응답", response.data);
+      const reservationId = response.data?.reservationId || response.data?.reservation?.reservationId;
+      alert(response.data?.message || "예약이 완료되었습니다.");
+      navigate(reservationId ? `/reservation/complete?reservationId=${reservationId}` : "/my-reservations");
     } catch (error) {
       console.log("예약 등록 오류", error);
-      alert("예약 등록 중 오류가 발생했습니다.");
+      alert(error.response?.data?.message || "예약 등록 중 오류가 발생했습니다.");
     }
   };
 

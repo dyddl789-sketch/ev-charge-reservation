@@ -43,6 +43,7 @@ const MyReservationPage = () => {
   const [month, setMonth] = useState("");
   const [activeStatus, setActiveStatus] = useState("전체");
   const [reservationList, setReservationList] = useState([]);
+  const [issuedCodeInfo, setIssuedCodeInfo] = useState(null);
 
   const getReservationList = async () => {
     console.log("getReservationList 실행", month);
@@ -75,8 +76,8 @@ const MyReservationPage = () => {
     }
 
     try {
-      await reservationApi.cancel(reservationId);
-      alert("예약이 취소되었습니다.");
+      const response = await reservationApi.cancel(reservationId);
+      alert(response.data?.message || "예약이 취소되었습니다.");
       setReservationList((prev) =>
         prev.map((item) =>
           item.reservationId === reservationId ? { ...item, status: "취소" } : item
@@ -94,10 +95,37 @@ const MyReservationPage = () => {
     try {
       const response = await reservationApi.issueAuthCode(reservationId);
       console.log("인증코드 발급 응답", response.data);
-      alert("인증코드 발급 요청이 완료되었습니다.");
+
+      const authCode = response.data?.authCode;
+      setIssuedCodeInfo({ reservationId, authCode });
+      alert(authCode ? `인증코드: ${authCode}` : response.data?.message || "인증코드가 발급되었습니다.");
     } catch (error) {
       console.log("인증코드 발급 오류", error);
-      alert("인증코드 발급 중 오류가 발생했습니다.");
+      alert(error.response?.data?.message || "인증코드 발급 중 오류가 발생했습니다.");
+    }
+  };
+
+  const verifyReservation = async (reservationId) => {
+    console.log("예약 인증 클릭", reservationId);
+
+    const defaultCode = issuedCodeInfo?.reservationId === reservationId ? issuedCodeInfo.authCode : "";
+    const authCode = window.prompt("인증코드를 입력해 주세요.", defaultCode || "");
+
+    if (!authCode) {
+      return;
+    }
+
+    try {
+      const response = await reservationApi.verify(reservationId, authCode);
+      alert(response.data?.message || "예약 인증이 완료되었습니다.");
+      setReservationList((prev) =>
+        prev.map((item) =>
+          item.reservationId === reservationId ? { ...item, status: "인증완료" } : item
+        )
+      );
+    } catch (error) {
+      console.log("예약 인증 오류", error);
+      alert(error.response?.data?.message || "예약 인증 중 오류가 발생했습니다.");
     }
   };
 
@@ -207,6 +235,15 @@ const MyReservationPage = () => {
                       onClick={() => issueAuthCode(item.reservationId)}
                     >
                       인증코드
+                    </button>
+                  )}
+                  {item.status === "예약완료" && (
+                    <button
+                      type="button"
+                      className="mypage-outline-btn"
+                      onClick={() => verifyReservation(item.reservationId)}
+                    >
+                      인증하기
                     </button>
                   )}
                   {item.status === "예약완료" && (

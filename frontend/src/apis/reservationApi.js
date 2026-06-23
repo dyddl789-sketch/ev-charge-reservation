@@ -1,6 +1,6 @@
 import api from "./api";
 
-// 예약 폼 데이터(JSON REST 필요: GET /reservation/api/form?chargerId=)
+// 예약 폼 데이터
 export const formData = (chargerId) => {
   console.log("reservation formData 요청", chargerId);
   return api.get("/reservation/api/form", {
@@ -8,7 +8,7 @@ export const formData = (chargerId) => {
   });
 };
 
-// 충전소 기준 예약 폼 데이터(JSON REST 필요: GET /reservation/api/form/station?stationId=)
+// 충전소 기준 예약 폼 데이터
 export const formDataByStation = (stationId) => {
   console.log("reservation formDataByStation 요청", stationId);
   return api.get("/reservation/api/form/station", {
@@ -16,17 +16,13 @@ export const formDataByStation = (stationId) => {
   });
 };
 
-// 예약 등록(기존 백엔드 POST /reservation/register DTO 필드명에 맞춤)
+// 예약 등록
 export const create = (data) => {
   console.log("reservation create 요청", data);
-  return api.post("/reservation/register", new URLSearchParams(data), {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-    },
-  });
+  return api.post("/reservation/api/register", data);
 };
 
-// 예약 완료 데이터(JSON REST 필요: GET /reservation/api/complete?reservationId=)
+// 예약 완료 데이터
 export const complete = (reservationId) => {
   console.log("reservation complete 요청", reservationId);
   return api.get("/reservation/api/complete", {
@@ -34,7 +30,7 @@ export const complete = (reservationId) => {
   });
 };
 
-// 충전기 임시 점유 변경(기존 백엔드 JSON: POST /reservation/lock/change)
+// 충전기 임시 점유 변경
 export const changeLock = (oldChargerId, newChargerId) => {
   console.log("reservation changeLock 요청", oldChargerId, newChargerId);
   return api.post(
@@ -48,7 +44,7 @@ export const changeLock = (oldChargerId, newChargerId) => {
   );
 };
 
-// 충전기 임시 점유 유지(기존 백엔드 JSON: POST /reservation/lock/keep-alive)
+// 충전기 임시 점유 유지
 export const keepAliveLock = (chargerId) => {
   console.log("reservation keepAliveLock 요청", chargerId);
   return api.post("/reservation/lock/keep-alive", new URLSearchParams({ chargerId }), {
@@ -58,7 +54,7 @@ export const keepAliveLock = (chargerId) => {
   });
 };
 
-// 충전기 임시 점유 해제(기존 백엔드 String: POST /reservation/lock/release)
+// 충전기 임시 점유 해제
 export const releaseLock = (chargerId) => {
   console.log("reservation releaseLock 요청", chargerId);
   return api.post("/reservation/lock/release", new URLSearchParams({ chargerId }), {
@@ -68,7 +64,7 @@ export const releaseLock = (chargerId) => {
   });
 };
 
-// 선택 시간 기준 충전기 상태 조회(기존 백엔드 JSON: GET /reservation/charger-status)
+// 선택 시간 기준 충전기 상태 조회
 export const chargerStatus = ({ stationId, reservationDate, startTime, estimatedMinutes }) => {
   console.log("reservation chargerStatus 요청", {
     stationId,
@@ -87,52 +83,42 @@ export const chargerStatus = ({ stationId, reservationDate, startTime, estimated
   });
 };
 
-// 내 예약 목록 조회(JSON REST 추가 전에는 Mock fallback 사용)
+// 내 예약 목록 조회
 export const myList = (month = "") => {
   console.log("reservation myList 요청", month);
-  return api.get("/reservation/my", {
+  return api.get("/reservation/api/my", {
     params: month ? { month } : {},
-    headers: { Accept: "application/json" },
   });
 };
 
-// 충전 이용 내역 조회(JSON REST 추가 전에는 Mock fallback 사용)
+// 충전 이용 내역 조회
 export const historyList = (month = "") => {
   console.log("reservation historyList 요청", month);
-  return api.get("/reservation/history", {
+  return api.get("/reservation/api/history", {
     params: month ? { month } : {},
-    headers: { Accept: "application/json" },
   });
 };
 
 // 예약 취소
 export const cancel = (reservationId) => {
   console.log("reservation cancel 요청", reservationId);
-  return api.post("/reservation/cancel", new URLSearchParams({ reservationId }), {
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-  });
+  return api.post("/reservation/api/cancel", { reservationId });
 };
 
 // 예약 인증코드 발급
 export const issueAuthCode = (reservationId) => {
   console.log("reservation issueAuthCode 요청", reservationId);
-  return api.post("/reservation/auth-code/issue", new URLSearchParams({ reservationId }), {
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-  });
+  return api.post("/reservation/api/auth-code/issue", { reservationId });
 };
 
 // 예약 인증 처리
 export const verify = (reservationId, authCode) => {
   console.log("reservation verify 요청", reservationId);
-  return api.post("/reservation/verify", new URLSearchParams({ reservationId, authCode }), {
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-  });
+  return api.post("/reservation/api/verify", { reservationId, authCode });
 };
 
 // 충전 영수증 이메일 발송
 export const sendReceiptEmail = (reservationId) => {
   console.log("reservation sendReceiptEmail 요청", reservationId);
-  return api.post("/reservation/receipt/email", new URLSearchParams({ reservationId }), {
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-  });
+  return api.post("/reservation/api/receipt/email", { reservationId });
 };

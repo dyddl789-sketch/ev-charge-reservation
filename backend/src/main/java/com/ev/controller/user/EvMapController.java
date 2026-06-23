@@ -12,10 +12,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.ev.dto.map.EvKakaoAddressDTO;
 import com.ev.dto.map.EvSavedLocationDTO;
 import com.ev.dto.station.EvChargerDTO;
 import com.ev.dto.station.EvStationMapDTO;
 import com.ev.security.EvUserDetails;
+import com.ev.service.user.EvKakaoAddressSearchService;
 import com.ev.service.user.EvSavedLocationService;
 import com.ev.service.user.EvStationService;
 
@@ -32,6 +34,9 @@ public class EvMapController {
 
     // 저장 위치 기능에서 사용할 Service
     private final EvSavedLocationService savedLocationService;
+
+    // 주소를 위도/경도로 변환하기 위한 Kakao Local API Service
+    private final EvKakaoAddressSearchService kakaoAddressSearchService;
 
     @Value("${kakao.javascript.key}")
     private String kakaoJavascriptKey;
@@ -50,12 +55,32 @@ public class EvMapController {
     @ResponseBody
     @GetMapping("/map-data")
     public List<EvStationMapDTO> stationMapData(
-            @RequestParam(value = "keyword", required = false) String keyword) {
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "connectorType", required = false) String connectorType,
+            @RequestParam(value = "latitude", required = false) Double latitude,
+            @RequestParam(value = "longitude", required = false) Double longitude,
+            @RequestParam(value = "limit", required = false, defaultValue = "10") int limit) {
 
         log.info("@# EvMapController.stationMapData()");
         log.info("@# keyword => {}", keyword);
+        log.info("@# connectorType => {}", connectorType);
+        log.info("@# latitude => {}", latitude);
+        log.info("@# longitude => {}", longitude);
+        log.info("@# limit => {}", limit);
 
-        List<EvStationMapDTO> stationMapList = stationService.getStationMapList(keyword);
+        List<EvStationMapDTO> stationMapList;
+
+        if (latitude != null && longitude != null) {
+            stationMapList = stationService.getStationMapListByCoordinate(
+                    keyword,
+                    connectorType,
+                    latitude,
+                    longitude,
+                    limit
+            );
+        } else {
+            stationMapList = stationService.getStationMapList(keyword, connectorType);
+        }
 
         log.info("@# stationMapList size => {}", stationMapList.size());
 
@@ -96,8 +121,27 @@ public class EvMapController {
         }
 
         Long memberId = userDetails.getMemberId();
-
         savedLocationDTO.setMemberId(memberId);
+
+        /*
+         * React 화면에서는 사용자가 주소만 입력한다.
+         * saved_location 테이블은 위도/경도와 PostGIS location 컬럼이 필요하므로,
+         * 위도/경도가 비어 있으면 Kakao Local API로 주소를 좌표로 변환한다.
+         */
+        if (savedLocationDTO.getLatitude() == null || savedLocationDTO.getLongitude() == null) {
+            EvKakaoAddressDTO coordinate = kakaoAddressSearchService.searchCoordinate(
+                    savedLocationDTO.getAddress(),
+                    savedLocationDTO.getLocationName()
+            );
+
+            if (coordinate == null || coordinate.getLatitude() == null || coordinate.getLongitude() == null) {
+                log.warn("@# saved location coordinate not found => {}", savedLocationDTO.getAddress());
+                return "주소 좌표를 찾지 못했습니다. 도로명 주소를 조금 더 정확히 입력해 주세요.";
+            }
+
+            savedLocationDTO.setLatitude(coordinate.getLatitude().doubleValue());
+            savedLocationDTO.setLongitude(coordinate.getLongitude().doubleValue());
+        }
 
         savedLocationService.saveSavedLocation(savedLocationDTO);
 

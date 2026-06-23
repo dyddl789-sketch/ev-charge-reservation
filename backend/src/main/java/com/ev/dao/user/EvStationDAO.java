@@ -27,7 +27,15 @@ public interface EvStationDAO {
     List<EvChargerDTO> findChargerListByStationId(@Param("stationId") Long stationId);
     
     // 카카오맵에 표시할 충전소 목록 조회
-    List<EvStationMapDTO> findStationMapList(@Param("keyword") String keyword);
+    List<EvStationMapDTO> findStationMapList(@Param("keyword") String keyword,
+                                             @Param("connectorType") String connectorType);
+
+    // 사용자가 선택한 출발지 좌표 기준 가까운 충전소 목록 조회
+    List<EvStationMapDTO> findStationMapListByCoordinate(@Param("keyword") String keyword,
+                                                          @Param("connectorType") String connectorType,
+                                                          @Param("latitude") Double latitude,
+                                                          @Param("longitude") Double longitude,
+                                                          @Param("limit") int limit);
 
     /*
      * 기본 출발지 주변 운영중 충전소 수 조회

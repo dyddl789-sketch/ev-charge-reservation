@@ -50,10 +50,45 @@ public class EvStationServiceImpl implements EvStationService {
     // 카카오맵 마커용 충전소 목록 조회
     @Override
     public List<EvStationMapDTO> getStationMapList(String keyword) {
+        return getStationMapList(keyword, null);
+    }
+
+    // 카카오맵 마커용 충전소 목록 조회 - 커넥터 타입 필터 포함
+    @Override
+    public List<EvStationMapDTO> getStationMapList(String keyword, String connectorType) {
         log.info("@# StationServiceImpl.getStationMapList()");
         log.info("@# keyword => {}", keyword);
+        log.info("@# connectorType => {}", connectorType);
 
-        return stationDAO.findStationMapList(keyword);
+        return stationDAO.findStationMapList(keyword, connectorType);
+    }
+
+    // 출발지 좌표 기준 가까운 충전소 목록 조회
+    @Override
+    public List<EvStationMapDTO> getStationMapListByCoordinate(String keyword,
+                                                               Double latitude,
+                                                               Double longitude,
+                                                               int limit) {
+        return getStationMapListByCoordinate(keyword, null, latitude, longitude, limit);
+    }
+
+    // 출발지 좌표 기준 가까운 충전소 목록 조회 - 커넥터 타입 필터 포함
+    @Override
+    public List<EvStationMapDTO> getStationMapListByCoordinate(String keyword,
+                                                               String connectorType,
+                                                               Double latitude,
+                                                               Double longitude,
+                                                               int limit) {
+        log.info("@# StationServiceImpl.getStationMapListByCoordinate()");
+        log.info("@# keyword => {}", keyword);
+        log.info("@# connectorType => {}", connectorType);
+        log.info("@# latitude => {}", latitude);
+        log.info("@# longitude => {}", longitude);
+        log.info("@# limit => {}", limit);
+
+        int safeLimit = limit <= 0 ? 10 : Math.min(limit, 50);
+
+        return stationDAO.findStationMapListByCoordinate(keyword, connectorType, latitude, longitude, safeLimit);
     }
 
     /*

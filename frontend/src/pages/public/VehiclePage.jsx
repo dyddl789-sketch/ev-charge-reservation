@@ -62,8 +62,8 @@ const VehiclePage = () => {
       const response = await vehicleApi.setDefault(vehicleId);
       console.log("기본 차량 설정 응답", response.data);
 
-      if (response.data !== "success") {
-        alert("기본 차량 설정에 실패했습니다.");
+      if (response.data?.success === false) {
+        alert(response.data?.message || "기본 차량 설정에 실패했습니다.");
         return;
       }
 
@@ -92,8 +92,8 @@ const VehiclePage = () => {
       const response = await vehicleApi.remove(vehicleId);
       console.log("차량 삭제 응답", response.data);
 
-      if (response.data !== "success") {
-        alert("차량 삭제에 실패했습니다.");
+      if (response.data?.success === false) {
+        alert(response.data?.message || "차량 삭제에 실패했습니다.");
         return;
       }
 
