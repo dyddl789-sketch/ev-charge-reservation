@@ -665,3 +665,32 @@
     width: 100%;
   }
 }
+/* =========================
+   Complaint Station / Charger Select Patch
+========================= */
+.complaint-selected-box {
+  margin: -4px 0 20px 168px;
+  padding: 14px 16px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.complaint-selected-box strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.complaint-selected-box p {
+  margin: 0;
+  font-weight: 900;
+}
+
+@media (max-width: 900px) {
+  .complaint-selected-box {
+    margin-left: 0;
+  }
+}

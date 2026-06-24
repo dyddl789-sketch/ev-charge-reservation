@@ -76,8 +76,8 @@ public class EvReservationServiceImpl implements EvReservationService {
      * 9. 예약 insert
      *
      * 중요:
-     * - 인증코드는 reservation 테이블에 저장하지 않는다.
-     * - 현장 인증코드는 Redis에서 충전기별 임시 코드로 관리한다.
+     * - 인증코드는 예약 생성 즉시 DB와 Redis에 저장한다.
+     * - 실제 인증은 예약 시작 10분 전부터 예약 시작 10분 후까지만 허용한다.
      */
     @Override
     @Transactional
@@ -252,14 +252,35 @@ public class EvReservationServiceImpl implements EvReservationService {
         reservationDTO.setStatus("예약완료");
 
         /*
-         * Redis 방식으로 변경했기 때문에
-         * reservation.auth_code는 생성하지 않는다.
+         * 인증코드는 예약 완료 즉시 생성한다.
+         * 사용자는 내 예약 상세에서 언제든 확인할 수 있지만,
+         * 실제 인증은 예약 시작 10분 전 ~ 예약 시작 10분 후까지만 가능하다.
          */
 
         /*
          * 11. 예약 등록
          */
         reservationDAO.insertReservation(reservationDTO);
+
+        LocalDateTime authCodeExpiresAt = reservationDTO.getStartTime().plusMinutes(10);
+        String authCode = evChargerRedisService.generateReservationAuthCode(
+                reservationDTO.getReservationId(),
+                reservationDTO.getChargerId(),
+                authCodeExpiresAt
+        );
+
+        reservationDTO.setAuthCode(authCode);
+        reservationDAO.updateReservationAuthCode(
+                reservationDTO.getReservationId(),
+                reservationDTO.getMemberId(),
+                authCode
+        );
+
+        /*
+         * 예약 생성 후 실제 예약 점유 상태를 충전기 상태에 반영한다.
+         * 공공데이터 적재에서는 예약중을 만들지 않고, 실제 예약 생성 시에만 예약중으로 변경한다.
+         */
+        reservationDAO.updateChargerStatus(reservationDTO.getChargerId(), "예약중");
 
         /*
          * 12. 예약 등록 성공 후 Redis 임시 점유 해제
@@ -290,6 +311,21 @@ public class EvReservationServiceImpl implements EvReservationService {
         return reservationDAO.findReservationById(reservationId, memberId);
     }
 
+    @Override
+    public EvReservationDTO getMyReservationDetail(Long reservationId, Long memberId) {
+        log.info("@# EvReservationServiceImpl.getMyReservationDetail()");
+        log.info("@# reservationId => {}", reservationId);
+        log.info("@# memberId => {}", memberId);
+
+        EvReservationDTO reservation = reservationDAO.findReservationById(reservationId, memberId);
+
+        if (reservation == null) {
+            throw new IllegalArgumentException("예약 정보를 찾을 수 없습니다.");
+        }
+
+        return reservation;
+    }
+
     /*
      * 내 예약 목록 조회
      */
@@ -315,10 +351,16 @@ public class EvReservationServiceImpl implements EvReservationService {
         log.info("@# reservationId => {}", reservationId);
         log.info("@# memberId => {}", memberId);
 
+        EvReservationDTO cancelTarget = reservationDAO.findReservationById(reservationId, memberId);
+
         int updateCount = reservationDAO.cancelReservation(reservationId, memberId);
 
         if (updateCount == 0) {
             throw new IllegalArgumentException("취소할 수 없는 예약입니다.");
+        }
+
+        if (cancelTarget != null && cancelTarget.getChargerId() != null) {
+            reservationDAO.updateChargerStatus(cancelTarget.getChargerId(), "사용가능");
         }
     }
 
@@ -337,17 +379,31 @@ public class EvReservationServiceImpl implements EvReservationService {
         log.info("@# reservationId => {}", reservationId);
         log.info("@# memberId => {}", memberId);
 
-        EvReservationDTO reservation =
-                reservationDAO.findVerifiableReservation(reservationId, memberId);
+        EvReservationDTO reservation = reservationDAO.findReservationById(reservationId, memberId);
 
         if (reservation == null) {
-            throw new IllegalArgumentException("예약 시작 10분 전부터 인증코드를 발급할 수 있습니다.");
+            throw new IllegalArgumentException("예약 정보를 찾을 수 없습니다.");
         }
 
-        String authCode =
-                evChargerRedisService.generateAuthCode(reservation.getChargerId());
+        if (!"예약완료".equals(reservation.getStatus()) && !"인증완료".equals(reservation.getStatus())) {
+            throw new IllegalArgumentException("인증코드는 예약완료 또는 인증완료 상태에서만 확인할 수 있습니다.");
+        }
 
-        log.info("@# issued authCode => {}", authCode);
+        if (reservation.getAuthCode() != null && !reservation.getAuthCode().isBlank()) {
+            log.info("@# return db authCode => {}", reservation.getAuthCode());
+            return reservation.getAuthCode();
+        }
+
+        LocalDateTime authCodeExpiresAt = reservation.getStartTime().plusMinutes(10);
+        String authCode = evChargerRedisService.generateReservationAuthCode(
+                reservationId,
+                reservation.getChargerId(),
+                authCodeExpiresAt
+        );
+
+        reservationDAO.updateReservationAuthCode(reservationId, memberId, authCode);
+
+        log.info("@# reissued authCode => {}", authCode);
 
         return authCode;
     }
@@ -381,7 +437,7 @@ public class EvReservationServiceImpl implements EvReservationService {
          */
         Long attemptCount = evChargerRedisService.getVerifyAttempt(memberId, reservationId);
 
-        if (attemptCount >= MAX_VERIFY_ATTEMPT) {
+        if (attemptCount != null && attemptCount >= MAX_VERIFY_ATTEMPT) {
             throw new IllegalArgumentException("인증 시도 횟수가 초과되었습니다. 잠시 후 다시 시도해주세요.");
         }
 
@@ -399,12 +455,19 @@ public class EvReservationServiceImpl implements EvReservationService {
         /*
          * 3. Redis에서 예약한 충전기의 현재 인증코드 조회
          */
-        String savedAuthCode =
-                evChargerRedisService.getAuthCode(reservation.getChargerId());
+        String savedAuthCode = evChargerRedisService.getReservationAuthCode(reservationId);
+
+        if (savedAuthCode == null) {
+            savedAuthCode = evChargerRedisService.getAuthCode(reservation.getChargerId());
+        }
+
+        if (savedAuthCode == null && reservation.getAuthCode() != null) {
+            savedAuthCode = reservation.getAuthCode();
+        }
 
         if (savedAuthCode == null) {
             evChargerRedisService.increaseVerifyAttempt(memberId, reservationId);
-            throw new IllegalArgumentException("인증코드가 만료되었습니다. 도착 인증을 다시 진행해주세요.");
+            throw new IllegalArgumentException("인증코드가 만료되었습니다. 예약 시간과 인증 가능 시간을 확인해주세요.");
         }
 
         /*
@@ -432,6 +495,7 @@ public class EvReservationServiceImpl implements EvReservationService {
                 reservation.getChargerId(),
                 "VERIFIED"
         );
+        reservationDAO.updateChargerStatus(reservation.getChargerId(), "사용중");
 
         /*
          * 7. 인증 성공 후 실패 횟수 초기화
@@ -442,6 +506,54 @@ public class EvReservationServiceImpl implements EvReservationService {
          * 8. 인증 성공 후 인증코드 재사용 방지
          */
         evChargerRedisService.deleteAuthCode(reservation.getChargerId());
+        evChargerRedisService.deleteReservationAuthCode(reservationId);
+
+        /*
+         * 인증 직후 세션을 바로 만들어 둔다.
+         * 이렇게 해야 프론트의 충전 게이지 시뮬레이션에서 실제 충전 시작 시간을 표시할 수 있다.
+         */
+        reservationDAO.upsertChargingSessionForSimulation(reservationId, memberId);
+    }
+
+    /*
+     * 충전 시작 시뮬레이션 완료 처리
+     *
+     * 핵심 설계:
+     * - reservation.start_time/end_time은 예약 당시 예정 시간으로 보존한다.
+     * - charging_session.actual_start_time은 인증 성공 시각을 사용한다.
+     * - charging_session.actual_end_time은 actual_start_time + estimated_minutes로 계산한다.
+     * - 화면에서는 10~20초로 압축해 보여주지만 DB에는 실제 세션 시간 개념을 저장한다.
+     */
+    @Override
+    @Transactional
+    public EvReservationDTO completeChargingSimulation(Long reservationId, Long memberId) {
+        log.info("@# EvReservationServiceImpl.completeChargingSimulation()");
+        log.info("@# reservationId => {}", reservationId);
+        log.info("@# memberId => {}", memberId);
+
+        EvReservationDTO reservation = reservationDAO.findReservationById(reservationId, memberId);
+
+        if (reservation == null) {
+            throw new IllegalArgumentException("예약 정보를 찾을 수 없습니다.");
+        }
+
+        if (!"충전중".equals(reservation.getStatus())) {
+            throw new IllegalArgumentException("충전중 상태의 예약만 완료 처리할 수 있습니다.");
+        }
+
+        reservationDAO.upsertChargingSessionForSimulation(reservationId, memberId);
+
+        int updateCount = reservationDAO.completeReservationForSimulation(reservationId, memberId);
+
+        if (updateCount == 0) {
+            throw new IllegalArgumentException("충전 완료 처리에 실패했습니다.");
+        }
+
+        reservationDAO.completeChargingSessionForSimulation(reservationId, memberId);
+        reservationDAO.updateChargerStatus(reservation.getChargerId(), "사용가능");
+        evChargerRedisService.setChargerStatus(reservation.getChargerId(), "AVAILABLE");
+
+        return reservationDAO.findReservationById(reservationId, memberId);
     }
     
     @Override
@@ -454,6 +566,9 @@ public class EvReservationServiceImpl implements EvReservationService {
          */
         int noShowCount = reservationDAO.updateReservationCompleteToNoShow();
         log.info("@# noShowCount => {}", noShowCount);
+
+        int noShowChargerResetCount = reservationDAO.updateNoShowChargersToAvailable();
+        log.info("@# noShowChargerResetCount => {}", noShowChargerResetCount);
 
         /*
          * 인증완료 → 충전중
@@ -473,6 +588,9 @@ public class EvReservationServiceImpl implements EvReservationService {
          */
         int completeCount = reservationDAO.updateChargingToComplete();
         log.info("@# completeCount => {}", completeCount);
+
+        int completedChargerResetCount = reservationDAO.updateCompletedChargersToAvailable();
+        log.info("@# completedChargerResetCount => {}", completedChargerResetCount);
 
         /*
          * 인증완료 상태였지만 이미 종료 시간이 지난 예약 → 완료
@@ -496,9 +614,11 @@ public class EvReservationServiceImpl implements EvReservationService {
 
         int totalCount =
                 noShowCount
+                + noShowChargerResetCount
                 + chargingCount
                 + sessionInsertCount
                 + completeCount
+                + completedChargerResetCount
                 + authenticatedCompleteCount
                 + sessionCompleteCount
                 + completedSessionInsertCount;

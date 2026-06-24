@@ -139,8 +139,18 @@ public class EvReservationDTO {
     private String stationAddress;
     private String chargerName;
     private String connectorType;
+    private String chargerType;
+    private String chargerStatus;
+    private Double chargingSpeedKw;
+    private Double pricePerKwh;
+    private Long stationId;
+    private Double stationLatitude;
+    private Double stationLongitude;
     private String vehicleNickname;
     private String modelName;
+    private String manufacturer;
+    private Double batteryCapacityKwh;
+    private Double maxChargingSpeedKw;
 
     /*
      * JSP 화면 표시용 시작 시간
@@ -170,6 +180,35 @@ public class EvReservationDTO {
         return endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
     }
     
+    /*
+     * 실제 충전 세션 정보
+     *
+     * reservation.startTime/endTime은 예약 당시 예정 시간이고,
+     * 아래 값들은 인증 후 실제 충전 시뮬레이션/세션 기준 시간이다.
+     */
+    private LocalDateTime actualStartTime;
+    private LocalDateTime actualEndTime;
+    private Double actualKwh;
+    private Integer actualMinutes;
+    private Double actualCost;
+    private String chargingSessionStatus;
+
+    public String getActualStartTimeText() {
+        if (actualStartTime == null) {
+            return "";
+        }
+
+        return actualStartTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+    }
+
+    public String getActualEndTimeText() {
+        if (actualEndTime == null) {
+            return "";
+        }
+
+        return actualEndTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+    }
+
     /*
      * 예약 인증 가능 여부
      *

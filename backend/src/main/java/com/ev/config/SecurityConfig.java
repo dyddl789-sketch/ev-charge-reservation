@@ -9,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -80,6 +82,18 @@ public class SecurityConfig {
 
                 // 공지 / FAQ는 공개 API
                 .requestMatchers("/notice/**", "/faq/**").permitAll()
+
+                // 관리자 MIS 세부 권한
+                .requestMatchers("/admin/public-api/**")
+                    .hasAnyRole("ADMIN", "MANAGER")
+                .requestMatchers("/admin/simulation/reset")
+                    .hasRole("ADMIN")
+                .requestMatchers("/admin/simulation/fault")
+                    .hasAnyRole("ADMIN", "MANAGER", "ENGINEER")
+                .requestMatchers("/admin/employees", "/admin/employees/**", "/admin/departments", "/admin/departments/**")
+                    .hasAnyRole("ADMIN", "MANAGER")
+                .requestMatchers("/admin/system", "/admin/system/**")
+                    .hasRole("ADMIN")
 
                 // 관리자 MIS API 접근 권한
                 .requestMatchers("/admin/**")

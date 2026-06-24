@@ -81,3 +81,49 @@
   font-size: 13px;
   font-weight: 800;
 }
+
+/* =========================
+   Reservation to Complaint Patch
+========================= */
+.station-complaint-btn,
+.charger-complaint-btn {
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.station-complaint-btn {
+  margin-top: 12px;
+  height: 36px;
+  padding: 0 12px;
+}
+
+.charger-option {
+  grid-template-columns: auto 1fr auto auto;
+}
+
+.charger-complaint-btn {
+  height: 34px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.charger-disabled .charger-complaint-btn {
+  opacity: 1;
+}
+
+@media (max-width: 900px) {
+  .charger-option {
+    grid-template-columns: auto 1fr;
+  }
+
+  .charger-status,
+  .charger-complaint-btn {
+    grid-column: 2 / 3;
+  }
+}

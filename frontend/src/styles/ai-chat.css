@@ -423,3 +423,135 @@
     max-height: none;
   }
 }
+
+/* =========================
+   AI Recommendation Sort Buttons
+========================= */
+.ai-sort-box {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.ai-sort-box > span {
+  display: block;
+  margin-bottom: 8px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ai-sort-box > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ai-sort-box button {
+  min-height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ai-sort-box button:hover,
+.ai-sort-box button.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.ai-candidate-card span + span {
+  margin-top: 3px;
+}
+
+/* =========================
+   AI Map / Reservation Result Patch
+========================= */
+.ai-reservation-box-top {
+  margin-top: 0;
+  margin-bottom: 22px;
+}
+
+.ai-action-row {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-map-action-btn,
+.ai-card-button-row button {
+  border: 0;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ai-map-action-btn:hover,
+.ai-card-button-row button:hover {
+  background: #1d4ed8;
+}
+
+.ai-card-button-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.ai-card-button-row button.secondary {
+  background: #eef2ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.ai-card-button-row button.secondary:hover {
+  background: #dbeafe;
+}
+
+.ai-candidate-card > button {
+  display: none;
+}
+
+.ai-reservation-result-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.ai-reservation-result-card {
+  padding: 12px;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.ai-reservation-result-card strong,
+.ai-reservation-result-card span {
+  display: block;
+}
+
+.ai-reservation-result-card strong {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.ai-reservation-result-card span {
+  margin-top: 4px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.ai-guide-panel-compact > h2 {
+  margin-top: 0;
+}

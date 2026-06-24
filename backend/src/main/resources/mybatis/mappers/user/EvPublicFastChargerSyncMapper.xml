@@ -115,7 +115,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             , charger_type = excluded.charger_type
             , connector_type = excluded.connector_type
             , charging_speed_kw = excluded.charging_speed_kw
-            , status = excluded.status
             , charger_code = excluded.charger_code
             , last_status_checked_at = current_timestamp
             , is_deleted = false

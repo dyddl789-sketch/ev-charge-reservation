@@ -1329,3 +1329,13 @@ select table_name
 from information_schema.tables
 where table_schema = 'public'
 order by table_name;
+
+
+
+alter table charging_station
+    add constraint uq_charging_station_external_station_id
+    unique (external_station_id);
+
+alter table charger
+    add constraint uq_charger_external_charger_id
+    unique (external_charger_id);

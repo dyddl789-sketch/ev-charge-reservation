@@ -49,6 +49,13 @@
             #{message}
         )
     </insert>
+
+    <!-- 대화 초기화: 현재 로그인 사용자의 AI 채팅방 메시지만 삭제 -->
+    <delete id="deleteMessagesByRoomId"
+            parameterType="long">
+        delete from ai_chat_message
+        where room_id = #{roomId}
+    </delete>
 	
 	<!-- 채팅방 메시지 목록 조회: 최근 20개를 시간순으로 조회 -->
 	<select id="findMessagesByRoomId"
@@ -142,7 +149,7 @@
 	      and v.is_deleted = false
 	      and sl.is_default = true
 	      and cs.station_status = '운영중'
-	      and c.status in ('사용가능', '예약중', '사용중')
+	      and c.status = '사용가능'
 	      and replace(trim(c.connector_type), ' ', '') = replace(trim(vm.connector_type), ' ', '')
 	    order by
 	          case
@@ -196,7 +203,7 @@
 	      and v.is_deleted = false
 	      and sl.is_default = true
 	      and cs.station_status = '운영중'
-	      and c.status in ('사용가능', '예약중', '사용중')
+	      and c.status = '사용가능'
 	      and replace(trim(c.connector_type), ' ', '') = replace(trim(vm.connector_type), ' ', '')
 	    order by
 	          case
@@ -211,4 +218,289 @@
 	
 	</select>
 	
+
+    <!-- AI가 현재 기준으로 사용하는 기본 출발지 조회 -->
+    <select id="findDefaultLocationForAi" resultType="map">
+        select
+              location_id as locationId
+            , location_name as locationName
+            , location_type as locationType
+            , address
+            , latitude
+            , longitude
+            , is_default as isDefault
+        from saved_location
+        where member_id = #{memberId}
+          and is_default = true
+        order by location_id asc
+        limit 1
+    </select>
+
+    <!--
+        AI 예약 후보 조회
+        기준:
+        1. 로그인 사용자의 대표 차량
+        2. DB에 저장된 기본 출발지
+        3. 대표 차량 커넥터와 맞는 충전기
+        4. 현재 상태가 사용가능인 충전기
+        5. 선택한 예약 시간과 기존 예약 시간이 겹치지 않는 충전기
+        6. 기본 정렬은 거리순, 버튼 요청에 따라 가격순/충전빠른순으로 변경
+    -->
+    <select id="findAiReservationCandidates" resultType="map">
+        with user_context as (
+            select
+                  v.vehicle_id
+                , v.vehicle_nickname
+                , vm.manufacturer
+                , vm.model_name
+                , vm.battery_capacity_kwh
+                , vm.connector_type as vehicle_connector_type
+                , vm.max_charging_speed_kw
+                , sl.location_id
+                , sl.location_name
+                , sl.address as location_address
+                , sl.latitude as location_latitude
+                , sl.longitude as location_longitude
+                , sl.location
+            from vehicle v
+            join vehicle_model vm
+              on v.model_id = vm.model_id
+            join saved_location sl
+              on sl.member_id = v.member_id
+             and sl.is_default = true
+            where v.member_id = #{memberId}
+              and v.is_default = true
+              and coalesce(v.is_deleted, false) = false
+            order by v.vehicle_id asc
+            limit 1
+        ), base_candidate as (
+            select
+                  uc.vehicle_id
+                , uc.vehicle_nickname
+                , uc.manufacturer
+                , uc.model_name
+                , uc.battery_capacity_kwh
+                , uc.vehicle_connector_type
+                , uc.max_charging_speed_kw
+                , uc.location_id
+                , uc.location_name
+                , uc.location_address
+                , uc.location_latitude
+                , uc.location_longitude
+                , cs.station_id
+                , cs.station_name
+                , cs.address
+                , cs.operator_name
+                , cs.latitude
+                , cs.longitude
+                , c.charger_id
+                , c.charger_name
+                , c.charger_type
+                , c.connector_type
+                , c.charging_speed_kw
+                , c.price_per_kwh
+                , c.status
+                , round((ST_Distance(cs.location, uc.location) / 1000)::numeric, 2)::double precision as distance_km
+                , least(
+                    c.charging_speed_kw,
+                    coalesce(nullif(uc.max_charging_speed_kw, 0), c.charging_speed_kw)
+                  )::double precision as effective_charging_speed_kw
+                , round(
+                    (uc.battery_capacity_kwh * ((#{targetSoc} - #{currentSoc}) / 100.0))::numeric,
+                    2
+                  )::double precision as required_kwh
+            from user_context uc
+            join charging_station cs
+              on ST_DWithin(cs.location, uc.location, #{radiusMeter})
+            join charger c
+              on c.station_id = cs.station_id
+            where cs.station_status = '운영중'
+              and coalesce(cs.is_deleted, false) = false
+              and c.status = '사용가능'
+              and coalesce(c.is_deleted, false) = false
+              and replace(upper(trim(c.connector_type)), ' ', '') = replace(upper(trim(uc.vehicle_connector_type)), ' ', '')
+        ), estimated_candidate as (
+            select
+                  bc.*
+                , greatest(
+                    10,
+                    ceil((bc.required_kwh / nullif(bc.effective_charging_speed_kw, 0)) * 60 * 1.15)::int
+                  ) as estimated_minutes
+                , round((bc.required_kwh * bc.price_per_kwh)::numeric, 0)::double precision as estimated_cost
+            from base_candidate bc
+            where bc.required_kwh > 0
+              and bc.effective_charging_speed_kw > 0
+        )
+        select
+              row_number() over () as candidateNo
+            , ec.vehicle_id as vehicleId
+            , ec.vehicle_nickname as vehicleNickname
+            , ec.manufacturer
+            , ec.model_name as modelName
+            , ec.battery_capacity_kwh as batteryCapacityKwh
+            , ec.vehicle_connector_type as vehicleConnectorType
+            , ec.max_charging_speed_kw as maxChargingSpeedKw
+            , ec.location_id as locationId
+            , ec.location_name as locationName
+            , ec.location_address as locationAddress
+            , ec.location_latitude as locationLatitude
+            , ec.location_longitude as locationLongitude
+            , ec.station_id as stationId
+            , ec.station_name as stationName
+            , ec.address
+            , ec.operator_name as operatorName
+            , ec.latitude
+            , ec.longitude
+            , ec.distance_km as distanceKm
+            , ec.charger_id as chargerId
+            , ec.charger_name as chargerName
+            , ec.charger_type as chargerType
+            , ec.connector_type as connectorType
+            , ec.charging_speed_kw as chargingSpeedKw
+            , ec.effective_charging_speed_kw as effectiveChargingSpeedKw
+            , ec.price_per_kwh as pricePerKwh
+            , ec.status
+            , ec.required_kwh as requiredKwh
+            , ec.estimated_minutes as estimatedMinutes
+            , ec.estimated_cost as estimatedCost
+        from estimated_candidate ec
+        where not exists (
+            select 1
+            from reservation r
+            where r.charger_id = ec.charger_id
+              and r.status in ('예약완료', '인증완료', '충전중')
+              and #{startTime}::timestamp &lt; r.end_time
+              and (#{startTime}::timestamp + (ec.estimated_minutes * interval '1 minute')) &gt; r.start_time
+        )
+        order by
+        <choose>
+            <when test="sort == 'COST'">
+                  ec.price_per_kwh asc
+                , ec.distance_km asc
+                , ec.effective_charging_speed_kw desc
+            </when>
+            <when test="sort == 'SPEED'">
+                  ec.effective_charging_speed_kw desc
+                , ec.distance_km asc
+                , ec.price_per_kwh asc
+            </when>
+            <otherwise>
+                  ec.distance_km asc
+                , ec.effective_charging_speed_kw desc
+                , ec.price_per_kwh asc
+            </otherwise>
+        </choose>
+        limit #{limit}
+    </select>
+
+    <!-- RAG: 공지사항 검색 -->
+    <select id="findAiRagNotices" resultType="map">
+        select
+              notice_id as noticeId
+            , title
+            , category
+            , content
+            , created_at as createdAt
+        from notice
+        where status = '게시'
+          and is_public = true
+        <if test="keyword != null and keyword != ''">
+          and (
+                 title ilike '%' || #{keyword} || '%'
+              or content ilike '%' || #{keyword} || '%'
+              or category ilike '%' || #{keyword} || '%'
+          )
+        </if>
+        order by is_pinned desc, created_at desc
+        limit #{limit}
+    </select>
+
+    <!-- RAG: FAQ 검색 -->
+    <select id="findAiRagFaqs" resultType="map">
+        select
+              faq_id as faqId
+            , category
+            , question
+            , answer
+        from faq
+        where is_active = true
+        <if test="keyword != null and keyword != ''">
+          and (
+                 question ilike '%' || #{keyword} || '%'
+              or answer ilike '%' || #{keyword} || '%'
+              or category ilike '%' || #{keyword} || '%'
+          )
+        </if>
+        order by display_order asc, faq_id asc
+        limit #{limit}
+    </select>
+
+    <!-- RAG: 로그인 사용자의 민원 이력 검색 -->
+    <select id="findAiRagComplaints" resultType="map">
+        select
+              complaint_id as complaintId
+            , title
+            , complaint_type as complaintType
+            , priority
+            , status
+            , station_name as stationName
+            , charger_name as chargerName
+            , ai_summary as aiSummary
+            , admin_memo as adminMemo
+            , created_at as createdAt
+        from complaint
+        where member_id = #{memberId}
+        <if test="keyword != null and keyword != ''">
+          and (
+                 title ilike '%' || #{keyword} || '%'
+              or content ilike '%' || #{keyword} || '%'
+              or complaint_type ilike '%' || #{keyword} || '%'
+              or station_name ilike '%' || #{keyword} || '%'
+              or charger_name ilike '%' || #{keyword} || '%'
+          )
+        </if>
+        order by created_at desc
+        limit #{limit}
+    </select>
+
+
+    <!-- AI 챗봇: 로그인 사용자의 예약 내역 조회 -->
+    <select id="findMyReservationsForAi" resultType="map">
+        select
+              r.reservation_id as reservationId
+            , r.reservation_date as reservationDate
+            , to_char(r.start_time, 'YYYY-MM-DD HH24:MI') as startTime
+            , to_char(r.end_time, 'YYYY-MM-DD HH24:MI') as endTime
+            , r.current_soc as currentSoc
+            , r.target_soc as targetSoc
+            , r.required_kwh as requiredKwh
+            , r.estimated_minutes as estimatedMinutes
+            , r.estimated_cost as estimatedCost
+            , r.status
+            , cs.station_id as stationId
+            , cs.station_name as stationName
+            , cs.address as stationAddress
+            , cs.latitude
+            , cs.longitude
+            , c.charger_id as chargerId
+            , c.charger_name as chargerName
+            , c.connector_type as connectorType
+            , c.charging_speed_kw as chargingSpeedKw
+            , v.vehicle_nickname as vehicleNickname
+            , vm.manufacturer
+            , vm.model_name as modelName
+        from reservation r
+        join charger c
+          on r.charger_id = c.charger_id
+        join charging_station cs
+          on c.station_id = cs.station_id
+        left join vehicle v
+          on r.vehicle_id = v.vehicle_id
+        left join vehicle_model vm
+          on v.model_id = vm.model_id
+        where r.member_id = #{memberId}
+        order by r.start_time desc
+        limit #{limit}
+    </select>
+
 </mapper>

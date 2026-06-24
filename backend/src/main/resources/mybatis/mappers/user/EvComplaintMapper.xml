@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.user.EvComplaintDAO">
+
+    <!-- 사용자 민원 등록 -->
+    <insert id="insertComplaint"
+            useGeneratedKeys="true"
+            keyProperty="complaintId"
+            keyColumn="complaint_id">
+        insert into complaint (
+            member_id,
+            title,
+            content,
+            complaint_type,
+            priority,
+            status,
+            station_id,
+            charger_id,
+            station_name,
+            charger_name,
+            notify_email,
+            notify_sms,
+            notify_site,
+            created_at
+        )
+        values (
+            #{memberId},
+            #{title},
+            #{content},
+            #{complaintType},
+            #{priority},
+            '접수',
+            #{stationId},
+            #{chargerId},
+            #{stationName},
+            #{chargerName},
+            #{notifyEmail},
+            #{notifySms},
+            #{notifySite},
+            current_timestamp
+        )
+    </insert>
+
+    <!-- 내 민원 목록 조회 -->
+    <select id="findMyComplaintList"
+            parameterType="long"
+            resultType="com.ev.dto.complaint.EvComplaintDTO">
+        select
+            c.complaint_id as complaintId,
+            c.member_id as memberId,
+            c.title,
+            c.content,
+            c.complaint_type as complaintType,
+            c.priority,
+            c.status,
+            c.station_id as stationId,
+            c.charger_id as chargerId,
+            c.station_name as stationName,
+            c.charger_name as chargerName,
+            c.notify_email as notifyEmail,
+            c.notify_sms as notifySms,
+            c.notify_site as notifySite,
+            c.assigned_department_id as assignedDepartmentId,
+            d.department_name as assignedDepartmentName,
+            c.assigned_employee_id as assignedEmployeeId,
+            am.member_name as assignedEmployeeName,
+            c.ai_summary as aiSummary,
+            c.admin_memo as adminMemo,
+            c.created_at as createdAt,
+            c.updated_at as updatedAt,
+            c.closed_at as closedAt
+        from complaint c
+        left join department d
+            on c.assigned_department_id = d.department_id
+        left join employee e
+            on c.assigned_employee_id = e.employee_id
+        left join app_member am
+            on e.member_id = am.member_id
+        where c.member_id = #{memberId}
+        order by c.created_at desc
+    </select>
+
+    <!-- 내 민원 상세 조회 -->
+    <select id="findMyComplaintDetail"
+            resultType="com.ev.dto.complaint.EvComplaintDTO">
+        select
+            c.complaint_id as complaintId,
+            c.member_id as memberId,
+            m.member_name as memberName,
+            m.user_id as userId,
+            m.email,
+            m.phone,
+            c.title,
+            c.content,
+            c.complaint_type as complaintType,
+            c.priority,
+            c.status,
+            c.station_id as stationId,
+            c.charger_id as chargerId,
+            c.station_name as stationName,
+            c.charger_name as chargerName,
+            c.notify_email as notifyEmail,
+            c.notify_sms as notifySms,
+            c.notify_site as notifySite,
+            c.assigned_department_id as assignedDepartmentId,
+            d.department_name as assignedDepartmentName,
+            c.assigned_employee_id as assignedEmployeeId,
+            am.member_name as assignedEmployeeName,
+            c.ai_summary as aiSummary,
+            c.admin_memo as adminMemo,
+            c.created_at as createdAt,
+            c.updated_at as updatedAt,
+            c.closed_at as closedAt
+        from complaint c
+        join app_member m
+            on c.member_id = m.member_id
+        left join department d
+            on c.assigned_department_id = d.department_id
+        left join employee e
+            on c.assigned_employee_id = e.employee_id
+        left join app_member am
+            on e.member_id = am.member_id
+        where c.member_id = #{memberId}
+          and c.complaint_id = #{complaintId}
+    </select>
+
+    <!-- 관리자 민원 목록 조회 -->
+    <select id="findAdminComplaintList"
+            parameterType="com.ev.dto.complaint.EvComplaintSearchDTO"
+            resultType="com.ev.dto.complaint.EvComplaintDTO">
+        select
+            c.complaint_id as complaintId,
+            c.member_id as memberId,
+            m.member_name as memberName,
+            m.user_id as userId,
+            m.email,
+            m.phone,
+            c.title,
+            c.content,
+            c.complaint_type as complaintType,
+            c.priority,
+            c.status,
+            c.station_id as stationId,
+            c.charger_id as chargerId,
+            c.station_name as stationName,
+            c.charger_name as chargerName,
+            c.assigned_department_id as assignedDepartmentId,
+            d.department_name as assignedDepartmentName,
+            c.assigned_employee_id as assignedEmployeeId,
+            am.member_name as assignedEmployeeName,
+            c.ai_summary as aiSummary,
+            c.admin_memo as adminMemo,
+            c.created_at as createdAt,
+            c.updated_at as updatedAt,
+            c.closed_at as closedAt
+        from complaint c
+        join app_member m
+            on c.member_id = m.member_id
+        left join department d
+            on c.assigned_department_id = d.department_id
+        left join employee e
+            on c.assigned_employee_id = e.employee_id
+        left join app_member am
+            on e.member_id = am.member_id
+        where 1 = 1
+        <if test="status != null and status != ''">
+            and c.status = #{status}
+        </if>
+        <if test="complaintType != null and complaintType != ''">
+            and c.complaint_type = #{complaintType}
+        </if>
+        <if test="priority != null and priority != ''">
+            and c.priority = #{priority}
+        </if>
+        <if test="stationId != null">
+            and c.station_id = #{stationId}
+        </if>
+        <if test="chargerId != null">
+            and c.charger_id = #{chargerId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (
+                c.title ilike concat('%', #{keyword}, '%')
+                or c.content ilike concat('%', #{keyword}, '%')
+                or c.station_name ilike concat('%', #{keyword}, '%')
+                or c.charger_name ilike concat('%', #{keyword}, '%')
+                or m.member_name ilike concat('%', #{keyword}, '%')
+                or m.user_id ilike concat('%', #{keyword}, '%')
+            )
+        </if>
+        order by c.created_at desc
+    </select>
+
+    <!-- 관리자 민원 상세 조회 -->
+    <select id="findAdminComplaintDetail"
+            parameterType="long"
+            resultType="com.ev.dto.complaint.EvComplaintDTO">
+        select
+            c.complaint_id as complaintId,
+            c.member_id as memberId,
+            m.member_name as memberName,
+            m.user_id as userId,
+            m.email,
+            m.phone,
+            c.title,
+            c.content,
+            c.complaint_type as complaintType,
+            c.priority,
+            c.status,
+            c.station_id as stationId,
+            c.charger_id as chargerId,
+            c.station_name as stationName,
+            c.charger_name as chargerName,
+            c.notify_email as notifyEmail,
+            c.notify_sms as notifySms,
+            c.notify_site as notifySite,
+            c.assigned_department_id as assignedDepartmentId,
+            d.department_name as assignedDepartmentName,
+            c.assigned_employee_id as assignedEmployeeId,
+            am.member_name as assignedEmployeeName,
+            c.ai_summary as aiSummary,
+            c.admin_memo as adminMemo,
+            c.created_at as createdAt,
+            c.updated_at as updatedAt,
+            c.closed_at as closedAt
+        from complaint c
+        join app_member m
+            on c.member_id = m.member_id
+        left join department d
+            on c.assigned_department_id = d.department_id
+        left join employee e
+            on c.assigned_employee_id = e.employee_id
+        left join app_member am
+            on e.member_id = am.member_id
+        where c.complaint_id = #{complaintId}
+    </select>
+
+    <!-- 민원 처리 이력 조회 -->
+    <select id="findComplaintHistoryList"
+            parameterType="long"
+            resultType="com.ev.dto.complaint.EvComplaintHistoryDTO">
+        select
+            h.history_id as historyId,
+            h.complaint_id as complaintId,
+            h.employee_id as employeeId,
+            m.member_name as employeeName,
+            h.before_status as beforeStatus,
+            h.after_status as afterStatus,
+            h.action_type as actionType,
+            h.memo,
+            h.created_at as createdAt
+        from complaint_history h
+        left join employee e
+            on h.employee_id = e.employee_id
+        left join app_member m
+            on e.member_id = m.member_id
+        where h.complaint_id = #{complaintId}
+        order by h.created_at asc
+    </select>
+
+    <!-- 민원 상태 변경 -->
+    <update id="updateComplaintStatus">
+        update complaint
+        set status = #{status},
+            admin_memo = coalesce(#{adminMemo}, admin_memo),
+            updated_at = current_timestamp,
+            closed_at =
+                case
+                    when #{closed} = true then current_timestamp
+                    else closed_at
+                end
+        where complaint_id = #{complaintId}
+    </update>
+
+    <!-- 민원 담당자 배정 -->
+    <update id="updateComplaintAssign">
+        update complaint
+        set assigned_department_id = #{assignedDepartmentId},
+            assigned_employee_id = #{assignedEmployeeId},
+            updated_at = current_timestamp
+        where complaint_id = #{complaintId}
+    </update>
+
+    <!-- 민원 처리 이력 저장 -->
+    <insert id="insertComplaintHistory">
+        insert into complaint_history (
+            complaint_id,
+            employee_id,
+            before_status,
+            after_status,
+            action_type,
+            memo,
+            created_at
+        )
+        values (
+            #{complaintId},
+            #{employeeId},
+            #{beforeStatus},
+            #{afterStatus},
+            #{actionType},
+            #{memo},
+            current_timestamp
+        )
+    </insert>
+
+    <!-- 관리자 회원의 employee_id 조회 -->
+    <select id="findEmployeeIdByMemberId"
+            parameterType="long"
+            resultType="long">
+        select employee_id
+        from employee
+        where member_id = #{memberId}
+        limit 1
+    </select>
+
+</mapper>

@@ -20,11 +20,20 @@ public interface EvChargerRedisService {
     String generateAuthCode(Long chargerId);
 
     /*
+     * 예약별 인증코드 생성
+     * 예약 생성 시점에 코드를 만들고, 예약 시작 + 10분까지 Redis TTL을 유지한다.
+     */
+    String generateReservationAuthCode(Long reservationId, Long chargerId, java.time.LocalDateTime expiresAt);
+
+    /*
      * 충전기 인증코드 조회
      *
      * Redis에 저장된 현재 인증코드를 조회한다.
      */
     String getAuthCode(Long chargerId);
+
+    /* 예약별 인증코드 조회 */
+    String getReservationAuthCode(Long reservationId);
 
     /*
      * 충전기 인증코드 삭제
@@ -32,6 +41,9 @@ public interface EvChargerRedisService {
      * 인증 성공 후 재사용을 막고 싶을 때 사용한다.
      */
     void deleteAuthCode(Long chargerId);
+
+    /* 예약별 인증코드 삭제 */
+    void deleteReservationAuthCode(Long reservationId);
 
     /*
      * 충전기 현재 상태 저장

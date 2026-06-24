@@ -271,6 +271,26 @@ const ReservationPage = () => {
     setForm({ ...form, [name]: value });
   };
 
+  const goComplaint = (targetCharger) => {
+    console.log("예약 화면 충전기 민원 접수 이동", targetCharger);
+
+    const targetStationId = targetCharger?.stationId || form.stationId || stationId;
+    const targetChargerId = targetCharger?.chargerId || form.chargerId;
+
+    const params = new URLSearchParams();
+    params.set("type", "충전기고장");
+
+    if (targetStationId) {
+      params.set("stationId", targetStationId);
+    }
+
+    if (targetChargerId) {
+      params.set("chargerId", targetChargerId);
+    }
+
+    navigate(`/complaint?${params.toString()}`);
+  };
+
   const changeCharger = async (newChargerId) => {
     console.log("충전기 선택 변경", newChargerId);
 
@@ -363,6 +383,13 @@ const ReservationPage = () => {
               <div className="station-mini-card">
                 <strong>{charger.stationName}</strong>
                 <p>{charger.address}</p>
+                <button
+                  type="button"
+                  className="station-complaint-btn"
+                  onClick={() => goComplaint(selectedCharger || charger)}
+                >
+                  이 충전소/충전기 민원 접수
+                </button>
               </div>
             </div>
 
@@ -401,6 +428,17 @@ const ReservationPage = () => {
                       <b className={disabled ? "charger-status unavailable" : "charger-status available"}>
                         {item.selectedByOther ? "선택중" : status}
                       </b>
+                      <button
+                        type="button"
+                        className="charger-complaint-btn"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          goComplaint(item);
+                        }}
+                      >
+                        이 충전기 민원 접수
+                      </button>
                     </label>
                   );
                 })}

@@ -1,7 +1,9 @@
 package com.ev.service.user;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -60,6 +62,10 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
         return "ev:charger:" + chargerId + ":auth-code";
     }
 
+    private String getReservationAuthCodeKey(Long reservationId) {
+        return "ev:reservation:" + reservationId + ":auth-code";
+    }
+
     /*
      * 충전기 상태 Redis key
      */
@@ -105,6 +111,61 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
         log.info("@# authCode => {}", authCode);
 
         return authCode;
+    }
+
+
+
+    @Override
+    public String generateReservationAuthCode(Long reservationId, Long chargerId, LocalDateTime expiresAt) {
+        log.info("@# EvChargerRedisServiceImpl.generateReservationAuthCode()");
+        log.info("@# reservationId => {}", reservationId);
+        log.info("@# chargerId => {}", chargerId);
+        log.info("@# expiresAt => {}", expiresAt);
+
+        String authCode = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
+
+        String reservationKey = getReservationAuthCodeKey(reservationId);
+        String chargerKey = getAuthCodeKey(chargerId);
+
+        long seconds = Duration.between(LocalDateTime.now(), expiresAt).getSeconds();
+        if (seconds < 60) {
+            seconds = 60;
+        }
+
+        stringRedisTemplate.opsForValue().set(reservationKey, authCode, seconds, TimeUnit.SECONDS);
+        stringRedisTemplate.opsForValue().set(chargerKey, authCode, seconds, TimeUnit.SECONDS);
+
+        log.info("@# reservation auth redisKey => {}", reservationKey);
+        log.info("@# charger auth redisKey => {}", chargerKey);
+        log.info("@# authCode => {}", authCode);
+        log.info("@# ttl seconds => {}", seconds);
+
+        return authCode;
+    }
+
+    @Override
+    public String getReservationAuthCode(Long reservationId) {
+        log.info("@# EvChargerRedisServiceImpl.getReservationAuthCode()");
+        log.info("@# reservationId => {}", reservationId);
+
+        String redisKey = getReservationAuthCodeKey(reservationId);
+        String authCode = stringRedisTemplate.opsForValue().get(redisKey);
+
+        log.info("@# redisKey => {}", redisKey);
+        log.info("@# authCode => {}", authCode);
+
+        return authCode;
+    }
+
+    @Override
+    public void deleteReservationAuthCode(Long reservationId) {
+        log.info("@# EvChargerRedisServiceImpl.deleteReservationAuthCode()");
+        log.info("@# reservationId => {}", reservationId);
+
+        String redisKey = getReservationAuthCodeKey(reservationId);
+        stringRedisTemplate.delete(redisKey);
+
+        log.info("@# deleted redisKey => {}", redisKey);
     }
 
     /*

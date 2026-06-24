@@ -17,6 +17,7 @@ import StationMapPage from "../pages/public/StationMapPage";
 import ReservationPage from "../pages/public/ReservationPage";
 import ReservationCompletePage from "../pages/public/ReservationCompletePage";
 import MyReservationPage from "../pages/public/MyReservationPage";
+import MyReservationDetailPage from "../pages/public/MyReservationDetailPage";
 import ChargingHistoryPage from "../pages/public/ChargingHistoryPage";
 import AiChatPage from "../pages/public/AiChatPage";
 import CustomerCenterPage from "../pages/public/CustomerCenterPage";
@@ -47,6 +48,7 @@ import ApprovalPage from "../pages/admin/ApprovalPage";
 import StatisticsPage from "../pages/admin/StatisticsPage";
 import SalesStatPage from "../pages/admin/SalesStatPage";
 import UsageStatPage from "../pages/admin/UsageStatPage";
+import SystemPage from "../pages/admin/SystemPage";
 
 const AppRoutes = () => {
   console.log("AppRoutes 렌더링");
@@ -67,6 +69,7 @@ const AppRoutes = () => {
             <Route path="/vehicles" element={<VehiclePage />} />
             <Route path="/vehicles/register" element={<VehicleRegisterPage />} />
             <Route path="/my-reservations" element={<MyReservationPage />} />
+            <Route path="/my-reservations/:reservationId" element={<MyReservationDetailPage />} />
             <Route path="/charging-history" element={<ChargingHistoryPage />} />
           </Route>
 
@@ -117,6 +120,7 @@ const AppRoutes = () => {
           <Route path="statistics" element={<StatisticsPage />} />
           <Route path="statistics/usage" element={<UsageStatPage />} />
           <Route path="statistics/sales" element={<SalesStatPage />} />
+          <Route path="system" element={<SystemPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

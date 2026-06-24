@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import * as stations from "../../apis/stationApi";
 import * as routeApi from "../../apis/routeApi";
 import "../../styles/station-map.css";
@@ -185,6 +185,7 @@ const StationMapPage = () => {
   console.log("StationMapPage 렌더링");
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const mapElementRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -223,6 +224,28 @@ const StationMapPage = () => {
     },
   ];
 
+  const getQueryMapFocus = () => {
+    const focusType = searchParams.get("focusType") || "";
+    const stationId = searchParams.get("stationId");
+    const latitude = toNumber(searchParams.get("lat"));
+    const longitude = toNumber(searchParams.get("lng"));
+    const name = searchParams.get("name") || "";
+    const address = searchParams.get("address") || "";
+
+    if (!focusType && !stationId && latitude === null && longitude === null) {
+      return null;
+    }
+
+    return {
+      focusType: focusType || (stationId ? "station" : "origin"),
+      stationId,
+      latitude,
+      longitude,
+      name,
+      address,
+    };
+  };
+
   const validStationList = useMemo(
     () =>
       stationList.filter(
@@ -255,7 +278,26 @@ const StationMapPage = () => {
   }, [validStationList, currentOrigin]);
 
   const initStationMapPage = async () => {
+    const queryFocus = getQueryMapFocus();
     const savedLocations = await getSavedLocations();
+
+    // AI 답변의 “지도에서 내 위치 보기”로 넘어온 경우에는 DB 기본 출발지 좌표를 지도 중심으로 사용한다.
+    if (queryFocus?.focusType === "origin" && queryFocus.latitude !== null && queryFocus.longitude !== null) {
+      const queryOrigin = {
+        locationId: "ai-default-location",
+        locationName: queryFocus.name || "AI 기본 출발지",
+        address: queryFocus.address || "AI 답변에서 이동한 위치",
+        latitude: queryFocus.latitude,
+        longitude: queryFocus.longitude,
+        isDefault: true,
+        isAiFocus: true,
+      };
+
+      setCurrentOrigin(queryOrigin);
+      await getStationMapData("", queryOrigin, connectorType, queryFocus);
+      return;
+    }
+
     const defaultLocation = savedLocations.find(
       (location) => location.isDefault && location.latitude && location.longitude
     );
@@ -264,7 +306,7 @@ const StationMapPage = () => {
     // 저장한 출발지가 없을 때만 브라우저 현재 위치를 기본값으로 사용한다.
     if (defaultLocation) {
       setCurrentOrigin(defaultLocation);
-      await getStationMapData("", defaultLocation);
+      await getStationMapData("", defaultLocation, connectorType, queryFocus);
       return;
     }
 
@@ -272,14 +314,14 @@ const StationMapPage = () => {
 
     if (browserOrigin) {
       setCurrentOrigin(browserOrigin);
-      await getStationMapData("", browserOrigin);
+      await getStationMapData("", browserOrigin, connectorType, queryFocus);
       return;
     }
 
-    await getStationMapData();
+    await getStationMapData("", currentOrigin, connectorType, queryFocus);
   };
 
-  const getStationMapData = async (searchKeyword = "", origin = currentOrigin, selectedConnectorType = connectorType) => {
+  const getStationMapData = async (searchKeyword = "", origin = currentOrigin, selectedConnectorType = connectorType, focusOptions = null) => {
     console.log("지도 충전소 데이터 조회 실행", searchKeyword, origin, selectedConnectorType);
 
     setIsLoading(true);
@@ -308,10 +350,18 @@ const StationMapPage = () => {
 
       console.log("지도 충전소 데이터 응답", normalizedData);
 
-      const nextSelectedStation = normalizedData[0] || null;
+      const focusStationId = focusOptions?.stationId || searchParams.get("stationId");
+      const focusStation = focusStationId
+        ? normalizedData.find((item) => String(item.stationId) === String(focusStationId))
+        : null;
+      const nextSelectedStation = focusStation || normalizedData[0] || null;
 
       setStationList(normalizedData);
       setSelectedStation((prev) => {
+        if (focusStation) {
+          return focusStation;
+        }
+
         if (!prev) {
           return nextSelectedStation;
         }
@@ -549,6 +599,35 @@ const StationMapPage = () => {
       });
 
       await drawOriginMarker();
+
+      const queryFocus = getQueryMapFocus();
+      if (queryFocus?.focusType === "station") {
+        const focusStation = queryFocus.stationId
+          ? validStationList.find((station) => String(station.stationId) === String(queryFocus.stationId))
+          : null;
+        const focusLat = focusStation?.latitude ?? queryFocus.latitude;
+        const focusLng = focusStation?.longitude ?? queryFocus.longitude;
+
+        if (focusStation) {
+          setSelectedStation(focusStation);
+        }
+
+        if (focusLat !== null && focusLng !== null) {
+          map.setLevel(MAP_FOCUS_LEVEL);
+          map.setCenter(new kakao.maps.LatLng(focusLat, focusLng));
+          setMapMessage(queryFocus.name ? `${queryFocus.name} 위치를 지도에서 표시했습니다.` : "선택한 충전소 위치를 지도에서 표시했습니다.");
+          setUseKakaoMap(true);
+          return;
+        }
+      }
+
+      if (queryFocus?.focusType === "origin" && queryFocus.latitude !== null && queryFocus.longitude !== null) {
+        map.setCenter(new kakao.maps.LatLng(queryFocus.latitude, queryFocus.longitude));
+        map.setLevel(MAP_FOCUS_LEVEL);
+        setUseKakaoMap(true);
+        setMapMessage(queryFocus.name ? `${queryFocus.name} 기준 위치를 지도에서 표시했습니다.` : "AI 기본 출발지 위치를 지도에서 표시했습니다.");
+        return;
+      }
 
       if (currentOrigin?.latitude && currentOrigin?.longitude) {
         map.setCenter(center);

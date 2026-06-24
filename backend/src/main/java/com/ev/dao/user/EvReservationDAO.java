@@ -71,6 +71,11 @@ public interface EvReservationDAO {
      */
     int insertReservation(EvReservationDTO reservationDTO);
 
+    // 예약 인증코드 DB 저장
+    int updateReservationAuthCode(@Param("reservationId") Long reservationId,
+                                  @Param("memberId") Long memberId,
+                                  @Param("authCode") String authCode);
+
     /*
      * 예약 완료 화면에서 예약 정보 조회
      */
@@ -123,6 +128,40 @@ public interface EvReservationDAO {
             @Param("reservationId") Long reservationId,
             @Param("memberId") Long memberId
     );
+
+    /*
+     * 인증 성공 후 충전 시뮬레이션용 세션 생성 또는 보정
+     */
+    int upsertChargingSessionForSimulation(
+            @Param("reservationId") Long reservationId,
+            @Param("memberId") Long memberId
+    );
+
+    /*
+     * 충전 시뮬레이션 완료 처리
+     */
+    int completeReservationForSimulation(
+            @Param("reservationId") Long reservationId,
+            @Param("memberId") Long memberId
+    );
+
+    /*
+     * 충전 시뮬레이션 완료 세션 저장
+     */
+    int completeChargingSessionForSimulation(
+            @Param("reservationId") Long reservationId,
+            @Param("memberId") Long memberId
+    );
+
+    // 예약/인증/완료 등 상태 변경 시 충전기 상태 갱신
+    int updateChargerStatus(@Param("chargerId") Long chargerId,
+                            @Param("status") String status);
+
+    // 노쇼 처리된 예약의 충전기 상태를 사용가능으로 복구
+    int updateNoShowChargersToAvailable();
+
+    // 완료 처리된 예약의 충전기 상태를 사용가능으로 복구
+    int updateCompletedChargersToAvailable();
 
     /*
      * 예약완료 → 노쇼

@@ -1338,3 +1338,252 @@
     overflow-x: auto;
   }
 }
+
+/* =========================
+   Authority / Simulation Patch
+========================= */
+.admin-menu-locked {
+  width: 100%;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #111827;
+  color: #6b7280;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: not-allowed;
+  opacity: 0.72;
+  text-align: left;
+}
+
+.admin-menu-locked em,
+.admin-menu-title em {
+  font-style: normal;
+  font-size: 12px;
+}
+
+.locked-group .admin-menu-title {
+  color: #6b7280;
+}
+
+.admin-outline-button,
+.admin-link-button {
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.admin-outline-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.simulation-panel {
+  border-color: #bfdbfe;
+  background: linear-gradient(180deg, #ffffff, #eff6ff);
+}
+
+.simulation-button-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.simulation-btn {
+  min-height: 120px;
+  padding: 18px;
+  border: 0;
+  border-radius: 16px;
+  color: #ffffff;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 16px 26px rgba(15, 23, 42, 0.12);
+}
+
+.simulation-btn b,
+.simulation-btn span,
+.simulation-btn em {
+  display: block;
+}
+
+.simulation-btn b {
+  font-size: 16px;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.simulation-btn span {
+  font-size: 13px;
+  font-weight: 800;
+  opacity: 0.92;
+}
+
+.simulation-btn em {
+  margin-top: 10px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  opacity: 0.9;
+}
+
+.simulation-btn.blue { background: linear-gradient(135deg, #2563eb, #0ea5e9); }
+.simulation-btn.red { background: linear-gradient(135deg, #dc2626, #f97316); }
+.simulation-btn.dark { background: linear-gradient(135deg, #111827, #475569); }
+
+.simulation-btn:disabled {
+  background: #1f2937;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.75;
+  box-shadow: none;
+}
+
+.operation-message {
+  margin-top: 14px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: #dbeafe;
+  color: #1e40af;
+  font-weight: 900;
+}
+
+.charger-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.charger-status-card {
+  padding: 18px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.charger-status-card span,
+.charger-status-card p {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.charger-status-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  color: #0f172a;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.charger-status-card.green { border-color: #bbf7d0; background: #f0fdf4; }
+.charger-status-card.blue { border-color: #bfdbfe; background: #eff6ff; }
+.charger-status-card.purple { border-color: #ddd6fe; background: #f5f3ff; }
+.charger-status-card.red { border-color: #fecaca; background: #fef2f2; }
+
+.locked-row {
+  opacity: 0.68;
+  background: #f8fafc;
+}
+
+.locked-row select:disabled {
+  background: #e5e7eb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.admin-action-row .admin-link-button {
+  background: #005bac;
+  border-color: #005bac;
+  color: #ffffff;
+}
+
+@media (max-width: 1180px) {
+  .simulation-button-grid,
+  .charger-status-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================
+   Dashboard Fault Cards
+========================= */
+.admin-fault-card-list {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-fault-card {
+  padding: 18px;
+  border: 1px solid #fecaca;
+  border-radius: 15px;
+  background: #fff7f7;
+}
+
+.admin-fault-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-fault-main span {
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.admin-fault-main h3 {
+  margin: 8px 0 6px;
+  color: #0f172a;
+  font-size: 20px;
+}
+
+.admin-fault-main p {
+  margin: 0;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.admin-fault-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.admin-fault-meta span {
+  padding: 12px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-fault-meta b {
+  display: block;
+  margin-top: 4px;
+  color: #0f172a;
+}
+
+@media (max-width: 900px) {
+  .admin-fault-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

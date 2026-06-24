@@ -33,6 +33,9 @@ public interface EvReservationService {
      */
     EvReservationDTO getReservationComplete(Long reservationId, Long memberId);
 
+    // 내 예약 상세 조회
+    EvReservationDTO getMyReservationDetail(Long reservationId, Long memberId);
+
     /*
      * 내 예약 목록 조회
      */
@@ -63,6 +66,12 @@ public interface EvReservationService {
      * - Redis에 저장된 인증코드와 입력 코드 일치
      */
     void verifyReservation(Long reservationId, Long memberId, String authCode);
+
+    /*
+     * 충전 시작 시뮬레이션 완료
+     * - 예약 예정 종료 시간이 아니라 인증 성공 시각 기준으로 실제 세션 완료 시간을 계산한다.
+     */
+    EvReservationDTO completeChargingSimulation(Long reservationId, Long memberId);
     
     /*
      * 예약 상태 자동 변경

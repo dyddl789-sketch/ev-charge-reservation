@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.admin.EvAdminOperationDAO">
+
+    <!-- 부산 지역 사용가능 충전기 중 장애 시뮬레이션 대상 1개 랜덤 조회 -->
+    <select id="findRandomAvailableBusanCharger"
+            resultType="com.ev.dto.admin.simulation.EvAdminSimulationChargerDTO">
+        select
+              c.charger_id as chargerId
+            , c.station_id as stationId
+            , cs.station_name as stationName
+            , c.charger_name as chargerName
+            , c.charger_type as chargerType
+            , c.connector_type as connectorType
+            , c.charging_speed_kw as chargingSpeedKw
+            , c.status as status
+            , cs.address as address
+            , cs.latitude as latitude
+            , cs.longitude as longitude
+            , '부산' as regionName
+            , to_char(coalesce(c.updated_at, c.created_at), 'YYYY-MM-DD HH24:MI') as updatedAtText
+          from charger c
+          join charging_station cs
+            on c.station_id = cs.station_id
+         where c.status = '사용가능'
+           and coalesce(c.is_deleted, false) = false
+           and coalesce(cs.is_deleted, false) = false
+           and (
+                cs.address like '부산%'
+                or cs.address like '부산광역시%'
+                or cs.address ilike '%Busan%'
+           )
+         order by random()
+         limit 1
+    </select>
+
+    <!-- 충전기 상태 변경: 예약 데이터는 건드리지 않는다. -->
+    <update id="updateChargerStatus">
+        update charger
+           set status = #{status},
+               updated_at = current_timestamp,
+               last_status_checked_at = current_timestamp
+         where charger_id = #{chargerId}
+    </update>
+
+    <!-- 발표/테스트 초기화: 고장 충전기만 사용가능으로 되돌린다. 이력은 남기지 않는다. -->
+    <update id="resetBrokenChargers">
+        update charger
+           set status = '사용가능',
+               updated_at = current_timestamp,
+               last_status_checked_at = current_timestamp
+         where status = '고장'
+    </update>
+
+    <select id="countBrokenChargers" resultType="int">
+        select count(*)
+          from charger
+         where status = '고장'
+    </select>
+
+    <!-- 공공 API 동기화 로그 저장 -->
+    <insert id="insertPublicApiSyncLog">
+        insert into public_api_sync_log (
+              api_name
+            , sync_type
+            , status
+            , request_count
+            , success_count
+            , fail_count
+            , error_message
+            , started_at
+            , finished_at
+        ) values (
+              #{apiName}
+            , #{syncType}
+            , #{status}
+            , #{requestCount}
+            , #{successCount}
+            , #{failCount}
+            , #{errorMessage}
+            , current_timestamp
+            , current_timestamp
+        )
+    </insert>
+
+    <!-- 대시보드 표시용 최근 고장 충전기 목록 -->
+    <select id="findRecentBrokenChargers"
+            resultType="com.ev.dto.admin.simulation.EvAdminSimulationChargerDTO">
+        select
+              c.charger_id as chargerId
+            , c.station_id as stationId
+            , cs.station_name as stationName
+            , c.charger_name as chargerName
+            , c.charger_type as chargerType
+            , c.connector_type as connectorType
+            , c.charging_speed_kw as chargingSpeedKw
+            , c.status as status
+            , cs.address as address
+            , cs.latitude as latitude
+            , cs.longitude as longitude
+            , case
+                  when cs.address like '부산%' then '부산'
+                  else split_part(cs.address, ' ', 1)
+              end as regionName
+            , to_char(coalesce(c.updated_at, c.created_at), 'YYYY-MM-DD HH24:MI') as updatedAtText
+          from charger c
+          join charging_station cs
+            on c.station_id = cs.station_id
+         where c.status = '고장'
+         order by coalesce(c.updated_at, c.created_at) desc
+         limit 5
+    </select>
+
+</mapper>

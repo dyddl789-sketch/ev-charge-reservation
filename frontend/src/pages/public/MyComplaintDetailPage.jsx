@@ -8,43 +8,17 @@ const MyComplaintDetailPage = () => {
   const { complaintId } = useParams();
   const [complaint, setComplaint] = useState(null);
 
-  const mockComplaint = {
-    complaintId,
-    title: "충전기 예약 인증이 되지 않습니다.",
-    complaintType: "예약문의",
-    priority: "NORMAL",
-    status: "처리중",
-    content: "예약 후 인증코드를 입력했지만 인증이 되지 않습니다.",
-    createdAt: "2026-06-17 10:20",
-    histories: [
-      {
-        historyId: 1,
-        actionType: "접수",
-        memo: "민원이 접수되었습니다.",
-        createdAt: "2026-06-17 10:20",
-      },
-      {
-        historyId: 2,
-        actionType: "배정",
-        memo: "운영팀 담당자에게 배정되었습니다.",
-        createdAt: "2026-06-17 10:40",
-      },
-    ],
-  };
-
   const loadComplaint = async () => {
     console.log("내 민원 상세 조회 실행", complaintId);
 
     try {
       const response = await complaintApi.getMyComplaintDetail(complaintId);
-
-      console.log("내 민원 상세 응답", response);
-
+      console.log("내 민원 상세 응답", response.data);
       setComplaint(response.data);
     } catch (error) {
-      console.log("내 민원 상세 조회 실패 - mock 사용", error);
-
-      setComplaint(mockComplaint);
+      console.log("내 민원 상세 조회 실패", error);
+      alert(error.response?.data?.message || "민원 상세 정보를 불러오지 못했습니다.");
+      setComplaint(null);
     }
   };
 
@@ -73,16 +47,19 @@ const MyComplaintDetailPage = () => {
             <span className="type-chip">{complaint.complaintType}</span>
             <h2>{complaint.title}</h2>
           </div>
-
-          <span className={`status-badge ${complaint.status}`}>
-            {complaint.status}
-          </span>
+          <span className={`status-badge ${complaint.status}`}>{complaint.status}</span>
         </div>
 
         <div className="detail-meta">
           <span>번호: {complaint.complaintId}</span>
           <span>우선순위: {complaint.priority}</span>
           <span>접수일: {complaint.createdAt}</span>
+        </div>
+
+        <div className="detail-meta">
+          <span>충전소: {complaint.stationName || '-'}</span>
+          <span>충전기: {complaint.chargerName || '-'}</span>
+          <span>담당자: {complaint.assignedEmployeeName || '미배정'}</span>
         </div>
 
         <div className="detail-content">
@@ -92,8 +69,8 @@ const MyComplaintDetailPage = () => {
 
         <div className="history-area">
           <h3>처리 이력</h3>
-
-          {(complaint.histories || []).map((history) => (
+          {(complaint.histories || complaint.historyList || []).length === 0 && <div className="empty-box">아직 처리 이력이 없습니다.</div>}
+          {(complaint.histories || complaint.historyList || []).map((history) => (
             <div className="history-item" key={history.historyId}>
               <strong>{history.actionType}</strong>
               <p>{history.memo}</p>
@@ -103,9 +80,7 @@ const MyComplaintDetailPage = () => {
         </div>
 
         <div className="complaint-btn-area">
-          <Link to="/complaints/my" className="cancel-btn link-btn">
-            목록으로
-          </Link>
+          <Link to="/complaints/my" className="cancel-btn link-btn">목록으로</Link>
         </div>
       </section>
     </section>

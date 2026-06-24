@@ -1,5 +1,6 @@
 package com.ev.controller.user;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -75,7 +76,7 @@ public class EvAiChatController {
         ));
     }
 
-    // React API: Redis 대화 캐시 초기화
+    // React API: AI 대화 이력과 Redis 캐시 전체 초기화
     @DeleteMapping("/messages")
     public ResponseEntity<?> clearMessages(
             @AuthenticationPrincipal EvUserDetails userDetails) {
@@ -84,11 +85,11 @@ public class EvAiChatController {
             return ResponseEntity.status(401).body(Map.of("message", "로그인이 필요합니다."));
         }
 
-        evAiChatService.clearChatCache(userDetails.getMemberId());
+        evAiChatService.clearChatMessages(userDetails.getMemberId());
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", "AI 대화 Redis 캐시가 초기화되었습니다."
+                "message", "AI 대화 이력과 Redis 캐시가 초기화되었습니다."
         ));
     }
 
@@ -106,11 +107,21 @@ public class EvAiChatController {
         Long memberId = userDetails.getMemberId();
         EvAiChatResponseDTO responseDTO = evAiChatService.sendMessage(memberId, requestDTO.getMessage());
 
-        return ResponseEntity.ok(Map.of(
-                "answer", responseDTO.getAnswer(),
-                "message", responseDTO.getAnswer(),
-                "senderType", "AI"
-        ));
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("answer", responseDTO.getAnswer());
+        response.put("message", responseDTO.getAnswer());
+        response.put("senderType", "AI");
+        response.put("intent", responseDTO.getIntent());
+
+        if (responseDTO.getLocation() != null) {
+            response.put("location", responseDTO.getLocation());
+        }
+
+        if (responseDTO.getReservations() != null) {
+            response.put("reservations", responseDTO.getReservations());
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     private ResponseEntity<?> getHistoryInternal(EvUserDetails userDetails) {

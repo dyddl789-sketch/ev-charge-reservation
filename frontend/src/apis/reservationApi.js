@@ -91,6 +91,12 @@ export const myList = (month = "") => {
   });
 };
 
+// 내 예약 상세 조회
+export const myDetail = (reservationId) => {
+  console.log("reservation myDetail 요청", reservationId);
+  return api.get(`/reservation/api/my/${reservationId}`);
+};
+
 // 충전 이용 내역 조회
 export const historyList = (month = "") => {
   console.log("reservation historyList 요청", month);
@@ -121,4 +127,10 @@ export const verify = (reservationId, authCode) => {
 export const sendReceiptEmail = (reservationId) => {
   console.log("reservation sendReceiptEmail 요청", reservationId);
   return api.post("/reservation/api/receipt/email", { reservationId });
+};
+
+// 충전 시작 시뮬레이션 완료 처리
+export const completeChargingSimulation = (reservationId) => {
+  console.log("reservation completeChargingSimulation 요청", reservationId);
+  return api.post("/reservation/api/charging/simulation/complete", { reservationId });
 };

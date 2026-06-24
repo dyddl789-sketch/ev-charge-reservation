@@ -205,6 +205,7 @@
             , required_kwh
             , estimated_minutes
             , estimated_cost
+            , auth_code
             , created_at
         )
         values (
@@ -219,9 +220,19 @@
             , #{requiredKwh}
             , #{estimatedMinutes}
             , #{estimatedCost}
+            , #{authCode}
             , current_timestamp
         )
     </insert>
+
+    <!-- 예약 생성 직후 인증코드 DB 저장 -->
+    <update id="updateReservationAuthCode">
+        update reservation
+           set auth_code = #{authCode},
+               updated_at = current_timestamp
+         where reservation_id = #{reservationId}
+           and member_id = #{memberId}
+    </update>
 
 
     <!--
@@ -246,18 +257,36 @@
             , r.estimated_minutes
             , r.estimated_cost
             , r.status
+            , r.auth_code
             , r.verified_at
             , r.no_show_at
             , r.canceled_at
             , r.created_at
             , r.updated_at
 
+            , chs.actual_start_time as "actualStartTime"
+            , chs.actual_end_time as "actualEndTime"
+            , chs.actual_kwh as "actualKwh"
+            , chs.actual_minutes as "actualMinutes"
+            , chs.actual_cost as "actualCost"
+            , chs.status as "chargingSessionStatus"
+
+            , cs.station_id as "stationId"
             , cs.station_name as "stationName"
             , cs.address as "stationAddress"
+            , cs.latitude as "stationLatitude"
+            , cs.longitude as "stationLongitude"
             , c.charger_name as "chargerName"
+            , c.charger_type as "chargerType"
             , c.connector_type as "connectorType"
+            , c.charging_speed_kw as "chargingSpeedKw"
+            , c.price_per_kwh as "pricePerKwh"
+            , c.status as "chargerStatus"
             , v.vehicle_nickname as "vehicleNickname"
+            , vm.manufacturer as "manufacturer"
             , vm.model_name as "modelName"
+            , vm.battery_capacity_kwh as "batteryCapacityKwh"
+            , vm.max_charging_speed_kw as "maxChargingSpeedKw"
 
           from reservation r
 
@@ -272,6 +301,9 @@
 
           join vehicle_model vm
             on v.model_id = vm.model_id
+
+          left join charging_session chs
+            on r.reservation_id = chs.reservation_id
 
          where r.reservation_id = #{reservationId}
            and r.member_id = #{memberId}
@@ -301,6 +333,7 @@
             , r.estimated_minutes
             , r.estimated_cost
             , r.status
+            , r.auth_code
             , r.verified_at
             , r.no_show_at
             , r.canceled_at
@@ -308,17 +341,27 @@
             , r.updated_at
 
             , case
-                  when current_timestamp between (r.start_time - interval '10 minutes') and r.end_time
+                  when current_timestamp between (r.start_time - interval '10 minutes') and (r.start_time + interval '10 minutes')
                   then true
                   else false
               end as "verifyAvailable"
 
+            , cs.station_id as "stationId"
             , cs.station_name as "stationName"
             , cs.address as "stationAddress"
+            , cs.latitude as "stationLatitude"
+            , cs.longitude as "stationLongitude"
             , c.charger_name as "chargerName"
+            , c.charger_type as "chargerType"
             , c.connector_type as "connectorType"
+            , c.charging_speed_kw as "chargingSpeedKw"
+            , c.price_per_kwh as "pricePerKwh"
+            , c.status as "chargerStatus"
             , v.vehicle_nickname as "vehicleNickname"
+            , vm.manufacturer as "manufacturer"
             , vm.model_name as "modelName"
+            , vm.battery_capacity_kwh as "batteryCapacityKwh"
+            , vm.max_charging_speed_kw as "maxChargingSpeedKw"
 
           from reservation r
 
@@ -389,13 +432,14 @@
             , start_time
             , end_time
             , status
+            , auth_code
           from reservation
          where reservation_id = #{reservationId}
            and member_id = #{memberId}
            and status = '예약완료'
            and current_timestamp between
                (start_time - interval '10 minutes')
-               and end_time
+               and (start_time + interval '10 minutes')
     </select>
 
 
@@ -406,7 +450,7 @@
     -->
     <update id="updateReservationStatusToVerified">
         update reservation
-           set status = '인증완료'
+           set status = '충전중'
              , verified_at = current_timestamp
              , updated_at = current_timestamp
          where reservation_id = #{reservationId}
@@ -445,6 +489,22 @@
         - 현재 시간이 예약 시작 시간 이후
         - 아직 예약 종료 시간 전
     -->
+
+
+    <!-- 노쇼 처리된 예약의 충전기 상태를 사용가능으로 복구 -->
+    <update id="updateNoShowChargersToAvailable">
+        update charger c
+           set status = '사용가능',
+               updated_at = current_timestamp,
+               last_status_checked_at = current_timestamp
+          from reservation r
+         where r.charger_id = c.charger_id
+           and r.status = '노쇼'
+           and c.status = '예약중'
+           and r.start_time + interval '10 minutes' &lt;= current_timestamp
+    </update>
+
+
     <update id="updateAuthenticatedToCharging">
         update reservation
            set status = '충전중'
@@ -603,6 +663,78 @@
            and cs.session_id is null
     </insert>
 
+
+    <!--
+        충전 시뮬레이션 인증 직후 세션 생성 또는 보정
+    -->
+    <insert id="upsertChargingSessionForSimulation">
+        insert into charging_session (
+              reservation_id
+            , member_id
+            , vehicle_id
+            , charger_id
+            , actual_start_time
+            , start_soc
+            , status
+            , created_at
+            , updated_at
+        )
+        select
+              r.reservation_id
+            , r.member_id
+            , r.vehicle_id
+            , r.charger_id
+            , coalesce(r.verified_at, current_timestamp)
+            , r.current_soc
+            , '충전중'
+            , current_timestamp
+            , current_timestamp
+          from reservation r
+         where r.reservation_id = #{reservationId}
+           and r.member_id = #{memberId}
+           and r.status = '충전중'
+        on conflict (reservation_id) do update
+           set actual_start_time = coalesce(charging_session.actual_start_time, excluded.actual_start_time)
+             , status = '충전중'
+             , updated_at = current_timestamp
+    </insert>
+
+
+    <!--
+        충전 시뮬레이션 완료 시 예약 상태를 완료로 변경
+    -->
+    <update id="completeReservationForSimulation">
+        update reservation
+           set status = '완료'
+             , updated_at = current_timestamp
+         where reservation_id = #{reservationId}
+           and member_id = #{memberId}
+           and status = '충전중'
+    </update>
+
+
+    <!--
+        충전 시뮬레이션 완료 세션 저장
+
+        실제 충전 완료 시간은 예약 종료 예정 시간이 아니라
+        actual_start_time + estimated_minutes 기준으로 저장한다.
+        프론트 화면에서는 이를 10~20초로 압축해 보여준다.
+    -->
+    <update id="completeChargingSessionForSimulation">
+        update charging_session chs
+           set actual_end_time = chs.actual_start_time + (r.estimated_minutes * interval '1 minute')
+             , end_soc = r.target_soc
+             , actual_kwh = r.required_kwh
+             , actual_minutes = r.estimated_minutes
+             , actual_cost = r.estimated_cost
+             , status = '완료'
+             , updated_at = current_timestamp
+          from reservation r
+         where chs.reservation_id = r.reservation_id
+           and r.reservation_id = #{reservationId}
+           and r.member_id = #{memberId}
+    </update>
+
 	<!--
     충전 내역 목록 조회
 
@@ -632,6 +764,12 @@
 	        , r.canceled_at
 	        , r.created_at
 	        , r.updated_at
+	        , chs.actual_start_time as "actualStartTime"
+	        , chs.actual_end_time as "actualEndTime"
+	        , chs.actual_kwh as "actualKwh"
+	        , chs.actual_minutes as "actualMinutes"
+	        , chs.actual_cost as "actualCost"
+	        , chs.status as "chargingSessionStatus"
 	
 	        , cs.station_name as "stationName"
 	        , cs.address as "stationAddress"
@@ -653,6 +791,9 @@
 	
 	      join vehicle_model vm
 	        on v.model_id = vm.model_id
+	
+	      left join charging_session chs
+	        on r.reservation_id = chs.reservation_id
 	
 	     where r.member_id = #{memberId}
 	       and r.status = '완료'
@@ -703,12 +844,22 @@
             , r.estimated_minutes
             , r.estimated_cost
             , r.status
+            , cs.station_id as "stationId"
             , cs.station_name as "stationName"
             , cs.address as "stationAddress"
+            , cs.latitude as "stationLatitude"
+            , cs.longitude as "stationLongitude"
             , c.charger_name as "chargerName"
+            , c.charger_type as "chargerType"
             , c.connector_type as "connectorType"
+            , c.charging_speed_kw as "chargingSpeedKw"
+            , c.price_per_kwh as "pricePerKwh"
+            , c.status as "chargerStatus"
             , v.vehicle_nickname as "vehicleNickname"
+            , vm.manufacturer as "manufacturer"
             , vm.model_name as "modelName"
+            , vm.battery_capacity_kwh as "batteryCapacityKwh"
+            , vm.max_charging_speed_kw as "maxChargingSpeedKw"
           from reservation r
           join charger c
             on r.charger_id = c.charger_id
@@ -836,4 +987,30 @@
         , c.charger_id asc
 
 	</select>
+
+
+
+    <!-- 완료 처리된 예약의 충전기 상태를 사용가능으로 복구 -->
+    <update id="updateCompletedChargersToAvailable">
+        update charger c
+           set status = '사용가능',
+               updated_at = current_timestamp,
+               last_status_checked_at = current_timestamp
+          from reservation r
+         where r.charger_id = c.charger_id
+           and r.status = '완료'
+           and c.status = '사용중'
+           and r.end_time &lt;= current_timestamp
+    </update>
+
+
+    <!-- 인증 성공/상태 변경 시 충전기 상태 갱신 -->
+    <update id="updateChargerStatus">
+        update charger
+           set status = #{status},
+               updated_at = current_timestamp,
+               last_status_checked_at = current_timestamp
+         where charger_id = #{chargerId}
+    </update>
+
 </mapper>
