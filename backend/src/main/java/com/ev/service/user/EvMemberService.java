@@ -33,4 +33,7 @@ public interface EvMemberService {
 
     // 휴대폰 번호 중복확인
     boolean isPhoneAvailable(String phone);
+    
+    // 회원탈퇴
+    void deleteMember(Long memberId);
 }

@@ -971,11 +971,12 @@ public class EvAiChatServiceImpl implements EvAiChatService {
             return;
         }
 
-        String cacheKey =
-                "ai:chat:room:" + room.getRoomId();
+        String recentCacheKey = getChatCacheKey(room.getRoomId());
+        String legacyCacheKey = "ai:chat:room:" + room.getRoomId();
 
-        stringRedisTemplate.delete(cacheKey);
+        stringRedisTemplate.delete(recentCacheKey);
+        stringRedisTemplate.delete(legacyCacheKey);
 
-        log.info("@# AI Redis Cache Deleted => {}", cacheKey);
+        log.info("@# AI Redis Cache Deleted => {}, {}", recentCacheKey, legacyCacheKey);
     }
 }

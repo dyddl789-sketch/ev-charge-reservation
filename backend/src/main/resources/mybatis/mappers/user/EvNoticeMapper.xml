@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.user.EvNoticeDAO">
+
+    <!-- 공지사항 공통 조회 컬럼 -->
+    <sql id="noticeColumn">
+        n.notice_id,
+        n.writer_id,
+        coalesce(am.member_name, '관리자') as writer_name,
+        n.title,
+        n.content,
+        n.category,
+        n.status,
+        n.is_pinned,
+        n.is_public,
+        n.view_count,
+        to_char(n.created_at, 'YYYY-MM-DD') as created_at,
+        to_char(n.updated_at, 'YYYY-MM-DD') as updated_at
+    </sql>
+
+    <!-- 공개 게시 조건 -->
+    <sql id="publishedCondition">
+        n.status = '게시'
+        and n.is_public = true
+        and (n.start_at is null or n.start_at &lt;= current_timestamp)
+        and (n.end_at is null or n.end_at &gt;= current_timestamp)
+    </sql>
+
+    <!-- 메인 화면 새소식 조회 -->
+    <select id="findMainNoticeList" resultType="com.ev.dto.notice.EvNoticeDTO">
+        select
+            <include refid="noticeColumn" />
+        from notice n
+        left join employee e
+            on n.writer_id = e.employee_id
+        left join app_member am
+            on e.member_id = am.member_id
+        where
+            <include refid="publishedCondition" />
+        order by
+            n.is_pinned desc,
+            n.created_at desc,
+            n.notice_id desc
+        limit #{limit}
+    </select>
+
+    <!-- 사용자 공지사항 목록 / 검색 조회 -->
+    <select id="findPublishedNoticeList" resultType="com.ev.dto.notice.EvNoticeDTO">
+        select
+            <include refid="noticeColumn" />
+        from notice n
+        left join employee e
+            on n.writer_id = e.employee_id
+        left join app_member am
+            on e.member_id = am.member_id
+        where
+            <include refid="publishedCondition" />
+
+        <if test="keyword != null and keyword != ''">
+            and (
+                   n.title ilike '%' || #{keyword} || '%'
+                or n.content ilike '%' || #{keyword} || '%'
+                or n.category ilike '%' || #{keyword} || '%'
+            )
+        </if>
+
+        order by
+            n.is_pinned desc,
+            n.created_at desc,
+            n.notice_id desc
+    </select>
+
+    <!-- 사용자 공지사항 상세 조회 -->
+    <select id="findPublishedNoticeById" resultType="com.ev.dto.notice.EvNoticeDTO">
+        select
+            <include refid="noticeColumn" />
+        from notice n
+        left join employee e
+            on n.writer_id = e.employee_id
+        left join app_member am
+            on e.member_id = am.member_id
+        where n.notice_id = #{noticeId}
+          and <include refid="publishedCondition" />
+    </select>
+
+    <!-- 조회수 증가 -->
+    <update id="increaseViewCount">
+        update notice
+           set view_count = view_count + 1
+         where notice_id = #{noticeId}
+           and status = '게시'
+           and is_public = true
+    </update>
+
+    <!-- 관리자 공지사항 목록 조회 -->
+    <select id="findAdminNoticeList" resultType="com.ev.dto.notice.EvNoticeDTO">
+        select
+            <include refid="noticeColumn" />
+        from notice n
+        left join employee e
+            on n.writer_id = e.employee_id
+        left join app_member am
+            on e.member_id = am.member_id
+        where n.status != '삭제'
+
+        <if test="status != null and status != ''">
+            and n.status = #{status}
+        </if>
+
+        <if test="keyword != null and keyword != ''">
+            and (
+                   n.title ilike '%' || #{keyword} || '%'
+                or n.content ilike '%' || #{keyword} || '%'
+                or n.category ilike '%' || #{keyword} || '%'
+            )
+        </if>
+
+        order by
+            n.is_pinned desc,
+            n.created_at desc,
+            n.notice_id desc
+    </select>
+
+    <!-- 관리자 공지사항 상세 조회 -->
+    <select id="findAdminNoticeById" resultType="com.ev.dto.notice.EvNoticeDTO">
+        select
+            <include refid="noticeColumn" />
+        from notice n
+        left join employee e
+            on n.writer_id = e.employee_id
+        left join app_member am
+            on e.member_id = am.member_id
+        where n.notice_id = #{noticeId}
+          and n.status != '삭제'
+    </select>
+
+    <!-- 관리자 member_id에 연결된 employee_id 조회 -->
+    <select id="findEmployeeIdByMemberId" resultType="java.lang.Long">
+        select employee_id
+          from employee
+         where member_id = #{memberId}
+         limit 1
+    </select>
+
+    <!-- 관리자 공지사항 등록 -->
+    <insert id="insertNotice" parameterType="com.ev.dto.notice.EvNoticeRequestDTO"
+            useGeneratedKeys="true" keyProperty="noticeId" keyColumn="notice_id">
+        insert into notice (
+            writer_id,
+            title,
+            content,
+            category,
+            status,
+            is_pinned,
+            is_public,
+            view_count,
+            created_at,
+            updated_at
+        ) values (
+            #{writerEmployeeId},
+            #{title},
+            #{content},
+            #{category},
+            #{status},
+            #{isPinned},
+            #{isPublic},
+            0,
+            current_timestamp,
+            current_timestamp
+        )
+    </insert>
+
+    <!-- 관리자 공지사항 수정 -->
+    <update id="updateNotice">
+        update notice
+           set title = #{request.title},
+               content = #{request.content},
+               category = #{request.category},
+               status = #{request.status},
+               is_pinned = #{request.isPinned},
+               is_public = #{request.isPublic},
+               updated_at = current_timestamp
+         where notice_id = #{noticeId}
+           and status != '삭제'
+    </update>
+
+    <!-- 관리자 공지사항 삭제 처리 -->
+    <update id="deleteNotice">
+        update notice
+           set status = '삭제',
+               is_public = false,
+               updated_at = current_timestamp
+         where notice_id = #{noticeId}
+           and status != '삭제'
+    </update>
+
+</mapper>

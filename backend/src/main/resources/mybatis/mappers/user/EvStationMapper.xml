@@ -127,6 +127,9 @@
 	      from charging_station cs
 	      left join charger c
 	        on cs.station_id = c.station_id
+	       <if test="connectorType != null and connectorType != ''">
+	       and c.connector_type = #{connectorType}
+	       </if>
 	     where 1=1
 	
 	    <if test="keyword != null and keyword != ''">
@@ -145,8 +148,95 @@
 	        , cs.station_status
 	        , cs.latitude
 	        , cs.longitude
+        <if test="connectorType != null and connectorType != ''">
+        having count(c.charger_id) > 0
+        </if>
 	     order by cs.station_id desc
 	</select>
+
+
+    <!--
+        사용자가 선택한 출발지 좌표 기준 가까운 충전소 목록 조회
+
+        사용 위치:
+        - React 충전소 찾기 화면
+        - 현재 위치 버튼 또는 기본 출발지 선택 후 주변 충전소 10곳 표시
+
+        정렬 기준:
+        1. 출발지와 가까운 순
+        2. 사용 가능한 충전기 많은 순
+        3. 충전소 ID 순
+    -->
+    <select id="findStationMapListByCoordinate"
+            resultType="com.ev.dto.station.EvStationMapDTO">
+        select
+              cs.station_id
+            , cs.station_name
+            , cs.address
+            , cs.operator_name
+            , cs.station_status
+            , cs.image_url
+            , cs.latitude
+            , cs.longitude
+            , count(c.charger_id) as charger_count
+            , coalesce(
+                sum(
+                    case
+                        when c.status = '사용가능' then 1
+                        else 0
+                    end
+                ), 0
+              ) as available_charger_count
+            , round(
+                (
+                    ST_Distance(
+                        ST_SetSRID(
+                            ST_MakePoint(cs.longitude::double precision, cs.latitude::double precision),
+                            4326
+                        )::geography,
+                        ST_SetSRID(
+                            ST_MakePoint(#{longitude}::double precision, #{latitude}::double precision),
+                            4326
+                        )::geography
+                    ) / 1000
+                )::numeric,
+                1
+              )::double precision as distance_km
+          from charging_station cs
+          left join charger c
+            on cs.station_id = c.station_id
+           <if test="connectorType != null and connectorType != ''">
+           and c.connector_type = #{connectorType}
+           </if>
+         where cs.latitude is not null
+           and cs.longitude is not null
+
+        <if test="keyword != null and keyword != ''">
+           and (
+                  cs.station_name ilike '%' || #{keyword} || '%'
+               or cs.address ilike '%' || #{keyword} || '%'
+               or cs.operator_name ilike '%' || #{keyword} || '%'
+           )
+        </if>
+
+         group by
+              cs.station_id
+            , cs.station_name
+            , cs.address
+            , cs.operator_name
+            , cs.station_status
+            , cs.image_url
+            , cs.latitude
+            , cs.longitude
+        <if test="connectorType != null and connectorType != ''">
+        having count(c.charger_id) > 0
+        </if>
+         order by
+              distance_km asc
+            , available_charger_count desc
+            , cs.station_id asc
+         limit #{limit}
+    </select>
 
 
     <!--

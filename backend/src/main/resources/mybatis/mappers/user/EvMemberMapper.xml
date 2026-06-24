@@ -170,4 +170,12 @@
 	    where member_id = #{memberId}
 	
 	</update>
+	
+	<!-- 회원탈퇴: 실제 삭제가 아니라 상태 비활성화 -->
+	<update id="deleteMember" parameterType="long">
+	    update app_member
+	       set status = 'INACTIVE',
+	           updated_at = current_timestamp
+	     where member_id = #{memberId}
+	</update>
 </mapper>
