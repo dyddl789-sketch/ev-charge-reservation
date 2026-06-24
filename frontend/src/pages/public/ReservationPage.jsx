@@ -4,10 +4,19 @@ import * as reservationApi from "../../apis/reservationApi";
 import "../../styles/station-reservation.css";
 
 const pad = (value) => String(value).padStart(2, "0");
+
+// 오늘 날짜를 yyyy-MM-dd 형식으로 반환한다.
 const today = () => {
   const date = new Date();
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
+
+const addDays = (dateValue, days) => {
+  const date = new Date(`${dateValue}T00:00`);
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
 const toDateTimeLocal = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 const timeOptions = Array.from({ length: 24 * 12 }, (_, index) => {
   const hour = Math.floor(index / 12);
@@ -15,54 +24,50 @@ const timeOptions = Array.from({ length: 24 * 12 }, (_, index) => {
   return `${pad(hour)}:${pad(minute)}`;
 });
 
-const mockFormData = {
-  charger: {
-    chargerId: 1,
-    stationId: 1,
-    chargerName: "급속 1번",
-    chargerType: "급속",
-    connectorType: "DC콤보",
-    chargingSpeedKw: 100,
-    pricePerKwh: 320,
-    chargerStatus: "사용가능",
-    stationName: "부산시청 공영주차장 충전소",
-    address: "부산 연제구 중앙대로 1001",
-    operatorName: "부산광역시",
-  },
-  chargerList: [
-    {
-      chargerId: 1,
-      stationId: 1,
-      chargerName: "급속 1번",
-      chargerType: "급속",
-      connectorType: "DC콤보",
-      chargingSpeedKw: 100,
-      pricePerKwh: 320,
-      chargerStatus: "사용가능",
-      selectedByOther: false,
-    },
-    {
-      chargerId: 2,
-      stationId: 1,
-      chargerName: "초급속 2번",
-      chargerType: "초급속",
-      connectorType: "DC콤보",
-      chargingSpeedKw: 200,
-      pricePerKwh: 340,
-      chargerStatus: "사용가능",
-      selectedByOther: false,
-    },
-  ],
-  vehicleList: [
-    {
-      vehicleId: 1,
-      vehicleNickname: "출퇴근용 아이오닉",
-      modelName: "아이오닉5",
-      batteryCapacityKwh: 77.4,
-      connectorType: "DC콤보",
-      isDefault: true,
-    },
-  ],
+const isPastDate = (dateValue) => {
+  if (!dateValue) {
+    return true;
+  }
+
+  return dateValue < today();
+};
+
+const isPastTimeOption = (dateValue, timeValue) => {
+  if (!dateValue || !timeValue) {
+    return true;
+  }
+
+  if (dateValue < today()) {
+    return true;
+  }
+
+  if (dateValue > today()) {
+    return false;
+  }
+
+  const reservationDateTime = new Date(`${dateValue}T${timeValue}`);
+  return reservationDateTime.getTime() <= Date.now();
+};
+
+const getNextAvailableTime = (dateValue) => {
+  return timeOptions.find((time) => !isPastTimeOption(dateValue, time)) || "";
+};
+
+const getInitialReservationDateTime = () => {
+  const todayValue = today();
+  const nextTime = getNextAvailableTime(todayValue);
+
+  if (nextTime) {
+    return {
+      reservationDate: todayValue,
+      startTimeValue: nextTime,
+    };
+  }
+
+  return {
+    reservationDate: addDays(todayValue, 1),
+    startTimeValue: "00:00",
+  };
 };
 
 const ReservationPage = () => {
@@ -78,12 +83,14 @@ const ReservationPage = () => {
   const [vehicleList, setVehicleList] = useState([]);
   const [currentHeldChargerId, setCurrentHeldChargerId] = useState("");
 
+  const initialReservationDateTime = useMemo(() => getInitialReservationDateTime(), []);
+
   const [form, setForm] = useState({
     vehicleId: "",
     chargerId: "",
     stationId: "",
-    reservationDate: today(),
-    startTimeValue: "18:00",
+    reservationDate: initialReservationDateTime.reservationDate,
+    startTimeValue: initialReservationDateTime.startTimeValue,
     currentSoc: 30,
     targetSoc: 80,
   });
@@ -95,6 +102,17 @@ const ReservationPage = () => {
   const selectedCharger = useMemo(() => {
     return chargerList.find((item) => String(item.chargerId) === String(form.chargerId));
   }, [chargerList, form.chargerId]);
+
+  const hasSelectableCharger = useMemo(() => {
+    return chargerList.some((item) => {
+      const status = item.chargerStatus || item.status;
+      return status === "사용가능" && !item.selectedByOther;
+    });
+  }, [chargerList]);
+
+  const isPastReservationTime = useMemo(() => {
+    return isPastDate(form.reservationDate) || isPastTimeOption(form.reservationDate, form.startTimeValue);
+  }, [form.reservationDate, form.startTimeValue]);
 
   const summary = useMemo(() => {
     if (!selectedVehicle || !selectedCharger) {
@@ -131,43 +149,93 @@ const ReservationPage = () => {
     const getFormData = async () => {
       console.log("예약 폼 데이터 조회", { chargerId, stationId });
 
+      if (!chargerId && !stationId) {
+        alert("예약할 충전소 정보가 없습니다. 충전소를 다시 선택해 주세요.");
+        navigate("/stations");
+        return;
+      }
+
       try {
         const response = chargerId
           ? await reservationApi.formData(chargerId)
           : await reservationApi.formDataByStation(stationId);
 
         console.log("예약 폼 데이터 응답", response.data);
-        const data = response.data || mockFormData;
-        const firstCharger = data.charger || data.chargerList?.[0];
+
+        const data = response.data || {};
+        const nextChargerList = data.chargerList || [];
+        const holdChargerId = data.holdChargerId ? String(data.holdChargerId) : "";
+        const selectedByHold = nextChargerList.find((item) => String(item.chargerId) === holdChargerId);
+        const firstSelectable = nextChargerList.find((item) => {
+          const status = item.chargerStatus || item.status;
+          return status === "사용가능" && !item.selectedByOther;
+        });
+        const firstCharger = selectedByHold || data.charger || firstSelectable || nextChargerList[0];
         const defaultVehicle = data.vehicleList?.find((vehicle) => vehicle.isDefault) || data.vehicleList?.[0];
 
+        if (!firstCharger) {
+          alert(data.message || "등록된 충전기가 없습니다. 다른 충전소를 선택해 주세요.");
+          navigate("/stations");
+          return;
+        }
+
         setCharger(firstCharger);
-        setChargerList(data.chargerList || []);
+        setChargerList(nextChargerList);
         setVehicleList(data.vehicleList || []);
-        setCurrentHeldChargerId(String(firstCharger?.chargerId || ""));
+        setCurrentHeldChargerId(holdChargerId);
         setForm((prev) => ({
           ...prev,
-          chargerId: String(firstCharger?.chargerId || ""),
+          chargerId: holdChargerId || "",
           stationId: String(firstCharger?.stationId || stationId || ""),
           vehicleId: String(defaultVehicle?.vehicleId || ""),
         }));
       } catch (error) {
-        console.log("예약 폼 데이터 조회 실패 - 목업 데이터 사용", error);
-        const firstCharger = mockFormData.charger;
-        const defaultVehicle = mockFormData.vehicleList[0];
-        setCharger(firstCharger);
-        setChargerList(mockFormData.chargerList);
-        setVehicleList(mockFormData.vehicleList);
-        setCurrentHeldChargerId(String(firstCharger.chargerId));
-        setForm((prev) => ({ ...prev, chargerId: String(firstCharger.chargerId), stationId: String(firstCharger.stationId), vehicleId: String(defaultVehicle.vehicleId) }));
+        console.log("예약 폼 데이터 조회 실패", error);
+        alert(error.response?.data?.message || "예약 정보를 불러오지 못했습니다. 충전소를 다시 선택해 주세요.");
+        navigate("/stations");
       }
     };
 
     getFormData();
-  }, [chargerId, stationId]);
+  }, [chargerId, stationId, navigate]);
 
   useEffect(() => {
-    if (!summary || !form.stationId) {
+    console.log("예약 날짜/시간 유효성 확인", {
+      reservationDate: form.reservationDate,
+      startTimeValue: form.startTimeValue,
+    });
+
+    if (isPastDate(form.reservationDate)) {
+      const nextReservation = getInitialReservationDateTime();
+      setForm((prev) => ({
+        ...prev,
+        reservationDate: nextReservation.reservationDate,
+        startTimeValue: nextReservation.startTimeValue,
+      }));
+      return;
+    }
+
+    if (isPastTimeOption(form.reservationDate, form.startTimeValue)) {
+      const nextTime = getNextAvailableTime(form.reservationDate);
+
+      if (nextTime) {
+        setForm((prev) => ({
+          ...prev,
+          startTimeValue: nextTime,
+        }));
+        return;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        reservationDate: addDays(form.reservationDate, 1),
+        startTimeValue: "00:00",
+      }));
+    }
+  }, [form.reservationDate, form.startTimeValue]);
+
+  useEffect(() => {
+    if (!summary || !form.stationId || isPastReservationTime) {
       return;
     }
 
@@ -195,7 +263,7 @@ const ReservationPage = () => {
     };
 
     getChargerStatus();
-  }, [form.stationId, form.reservationDate, form.startTimeValue, summary?.estimatedMinutes]);
+  }, [form.stationId, form.reservationDate, form.startTimeValue, summary?.estimatedMinutes, isPastReservationTime]);
 
   const changeValue = (e) => {
     const { name, value } = e.target;
@@ -212,7 +280,7 @@ const ReservationPage = () => {
     }
 
     try {
-      const response = await reservationApi.changeLock(currentHeldChargerId, newChargerId);
+      const response = await reservationApi.changeLock(currentHeldChargerId || newChargerId, newChargerId);
       console.log("충전기 선점 변경 응답", response.data);
 
       if (!response.data?.success) {
@@ -237,8 +305,18 @@ const ReservationPage = () => {
       return;
     }
 
+    if (!form.chargerId) {
+      alert("예약 가능한 충전기를 선택해 주세요.");
+      return;
+    }
+
     if (!summary) {
       alert("예약 조건을 확인해 주세요. 목표 배터리 잔량은 현재 잔량보다 높아야 합니다.");
+      return;
+    }
+
+    if (isPastReservationTime) {
+      alert("현재 시간보다 이전 시간으로 예약할 수 없습니다.");
       return;
     }
 
@@ -327,6 +405,11 @@ const ReservationPage = () => {
                   );
                 })}
               </div>
+              {!hasSelectableCharger && (
+                <p className="reservation-help-message">
+                  현재 예약 가능한 충전기가 없습니다. 다른 충전소를 선택하거나 시간을 변경해 주세요.
+                </p>
+              )}
             </div>
 
             <div className="form-section">
@@ -334,15 +417,33 @@ const ReservationPage = () => {
               <div className="form-grid">
                 <div className="form-group">
                   <label>예약 날짜</label>
-                  <input type="date" name="reservationDate" value={form.reservationDate} onChange={changeValue} />
+                  <input
+                    type="date"
+                    name="reservationDate"
+                    min={today()}
+                    value={form.reservationDate}
+                    onChange={changeValue}
+                  />
                 </div>
                 <div className="form-group">
                   <label>시작 시간</label>
                   <select name="startTimeValue" value={form.startTimeValue} onChange={changeValue}>
-                    {timeOptions.map((time) => <option key={time} value={time}>{time}</option>)}
+                    {timeOptions.map((time) => {
+                      const disabled = isPastTimeOption(form.reservationDate, time);
+                      return (
+                        <option key={time} value={time} disabled={disabled}>
+                          {disabled ? `${time} 예약 불가` : time}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
+              {isPastReservationTime && (
+                <p className="reservation-time-message">
+                  현재 시간보다 이전 시간은 예약할 수 없습니다. 예약 가능한 시간으로 다시 선택해 주세요.
+                </p>
+              )}
             </div>
 
             <div className="form-section">
@@ -359,7 +460,11 @@ const ReservationPage = () => {
               </div>
             </div>
 
-            <button type="submit" className="submit-btn" disabled={vehicleList.length === 0}>
+            <button
+              type="submit"
+              className="submit-btn"
+              disabled={vehicleList.length === 0 || !form.chargerId || !summary || isPastReservationTime}
+            >
               예약
             </button>
           </form>

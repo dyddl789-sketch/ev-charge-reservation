@@ -26,6 +26,8 @@ import MyComplaintPage from "../pages/public/MyComplaintPage";
 import MyComplaintDetailPage from "../pages/public/MyComplaintDetailPage";
 import NoticePage from "../pages/public/NoticePage";
 import NoticeDetailPage from "../pages/public/NoticeDetailPage";
+import NoticeWritePage from "../pages/public/NoticeWritePage";
+import NoticeEditPage from "../pages/public/NoticeEditPage";
 import NotFoundPage from "../pages/public/NotFoundPage";
 import OAuth2RedirectPage from "../pages/public/OAuth2RedirectPage";
 
@@ -85,6 +87,8 @@ const AppRoutes = () => {
           </Route>
 
           <Route path="/notice" element={<NoticePage />} />
+          <Route path="/notice/write" element={<NoticeWritePage />} />
+          <Route path="/notice/:noticeId/edit" element={<NoticeEditPage />} />
           <Route path="/notice/:noticeId" element={<NoticeDetailPage />} />
         </Route>
 

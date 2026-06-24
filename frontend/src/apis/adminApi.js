@@ -181,3 +181,33 @@ export const approvals = (params = {}) => {
   console.log("관리자 전자결재 목록 요청", params);
   return api.get("/admin/approvals", { params });
 };
+
+// 관리자 공지사항 목록 조회
+export const notices = (params = {}) => {
+  console.log("관리자 공지사항 목록 요청", params);
+  return api.get("/admin/notice/list", { params });
+};
+
+// 관리자 공지사항 상세 조회
+export const noticeDetail = (noticeId) => {
+  console.log("관리자 공지사항 상세 요청", noticeId);
+  return api.get(`/admin/notice/${noticeId}`);
+};
+
+// 관리자 공지사항 등록
+export const createNotice = (noticeData) => {
+  console.log("관리자 공지사항 등록 요청", noticeData);
+  return api.post("/admin/notice", noticeData);
+};
+
+// 관리자 공지사항 수정
+export const updateNotice = (noticeId, noticeData) => {
+  console.log("관리자 공지사항 수정 요청", noticeId, noticeData);
+  return api.put(`/admin/notice/${noticeId}`, noticeData);
+};
+
+// 관리자 공지사항 삭제 처리
+export const deleteNotice = (noticeId) => {
+  console.log("관리자 공지사항 삭제 요청", noticeId);
+  return api.delete(`/admin/notice/${noticeId}`);
+};

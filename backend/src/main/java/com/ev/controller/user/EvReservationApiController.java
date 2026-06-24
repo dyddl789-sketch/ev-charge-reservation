@@ -77,6 +77,9 @@ public class EvReservationApiController {
             return ResponseEntity.badRequest().body(Map.of("message", "등록된 충전기가 없습니다."));
         }
 
+        /*
+         * 충전소 기준 예약 진입에서는 사용 가능한 충전기가 있으면 첫 번째 충전기를 임시 선점한다.
+         */
         for (EvReservationChargerDTO candidate : chargerList) {
             if (!"사용가능".equals(candidate.getChargerStatus())) {
                 continue;
@@ -84,11 +87,31 @@ public class EvReservationApiController {
 
             boolean holdSuccess = evReservationService.holdChargerForReservation(candidate.getChargerId(), memberId);
             if (holdSuccess) {
-                return ResponseEntity.ok(buildFormResponse(candidate, memberId));
+                return ResponseEntity.ok(
+                        buildFormResponse(
+                                candidate,
+                                memberId,
+                                candidate.getChargerId(),
+                                "충전기 임시 선점이 완료되었습니다."
+                        )
+                );
             }
         }
 
-        return ResponseEntity.status(409).body(Map.of("message", "현재 예약 가능한 충전기가 없거나 다른 사용자가 선택 중입니다."));
+        /*
+         * 사용 가능한 충전기가 0대여도 예약 화면에는 진입할 수 있어야 한다.
+         * 이 경우 프론트에서 충전소 정보와 충전기 목록을 보여주고 예약 버튼만 비활성화한다.
+         */
+        EvReservationChargerDTO firstCharger = chargerList.get(0);
+
+        return ResponseEntity.ok(
+                buildFormResponse(
+                        firstCharger,
+                        memberId,
+                        null,
+                        "현재 예약 가능한 충전기가 없습니다."
+                )
+        );
     }
 
     @PostMapping("/register")
@@ -239,6 +262,18 @@ public class EvReservationApiController {
     }
 
     private Map<String, Object> buildFormResponse(EvReservationChargerDTO charger, Long memberId) {
+        return buildFormResponse(
+                charger,
+                memberId,
+                charger.getChargerId(),
+                "충전기 임시 선점이 완료되었습니다."
+        );
+    }
+
+    private Map<String, Object> buildFormResponse(EvReservationChargerDTO charger,
+                                                  Long memberId,
+                                                  Long holdChargerId,
+                                                  String message) {
         List<EvReservationChargerDTO> chargerList = evReservationService.getReservationChargerList(charger.getStationId(), memberId);
         List<EvVehicleDTO> vehicleList = evReservationService.getVehicleList(memberId);
 
@@ -246,8 +281,8 @@ public class EvReservationApiController {
         result.put("charger", charger);
         result.put("chargerList", chargerList);
         result.put("vehicleList", vehicleList);
-        result.put("holdChargerId", charger.getChargerId());
-        result.put("message", "충전기 임시 선점이 완료되었습니다.");
+        result.put("holdChargerId", holdChargerId);
+        result.put("message", message);
 
         return result;
     }
