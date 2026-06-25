@@ -117,6 +117,10 @@ public class EvAiChatController {
             response.put("location", responseDTO.getLocation());
         }
 
+        if (responseDTO.getCandidates() != null) {
+            response.put("candidates", responseDTO.getCandidates());
+        }
+
         if (responseDTO.getReservations() != null) {
             response.put("reservations", responseDTO.getReservations());
         }

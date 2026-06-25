@@ -56,6 +56,11 @@ const sortLabels = {
   SPEED: "충전빠른순",
 };
 
+const AI_CHAT_CACHE_KEY = "ev_ai_chat_messages_v2";
+const AI_CHAT_MAP_CONTEXT_KEY = "ev_ai_chat_map_origin_context_v1";
+const AI_CHAT_LOCATION_REFRESH_KEY = "ev_ai_chat_location_refresh_v1";
+const AI_CHAT_LOCATION_REFRESH_MAX_AGE_MS = 10 * 60 * 1000;
+
 const valueOf = (item, ...keys) => {
   if (!item) {
     return null;
@@ -68,6 +73,159 @@ const valueOf = (item, ...keys) => {
   }
 
   return null;
+};
+
+const parseJsonValue = (value, fallback) => {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    console.log("AI 메시지 JSON 파싱 실패", error);
+    return fallback;
+  }
+};
+
+const normalizeCreatedAt = (createdAt) => {
+  if (!createdAt) {
+    return new Date().toLocaleString();
+  }
+
+  if (Array.isArray(createdAt)) {
+    const [year, month, day, hour = 0, minute = 0] = createdAt;
+    return `${year}-${pad(month)}-${pad(day)} ${pad(hour)}:${pad(minute)}`;
+  }
+
+  return String(createdAt).replace("T", " ").slice(0, 16);
+};
+
+const normalizeChatMessage = (item) => {
+  const candidates = parseJsonValue(item.candidates ?? item.candidatesJson, []);
+  const reservations = parseJsonValue(item.reservations ?? item.reservationsJson, []);
+  const location = parseJsonValue(item.location ?? item.locationJson, null);
+
+  return {
+    ...item,
+    messageId: item.messageId || `${item.senderType || "AI"}-${Date.now()}-${Math.random()}`,
+    senderType: item.senderType || item.sender_type || "AI",
+    message: item.message || item.answer || "",
+    intent: item.intent,
+    actionType: item.actionType || item.action_type,
+    buttonText: item.buttonText || item.button_text,
+    actionUrl: item.actionUrl || item.action_url,
+    location,
+    candidates: Array.isArray(candidates) ? candidates : [],
+    reservations: Array.isArray(reservations) ? reservations : [],
+    createdAt: normalizeCreatedAt(item.createdAt || item.created_at),
+  };
+};
+
+const loadCachedMessages = () => {
+  if (typeof window === "undefined") {
+    return guideMessages;
+  }
+
+  try {
+    const cached = window.sessionStorage.getItem(AI_CHAT_CACHE_KEY);
+    if (!cached) {
+      return guideMessages;
+    }
+
+    const parsed = JSON.parse(cached);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed.map(normalizeChatMessage) : guideMessages;
+  } catch (error) {
+    console.log("AI 채팅 세션 캐시 로딩 실패", error);
+    return guideMessages;
+  }
+};
+
+const mergeCachedMessageExtras = (serverMessages) => {
+  const cachedMessages = loadCachedMessages();
+
+  return serverMessages.map((serverMessage) => {
+    const cachedMessage = cachedMessages.find(
+      (cached) =>
+        cached.senderType === serverMessage.senderType &&
+        cached.message === serverMessage.message
+    );
+
+    if (!cachedMessage) {
+      return serverMessage;
+    }
+
+    return {
+      ...serverMessage,
+      location: serverMessage.location || cachedMessage.location,
+      candidates: serverMessage.candidates?.length > 0 ? serverMessage.candidates : cachedMessage.candidates || [],
+      reservations: serverMessage.reservations?.length > 0 ? serverMessage.reservations : cachedMessage.reservations || [],
+      actionType: serverMessage.actionType || cachedMessage.actionType,
+      buttonText: serverMessage.buttonText || cachedMessage.buttonText,
+      actionUrl: serverMessage.actionUrl || cachedMessage.actionUrl,
+    };
+  });
+};
+
+const saveAiMapContext = (context) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(
+      AI_CHAT_MAP_CONTEXT_KEY,
+      JSON.stringify({
+        ...context,
+        createdAt: Date.now(),
+      })
+    );
+  } catch (error) {
+    console.log("AI 지도 이동 컨텍스트 저장 실패", error);
+  }
+};
+
+const readPendingLocationRefresh = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawValue = window.sessionStorage.getItem(AI_CHAT_LOCATION_REFRESH_KEY);
+
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsed = JSON.parse(rawValue);
+    const createdAt = Number(parsed.createdAt || 0);
+
+    if (createdAt && Date.now() - createdAt > AI_CHAT_LOCATION_REFRESH_MAX_AGE_MS) {
+      console.log("AI 위치 변경 재검색 요청 만료", parsed);
+      window.sessionStorage.removeItem(AI_CHAT_LOCATION_REFRESH_KEY);
+      window.sessionStorage.removeItem(AI_CHAT_MAP_CONTEXT_KEY);
+      return null;
+    }
+
+    return parsed;
+  } catch (error) {
+    console.log("AI 위치 변경 재검색 요청 파싱 실패", error);
+    window.sessionStorage.removeItem(AI_CHAT_LOCATION_REFRESH_KEY);
+    return null;
+  }
+};
+
+const clearPendingLocationRefresh = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(AI_CHAT_LOCATION_REFRESH_KEY);
+  window.sessionStorage.removeItem(AI_CHAT_MAP_CONTEXT_KEY);
 };
 
 const isMyReservationRequest = (text) => {
@@ -152,13 +310,31 @@ const buildStationMapUrl = ({ stationId, latitude, longitude, name, address, foc
   return `/stations?${params.toString()}`;
 };
 
+const buildReservationCandidateMessage = (data, candidates) => {
+  if (!Array.isArray(candidates) || candidates.length === 0) {
+    return data?.message || "선택한 조건에 맞는 예약 후보를 찾지 못했습니다.";
+  }
+
+  const locationName =
+    valueOf(data?.location, "locationName", "location_name") ||
+    valueOf(data?.origin, "locationName", "location_name") ||
+    "기본 출발지";
+
+  return `${locationName} 기준으로 예약 가능한 충전소 후보 ${candidates.length}곳을 찾았습니다.\n거리, 요금, 예상시간은 아래 카드에서 비교해 주세요.`;
+};
+
 const AiChatPage = () => {
   console.log("AiChatPage 렌더링");
 
   const navigate = useNavigate();
   const messageListRef = useRef(null);
+  const messageItemRefs = useRef({});
   const historyClearedRef = useRef(false);
-  const [messages, setMessages] = useState(guideMessages);
+  const locationRefreshHandledRef = useRef(null);
+  const [messages, setMessages] = useState(loadCachedMessages);
+  const [focusMessageId, setFocusMessageId] = useState(null);
+  const [latestAnswerMessageId, setLatestAnswerMessageId] = useState(null);
+  const [showLatestButton, setShowLatestButton] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [clearLoading, setClearLoading] = useState(false);
@@ -172,11 +348,51 @@ const AiChatPage = () => {
   });
 
   useEffect(() => {
-    loadMessages();
+    const initAiChatPage = async () => {
+      await loadMessages();
+      await checkPendingLocationRefresh();
+    };
+
+    initAiChatPage();
   }, []);
 
   useEffect(() => {
-    console.log("AI 채팅창 내부 스크롤 이동");
+    const messageList = messageListRef.current;
+
+    if (!messageList) {
+      return undefined;
+    }
+
+    const handleScroll = () => {
+      if (isMessageListNearBottom()) {
+        setShowLatestButton(false);
+      }
+    };
+
+    messageList.addEventListener("scroll", handleScroll);
+
+    return () => {
+      messageList.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!focusMessageId) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      scrollToMessageStart(focusMessageId);
+      setFocusMessageId(null);
+    }, 80);
+
+    return () => window.clearTimeout(timer);
+  }, [messages, focusMessageId]);
+
+  useEffect(() => {
+    if (!loading || !isMessageListNearBottom()) {
+      return;
+    }
 
     const messageList = messageListRef.current;
 
@@ -184,9 +400,58 @@ const AiChatPage = () => {
       return;
     }
 
-    // 전체 페이지가 아니라 채팅 메시지 영역 안에서만 아래로 이동
-    messageList.scrollTop = messageList.scrollHeight;
-  }, [messages, loading]);
+    window.requestAnimationFrame(() => {
+      messageList.scrollTop = messageList.scrollHeight;
+    });
+  }, [loading]);
+
+  useEffect(() => {
+    console.log("AI 채팅 세션 캐시 저장");
+
+    try {
+      window.sessionStorage.setItem(AI_CHAT_CACHE_KEY, JSON.stringify(messages));
+    } catch (error) {
+      console.log("AI 채팅 세션 캐시 저장 실패", error);
+    }
+  }, [messages]);
+
+  const isMessageListNearBottom = () => {
+    const messageList = messageListRef.current;
+
+    if (!messageList) {
+      return true;
+    }
+
+    const distanceFromBottom = messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight;
+    return distanceFromBottom < 140;
+  };
+
+  const scrollToMessageStart = (messageId) => {
+    console.log("AI 최신 답변 시작 위치로 이동", messageId);
+
+    const targetElement = messageItemRefs.current[messageId];
+
+    if (!targetElement) {
+      return;
+    }
+
+    targetElement.scrollIntoView({
+      block: "start",
+      behavior: "smooth",
+    });
+  };
+
+  const moveToLatestAnswer = () => {
+    console.log("최신 AI 답변으로 이동", latestAnswerMessageId);
+
+    if (latestAnswerMessageId) {
+      scrollToMessageStart(latestAnswerMessageId);
+    } else if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
+
+    setShowLatestButton(false);
+  };
 
   const loadMessages = async () => {
     console.log("AI 채팅 이력 로딩");
@@ -203,32 +468,93 @@ const AiChatPage = () => {
       }
 
       if (Array.isArray(data) && data.length > 0) {
-        setMessages(data);
+        setMessages(mergeCachedMessageExtras(data.map(normalizeChatMessage)));
       } else {
-        setMessages(guideMessages);
+        setMessages(loadCachedMessages());
       }
     } catch (error) {
-      console.log("AI 채팅 이력 로딩 실패 - 기본 안내 메시지 사용", error);
-      setMessages(guideMessages);
+      console.log("AI 채팅 이력 로딩 실패 - 세션 캐시 또는 기본 안내 메시지 사용", error);
+      setMessages(loadCachedMessages());
     }
   };
 
   const addAiMessage = (message, extra = {}) => {
+    const { forceFocus = false, ...messageExtra } = extra;
+    const messageId = Date.now() + Math.floor(Math.random() * 1000);
+    const shouldFocusMessage = forceFocus || isMessageListNearBottom();
+
     const aiMessage = {
-      messageId: Date.now() + Math.floor(Math.random() * 1000),
+      messageId,
       senderType: "AI",
       message,
       createdAt: new Date().toLocaleString(),
-      ...extra,
+      ...messageExtra,
     };
 
     setMessages((prev) => [...prev, aiMessage]);
+    setLatestAnswerMessageId(messageId);
+
+    if (shouldFocusMessage) {
+      setFocusMessageId(messageId);
+      setShowLatestButton(false);
+    } else {
+      setShowLatestButton(true);
+    }
   };
 
-  const validateReservationCondition = () => {
-    console.log("AI 예약 조건 검증", reservationForm);
+  const checkPendingLocationRefresh = async () => {
+    const refreshRequest = readPendingLocationRefresh();
 
-    const startDateTime = buildDateTime(reservationForm.reservationDate, reservationForm.startTime);
+    if (!refreshRequest) {
+      return;
+    }
+
+    const refreshKey = refreshRequest.createdAt || refreshRequest.requestId;
+
+    if (locationRefreshHandledRef.current === refreshKey) {
+      return;
+    }
+
+    locationRefreshHandledRef.current = refreshKey;
+    clearPendingLocationRefresh();
+
+    const context = refreshRequest.context || {};
+    const location = refreshRequest.location || {};
+    const locationName = location.locationName || context.locationName || "변경한 출발지";
+    const nextSort = context.sort || activeSort || "DISTANCE";
+    const nextReservationForm = context.reservationForm || reservationForm;
+
+    console.log("지도 출발지 변경 후 AI 자동 재검색 실행", refreshRequest);
+
+    if (context.refreshMode !== "RESERVATION_CANDIDATES") {
+      addAiMessage(`출발지가 “${locationName}”로 변경되었습니다. 충전소 추천을 다시 요청하면 새 위치 기준으로 조회하겠습니다.`, {
+        intent: "AI_LOCATION_CHANGED",
+        forceFocus: true,
+      });
+      return;
+    }
+
+    setReservationForm((prev) => ({
+      ...prev,
+      ...nextReservationForm,
+    }));
+
+    addAiMessage(`출발지가 “${locationName}”로 변경되었습니다. 새 출발지 기준으로 예약 가능한 충전소 후보를 다시 조회하겠습니다.`, {
+      intent: "AI_LOCATION_REFRESH",
+      forceFocus: true,
+    });
+
+    await prepareAiReservation({
+      messageText: `${locationName} 기준으로 예약 가능한 충전소 후보 다시 보여줘`,
+      sort: nextSort,
+      reservationCondition: nextReservationForm,
+    });
+  };
+
+  const validateReservationCondition = (condition = reservationForm) => {
+    console.log("AI 예약 조건 검증", condition);
+
+    const startDateTime = buildDateTime(condition.reservationDate, condition.startTime);
     const now = new Date();
 
     if (!startDateTime) {
@@ -241,8 +567,8 @@ const AiChatPage = () => {
       return false;
     }
 
-    const currentSoc = Number(reservationForm.currentSoc);
-    const targetSoc = Number(reservationForm.targetSoc);
+    const currentSoc = Number(condition.currentSoc);
+    const targetSoc = Number(condition.targetSoc);
 
     if (Number.isNaN(currentSoc) || Number.isNaN(targetSoc)) {
       alert("현재 SOC와 목표 SOC를 입력해 주세요.");
@@ -262,10 +588,10 @@ const AiChatPage = () => {
     return true;
   };
 
-  const prepareAiReservation = async ({ messageText, sort }) => {
-    console.log("AI 예약 후보 조회 실행", messageText, sort);
+  const prepareAiReservation = async ({ messageText, sort, reservationCondition = reservationForm }) => {
+    console.log("AI 예약 후보 조회 실행", messageText, sort, reservationCondition);
 
-    if (!validateReservationCondition()) {
+    if (!validateReservationCondition(reservationCondition)) {
       return;
     }
 
@@ -275,10 +601,10 @@ const AiChatPage = () => {
       const response = await aiApi.prepareReservation({
         message: messageText,
         sort,
-        reservationDate: reservationForm.reservationDate,
-        startTime: reservationForm.startTime,
-        currentSoc: Number(reservationForm.currentSoc),
-        targetSoc: Number(reservationForm.targetSoc),
+        reservationDate: reservationCondition.reservationDate,
+        startTime: reservationCondition.startTime,
+        currentSoc: Number(reservationCondition.currentSoc),
+        targetSoc: Number(reservationCondition.targetSoc),
       });
 
       const data = response.data;
@@ -288,7 +614,7 @@ const AiChatPage = () => {
       setReservationCandidates(candidates);
       setActiveSort(data.sort || sort);
 
-      addAiMessage(data.message || "선택한 날짜와 시간 기준으로 예약 가능한 충전기 후보를 조회했습니다.", {
+      addAiMessage(buildReservationCandidateMessage(data, candidates), {
         intent: "AI_RESERVATION_PREPARE",
         candidates,
         location: data.location,
@@ -345,6 +671,7 @@ const AiChatPage = () => {
         {
           intent: data.intent,
           location: data.location,
+          candidates: Array.isArray(data.candidates) ? data.candidates : [],
           reservations: Array.isArray(data.reservations) ? data.reservations : [],
           actionType: data.actionType,
           buttonText: data.buttonText,
@@ -430,6 +757,20 @@ const AiChatPage = () => {
       return;
     }
 
+    const hasReservationCandidateContext =
+      reservationCandidates.length > 0 ||
+      messages.some((messageItem) => Array.isArray(messageItem.candidates) && messageItem.candidates.length > 0);
+
+    // 지도에서 출발지를 바꾼 뒤 AI 화면으로 돌아오면
+    // 변경된 기본 출발지 기준으로 후보를 자동 재조회하기 위한 컨텍스트를 저장한다.
+    saveAiMapContext({
+      refreshMode: hasReservationCandidateContext ? "RESERVATION_CANDIDATES" : "LOCATION_ONLY",
+      sort: activeSort,
+      reservationForm,
+      locationName: name,
+      source: "AI_LOCATION_VIEW",
+    });
+
     navigate(buildStationMapUrl({ latitude, longitude, name, address, focusType: "origin" }));
   };
 
@@ -447,12 +788,37 @@ const AiChatPage = () => {
       return;
     }
 
+    const hasReservationCandidateContext =
+      reservationCandidates.length > 0 ||
+      messages.some((messageItem) => Array.isArray(messageItem.candidates) && messageItem.candidates.length > 0);
+
+    // 후보 카드에서 지도 화면으로 이동한 경우에도 출발지 변경 후 AI 재검색이 가능해야 한다.
+    saveAiMapContext({
+      refreshMode: hasReservationCandidateContext ? "RESERVATION_CANDIDATES" : "LOCATION_ONLY",
+      sort: activeSort,
+      reservationForm,
+      locationName: name,
+      source: "AI_STATION_VIEW",
+    });
+
     navigate(buildStationMapUrl({ stationId, latitude, longitude, name, address, focusType: "station" }));
   };
 
   const moveReservationList = () => {
     console.log("내 예약 화면 이동");
     navigate("/my-reservations");
+  };
+
+  const moveReservationDetail = (reservation) => {
+    const reservationId = valueOf(reservation, "reservationId", "reservation_id");
+    console.log("내 예약 상세 화면 이동", reservationId);
+
+    if (!reservationId) {
+      alert("예약 상세로 이동할 예약번호가 없습니다.");
+      return;
+    }
+
+    navigate(`/my-reservations/${reservationId}`);
   };
 
   const moveAiAction = (item) => {
@@ -465,6 +831,16 @@ const AiChatPage = () => {
 
     if (item?.actionType === "VEHICLE_REGISTER") {
       navigate("/vehicles/register");
+      return;
+    }
+
+    if (item?.actionType === "MY_RESERVATION_HISTORY") {
+      navigate("/my-reservations");
+      return;
+    }
+
+    if (item?.actionType === "LOCATION_REGISTER") {
+      navigate("/stations");
     }
   };
 
@@ -510,6 +886,7 @@ const AiChatPage = () => {
     historyClearedRef.current = true;
     setClearLoading(true);
     setReservationCandidates([]);
+    window.sessionStorage.removeItem(AI_CHAT_CACHE_KEY);
     setMessages(guideMessages);
 
     try {
@@ -640,7 +1017,17 @@ const AiChatPage = () => {
 
             <div ref={messageListRef} className="chat-message-list chat-window-message-list">
               {messages.map((item) => (
-                <div key={item.messageId} className={item.senderType === "USER" ? "chat-message user" : "chat-message ai"}>
+                <div
+                  key={item.messageId}
+                  ref={(element) => {
+                    if (element) {
+                      messageItemRefs.current[item.messageId] = element;
+                    } else {
+                      delete messageItemRefs.current[item.messageId];
+                    }
+                  }}
+                  className={item.senderType === "USER" ? "chat-message user" : "chat-message ai"}
+                >
                   <div className="chat-bubble">
                     {item.intent && <span className="intent-badge">{item.intent}</span>}
                     <p>{item.message}</p>
@@ -663,46 +1050,106 @@ const AiChatPage = () => {
 
                     {Array.isArray(item.candidates) && item.candidates.length > 0 && (
                       <div className="ai-candidate-list">
-                        {item.candidates.map((candidate) => (
-                          <div className="ai-candidate-card" key={`${candidate.candidateNo}-${candidate.chargerId}`}>
-                            <strong>
-                              {candidate.candidateNo}번. {candidate.stationName}
-                            </strong>
-                            <span>거리 {Number(candidate.distanceKm || 0).toFixed(2)}km · {candidate.chargerName}</span>
-                            <span>{candidate.connectorType} · 출력 {candidate.chargingSpeedKw}kW · 적용 {candidate.effectiveChargingSpeedKw || candidate.chargingSpeedKw}kW</span>
-                            <span>요금 {Number(candidate.pricePerKwh || 0).toLocaleString()}원/kWh</span>
-                            <span>예상 {candidate.estimatedMinutes}분 · {Number(candidate.estimatedCost || 0).toLocaleString()}원</span>
-                            <div className="ai-card-button-row">
-                              <button type="button" onClick={() => confirmAiReservation(candidate.candidateNo)}>
-                                이 후보로 예약
-                              </button>
-                              <button type="button" className="secondary" onClick={() => moveStationToMap(candidate)}>
-                                지도에서 보기
-                              </button>
+                        {item.candidates.map((candidate) => {
+                          const distanceKm = Number(candidate.distanceKm || 0).toFixed(2);
+                          const pricePerKwh = Number(candidate.pricePerKwh || 0).toLocaleString();
+                          const estimatedMinutes = Number(candidate.estimatedMinutes || 0).toLocaleString();
+                          const estimatedCost = Number(candidate.estimatedCost || 0).toLocaleString();
+                          const effectiveSpeed = candidate.effectiveChargingSpeedKw || candidate.chargingSpeedKw;
+
+                          return (
+                            <div className="ai-candidate-card refined" key={`${candidate.candidateNo}-${candidate.chargerId}`}>
+                              <div className="ai-candidate-head">
+                                <span className="ai-candidate-rank">추천 {candidate.candidateNo}</span>
+                                <div>
+                                  <strong>{candidate.stationName}</strong>
+                                  <em>{candidate.chargerName}</em>
+                                </div>
+                              </div>
+
+                              <div className="ai-candidate-metrics">
+                                <div>
+                                  <span>거리</span>
+                                  <strong>{distanceKm}km</strong>
+                                </div>
+                                <div>
+                                  <span>요금</span>
+                                  <strong>{pricePerKwh}원/kWh</strong>
+                                </div>
+                                <div>
+                                  <span>예상시간</span>
+                                  <strong>{estimatedMinutes}분</strong>
+                                </div>
+                              </div>
+
+                              <div className="ai-candidate-sub-info">
+                                <span>{candidate.connectorType}</span>
+                                <span>출력 {candidate.chargingSpeedKw}kW</span>
+                                <span>적용 {effectiveSpeed}kW</span>
+                                <span>예상비용 {estimatedCost}원</span>
+                              </div>
+
+                              <div className="ai-card-button-row">
+                                <button type="button" onClick={() => confirmAiReservation(candidate.candidateNo)}>
+                                  이 후보로 예약
+                                </button>
+                                <button type="button" className="secondary" onClick={() => moveStationToMap(candidate)}>
+                                  지도에서 보기
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
 
                     {Array.isArray(item.reservations) && item.reservations.length > 0 && (
                       <div className="ai-reservation-result-list">
-                        {item.reservations.map((reservation) => (
-                          <div className="ai-reservation-result-card" key={valueOf(reservation, "reservationId", "reservation_id")}>
-                            <strong>{valueOf(reservation, "stationName", "station_name")}</strong>
-                            <span>예약시간 {valueOf(reservation, "startTime", "start_time")} ~ {valueOf(reservation, "endTime", "end_time")}</span>
-                            <span>충전기 {valueOf(reservation, "chargerName", "charger_name")} · {valueOf(reservation, "connectorType", "connector_type")}</span>
-                            <span>차량 {valueOf(reservation, "manufacturer")} {valueOf(reservation, "modelName", "model_name")} · 상태 {valueOf(reservation, "status")}</span>
-                            <div className="ai-card-button-row">
-                              <button type="button" className="secondary" onClick={() => moveStationToMap(reservation)}>
-                                지도에서 보기
-                              </button>
-                              <button type="button" onClick={moveReservationList}>
-                                내 예약 화면
-                              </button>
+                        {item.reservations.map((reservation) => {
+                          const reservationId = valueOf(reservation, "reservationId", "reservation_id");
+                          const stationName = valueOf(reservation, "stationName", "station_name");
+                          const startTime = valueOf(reservation, "startTime", "start_time");
+                          const endTime = valueOf(reservation, "endTime", "end_time");
+                          const chargerName = valueOf(reservation, "chargerName", "charger_name");
+                          const connectorType = valueOf(reservation, "connectorType", "connector_type");
+                          const status = valueOf(reservation, "status");
+
+                          return (
+                            <div className="ai-reservation-result-card refined" key={reservationId}>
+                              <div className="ai-reservation-result-head">
+                                <div>
+                                  <strong>{stationName}</strong>
+                                  <span>예약번호 {reservationId}</span>
+                                </div>
+                                <em>{status}</em>
+                              </div>
+
+                              <div className="ai-reservation-summary-grid">
+                                <div>
+                                  <span>예약시간</span>
+                                  <strong>{startTime} ~ {endTime}</strong>
+                                </div>
+                                <div>
+                                  <span>충전기</span>
+                                  <strong>{chargerName}</strong>
+                                </div>
+                                <div>
+                                  <span>커넥터</span>
+                                  <strong>{connectorType}</strong>
+                                </div>
+                              </div>
+
+                              <div className="ai-card-button-row">
+                                <button type="button" onClick={() => moveReservationDetail(reservation)}>
+                                  예약 상세
+                                </button>
+                                <button type="button" className="secondary" onClick={moveReservationList}>
+                                  내 예약 내역
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
 
@@ -719,15 +1166,13 @@ const AiChatPage = () => {
                 </div>
               )}
 
-              {reservationCandidates.length > 0 && (
-                <div className="chat-message ai">
-                  <div className="chat-bubble reservation-help">
-                    <p>후보 카드의 “이 후보로 예약” 버튼을 누르면 Redis에 저장된 후보 기준으로 실제 예약이 생성됩니다.</p>
-                  </div>
-                </div>
-              )}
-
             </div>
+
+            {showLatestButton && (
+              <button type="button" className="chat-latest-button" onClick={moveToLatestAnswer}>
+                최신 답변으로 이동 ↓
+              </button>
+            )}
 
             <form className="chat-input-form chat-window-input-form" onSubmit={handleSubmit}>
               <input

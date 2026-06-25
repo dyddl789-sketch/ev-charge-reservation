@@ -70,10 +70,10 @@ public class EvAiChatServiceImpl implements EvAiChatService {
         if (isDefaultLocationQuestion(message)) {
             Map<String, Object> location = evAiChatDAO.findDefaultLocationForAi(memberId);
             answer = buildDefaultLocationAnswer(location);
-            saveMessage(roomId, "AI", answer);
 
             EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer, "DEFAULT_LOCATION");
             responseDTO.setLocation(location);
+            saveMessage(roomId, "AI", answer, responseDTO);
             return responseDTO;
         }
 
@@ -81,7 +81,6 @@ public class EvAiChatServiceImpl implements EvAiChatService {
         if (isDefaultVehicleQuestion(message)) {
             Map<String, Object> vehicle = evAiChatDAO.findDefaultVehicleForAi(memberId);
             answer = buildDefaultVehicleAnswer(vehicle);
-            saveMessage(roomId, "AI", answer);
 
             EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer, "DEFAULT_VEHICLE");
             if (vehicle == null || vehicle.isEmpty()) {
@@ -89,6 +88,7 @@ public class EvAiChatServiceImpl implements EvAiChatService {
                 responseDTO.setButtonText("차량 등록하러 가기");
                 responseDTO.setActionUrl("/vehicles/register");
             }
+            saveMessage(roomId, "AI", answer, responseDTO);
             return responseDTO;
         }
 
@@ -96,10 +96,15 @@ public class EvAiChatServiceImpl implements EvAiChatService {
         if (isMyReservationQuestion(message)) {
             List<Map<String, Object>> reservationList = evAiChatDAO.findMyReservationsForAi(memberId, 10);
             answer = buildMyReservationAnswer(reservationList);
-            saveMessage(roomId, "AI", answer);
 
             EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer, "MY_RESERVATION_LIST");
             responseDTO.setReservations(reservationList);
+            if (reservationList == null || reservationList.isEmpty()) {
+                responseDTO.setActionType("MY_RESERVATION_HISTORY");
+                responseDTO.setButtonText("내 예약 내역 보기");
+                responseDTO.setActionUrl("/my-reservations");
+            }
+            saveMessage(roomId, "AI", answer, responseDTO);
             return responseDTO;
         }
 
@@ -107,8 +112,9 @@ public class EvAiChatServiceImpl implements EvAiChatService {
         if (isReservationGuideQuestion(message)) {
             String ragContext = buildRagContext(memberId, message);
             answer = callGeminiWithContext(recentMessages, message, ragContext);
-            saveMessage(roomId, "AI", answer);
-            return new EvAiChatResponseDTO(answer, "RESERVATION_GUIDE");
+            EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer, "RESERVATION_GUIDE");
+            saveMessage(roomId, "AI", answer, responseDTO);
+            return responseDTO;
         }
 
         EvAiChatIntentDTO intentDTO = analyzeIntent(message);
@@ -129,9 +135,9 @@ public class EvAiChatServiceImpl implements EvAiChatService {
             }
         }
 
-        saveMessage(roomId, "AI", answer);
         EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer);
         applyVehicleRegisterActionIfNeeded(answer, responseDTO);
+        saveMessage(roomId, "AI", answer, responseDTO);
         return responseDTO;
     }
 
@@ -406,14 +412,14 @@ public class EvAiChatServiceImpl implements EvAiChatService {
         log.info("@# EvAiChatServiceImpl.buildMyReservationAnswer()");
 
         if (reservationList == null || reservationList.isEmpty()) {
-            return "현재 조회되는 예약 내역이 없습니다.\n충전소 찾기 또는 AI 예약 후보에서 새로운 예약을 진행할 수 있습니다.";
+            return "현재 진행중인 예약이 없습니다.\n완료되었거나 취소된 예약을 포함한 전체 내역은 아래 버튼에서 확인할 수 있습니다.";
         }
 
         StringBuilder builder = new StringBuilder();
-        builder.append("DB에 저장된 내 예약 내역을 조회했습니다.\n");
-        builder.append("최근 예약 ").append(reservationList.size()).append("건을 보여드립니다.\n");
+        builder.append("현재 진행중인 예약 ").append(reservationList.size()).append("건을 조회했습니다.\n");
+        builder.append("예약 카드를 확인하고 상세 화면에서 인증코드, 충전 시작, 취소 처리를 진행할 수 있습니다.\n");
 
-        int count = Math.min(5, reservationList.size());
+        int count = Math.min(3, reservationList.size());
         for (int i = 0; i < count; i++) {
             Map<String, Object> reservation = reservationList.get(i);
             builder.append("\n").append(i + 1).append(". ")
@@ -424,7 +430,6 @@ public class EvAiChatServiceImpl implements EvAiChatService {
                     .append("상태 : ").append(text(value(reservation, "status"))).append("\n");
         }
 
-        builder.append("\n각 예약 카드의 지도 버튼을 누르면 해당 충전소 위치를 지도에서 볼 수 있습니다.");
         return builder.toString();
     }
 
@@ -585,6 +590,10 @@ public class EvAiChatServiceImpl implements EvAiChatService {
     }
 
     private void saveMessage(Long roomId, String senderType, String message) {
+        saveMessage(roomId, senderType, message, null);
+    }
+
+    private void saveMessage(Long roomId, String senderType, String message, EvAiChatResponseDTO responseDTO) {
         log.info("@# EvAiChatServiceImpl.saveMessage()");
         log.info("@# senderType => {}", senderType);
 
@@ -593,8 +602,31 @@ public class EvAiChatServiceImpl implements EvAiChatService {
         messageDTO.setSenderType(senderType);
         messageDTO.setMessage(message);
 
+        if (responseDTO != null) {
+            messageDTO.setIntent(responseDTO.getIntent());
+            messageDTO.setActionType(responseDTO.getActionType());
+            messageDTO.setButtonText(responseDTO.getButtonText());
+            messageDTO.setActionUrl(responseDTO.getActionUrl());
+            messageDTO.setLocationJson(toJson(responseDTO.getLocation()));
+            messageDTO.setCandidatesJson(toJson(responseDTO.getCandidates()));
+            messageDTO.setReservationsJson(toJson(responseDTO.getReservations()));
+        }
+
         evAiChatDAO.insertMessage(messageDTO);
         addMessageToCache(roomId, messageDTO);
+    }
+
+    private String toJson(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception e) {
+            log.warn("@# ai chat metadata json convert fail => {}", e.getMessage());
+            return null;
+        }
     }
 
     private List<EvAiChatMessageDTO> getRecentMessages(Long roomId) {
@@ -649,6 +681,24 @@ public class EvAiChatServiceImpl implements EvAiChatService {
             stringRedisTemplate.expire(key, CHAT_CACHE_TTL);
         } catch (Exception e) {
             log.warn("@# ai chat cache append fail => {}", e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void saveConversationMessage(Long memberId, String userMessage, EvAiChatResponseDTO responseDTO) {
+        log.info("@# EvAiChatServiceImpl.saveConversationMessage()");
+        log.info("@# memberId => {}", memberId);
+
+        EvAiChatRoomDTO roomDTO = getOrCreateRoom(memberId);
+        Long roomId = roomDTO.getRoomId();
+
+        if (userMessage != null && !userMessage.trim().isEmpty()) {
+            saveMessage(roomId, "USER", userMessage.trim());
+        }
+
+        if (responseDTO != null && responseDTO.getAnswer() != null) {
+            saveMessage(roomId, "AI", responseDTO.getAnswer(), responseDTO);
         }
     }
 

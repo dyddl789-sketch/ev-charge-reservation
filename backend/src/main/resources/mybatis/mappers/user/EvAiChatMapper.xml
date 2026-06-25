@@ -38,15 +38,32 @@
 
     <!-- AI 채팅 메시지 저장 -->
     <insert id="insertMessage"
-            parameterType="com.ev.dto.chat.EvAiChatMessageDTO">
+            parameterType="com.ev.dto.chat.EvAiChatMessageDTO"
+            useGeneratedKeys="true"
+            keyProperty="messageId"
+            keyColumn="message_id">
         insert into ai_chat_message (
             room_id,
             sender_type,
-            message
+            message,
+            intent,
+            action_type,
+            button_text,
+            action_url,
+            location_json,
+            candidates_json,
+            reservations_json
         ) values (
             #{roomId},
             #{senderType},
-            #{message}
+            #{message},
+            #{intent},
+            #{actionType},
+            #{buttonText},
+            #{actionUrl},
+            #{locationJson},
+            #{candidatesJson},
+            #{reservationsJson}
         )
     </insert>
 
@@ -67,6 +84,13 @@
 	        room_id as roomId,
 	        sender_type as senderType,
 	        message,
+	        intent,
+	        action_type as actionType,
+	        button_text as buttonText,
+	        action_url as actionUrl,
+	        location_json as locationJson,
+	        candidates_json as candidatesJson,
+	        reservations_json as reservationsJson,
 	        created_at as createdAt
 	    from (
 	        select
@@ -74,6 +98,13 @@
 	            room_id,
 	            sender_type,
 	            message,
+	            intent,
+	            action_type,
+	            button_text,
+	            action_url,
+	            location_json,
+	            candidates_json,
+	            reservations_json,
 	            created_at
 	        from ai_chat_message
 	        where room_id = #{roomId}
@@ -94,6 +125,13 @@
 	        room_id as roomId,
 	        sender_type as senderType,
 	        message,
+	        intent,
+	        action_type as actionType,
+	        button_text as buttonText,
+	        action_url as actionUrl,
+	        location_json as locationJson,
+	        candidates_json as candidatesJson,
+	        reservations_json as reservationsJson,
 	        created_at as createdAt
 	    from (
 	        select
@@ -101,6 +139,13 @@
 	            room_id,
 	            sender_type,
 	            message,
+	            intent,
+	            action_type,
+	            button_text,
+	            action_url,
+	            location_json,
+	            candidates_json,
+	            reservations_json,
 	            created_at
 	        from ai_chat_message
 	        where room_id = #{roomId}
@@ -486,7 +531,7 @@
     </select>
 
 
-    <!-- AI 챗봇: 로그인 사용자의 예약 내역 조회 -->
+    <!-- AI 챗봇: 로그인 사용자의 진행중 예약 조회 -->
     <select id="findMyReservationsForAi" resultType="map">
         select
               r.reservation_id as reservationId
@@ -521,7 +566,15 @@
         left join vehicle_model vm
           on v.model_id = vm.model_id
         where r.member_id = #{memberId}
-        order by r.start_time desc
+          and r.status in ('예약완료', '인증완료', '충전중')
+          and r.end_time >= current_timestamp
+        order by
+              case
+                  when r.status = '충전중' then 1
+                  when r.status = '인증완료' then 2
+                  else 3
+              end
+            , r.start_time asc
         limit #{limit}
     </select>
 

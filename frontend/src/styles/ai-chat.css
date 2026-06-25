@@ -555,3 +555,199 @@
 .ai-guide-panel-compact > h2 {
   margin-top: 0;
 }
+
+/* =========================
+   AI Persistent Action/Card UI Patch
+========================= */
+.ai-candidate-card.refined,
+.ai-reservation-result-card.refined {
+  padding: 16px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ai-candidate-card.refined {
+  border: 1px solid #dbeafe;
+}
+
+.ai-candidate-card.refined * ,
+.ai-reservation-result-card.refined * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ai-candidate-card.refined::selection,
+.ai-candidate-card.refined *::selection,
+.ai-reservation-result-card.refined::selection,
+.ai-reservation-result-card.refined *::selection {
+  background: transparent;
+}
+
+.ai-candidate-head,
+.ai-reservation-result-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ai-candidate-rank {
+  flex: 0 0 auto;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  margin: 0 !important;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8 !important;
+  font-size: 11px !important;
+  font-weight: 900;
+}
+
+.ai-candidate-head > div,
+.ai-reservation-result-head > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-candidate-head strong,
+.ai-reservation-result-head strong {
+  display: block;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.ai-candidate-head em,
+.ai-reservation-result-head span {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.ai-candidate-metrics,
+.ai-reservation-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.ai-candidate-metrics > div,
+.ai-reservation-summary-grid > div {
+  min-width: 0;
+  padding: 11px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.ai-candidate-metrics span,
+.ai-reservation-summary-grid span {
+  display: block;
+  margin: 0 0 4px !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 900;
+}
+
+.ai-candidate-metrics strong,
+.ai-reservation-summary-grid strong {
+  display: block;
+  overflow: hidden;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-candidate-metrics > div:nth-child(2) strong {
+  color: #ea580c;
+}
+
+.ai-candidate-metrics > div:nth-child(3) strong {
+  color: #2563eb;
+}
+
+.ai-candidate-sub-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.ai-candidate-sub-info span {
+  display: inline-flex !important;
+  align-items: center;
+  margin: 0 !important;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569 !important;
+  font-size: 11px !important;
+  font-weight: 800;
+}
+
+.ai-reservation-result-card.refined {
+  border: 1px solid #bbf7d0;
+}
+
+.ai-reservation-result-head em {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+@media (max-width: 700px) {
+  .ai-candidate-metrics,
+  .ai-reservation-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================
+   AI Chat Scroll UX Patch
+========================= */
+.ai-chat-card.ai-chat-window-card {
+  position: relative;
+}
+
+.chat-message {
+  scroll-margin-top: 18px;
+}
+
+.chat-latest-button {
+  position: absolute;
+  right: 24px;
+  bottom: 86px;
+  z-index: 15;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 15px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.22);
+  cursor: pointer;
+}
+
+.chat-latest-button:hover {
+  background: #1d4ed8;
+}

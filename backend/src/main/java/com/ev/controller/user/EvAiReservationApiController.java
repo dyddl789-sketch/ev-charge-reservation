@@ -19,9 +19,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ev.dao.user.EvAiChatDAO;
+import com.ev.dto.chat.EvAiChatResponseDTO;
 import com.ev.dto.reservation.EvReservationDTO;
 import com.ev.dto.vehicle.EvVehicleDTO;
 import com.ev.security.EvUserDetails;
+import com.ev.service.user.EvAiChatService;
 import com.ev.service.user.EvReservationService;
 import com.ev.service.user.EvVehicleService;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -42,6 +44,7 @@ public class EvAiReservationApiController {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final EvAiChatDAO evAiChatDAO;
+    private final EvAiChatService evAiChatService;
     private final EvVehicleService evVehicleService;
     private final EvReservationService reservationService;
     private final StringRedisTemplate stringRedisTemplate;
@@ -75,13 +78,14 @@ public class EvAiReservationApiController {
 
             List<EvVehicleDTO> vehicleList = evVehicleService.getVehicleList(memberId);
             if (vehicleList == null || vehicleList.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "AI 예약을 사용하려면 먼저 대표차량을 등록해 주세요.",
-                        "actionType", "VEHICLE_REGISTER",
-                        "buttonText", "차량 등록하러 가기",
-                        "actionUrl", "/vehicles/register"
-                ));
+                Map<String, Object> response = buildActionResponse(
+                        "AI 예약을 사용하려면 먼저 대표차량을 등록해 주세요.",
+                        "VEHICLE_REGISTER",
+                        "차량 등록하러 가기",
+                        "/vehicles/register"
+                );
+                savePrepareConversation(memberId, request, response);
+                return ResponseEntity.badRequest().body(response);
             }
 
             EvVehicleDTO vehicle = vehicleList.stream()
@@ -90,21 +94,26 @@ public class EvAiReservationApiController {
                     .orElse(null);
 
             if (vehicle == null) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "AI 예약을 사용하려면 대표차량이 필요합니다. 차량 등록 화면에서 기본 차량으로 설정해 주세요.",
-                        "actionType", "VEHICLE_REGISTER",
-                        "buttonText", "차량 등록하러 가기",
-                        "actionUrl", "/vehicles/register"
-                ));
+                Map<String, Object> response = buildActionResponse(
+                        "AI 예약을 사용하려면 대표차량이 필요합니다. 차량 등록 화면에서 기본 차량으로 설정해 주세요.",
+                        "VEHICLE_REGISTER",
+                        "차량 등록하러 가기",
+                        "/vehicles/register"
+                );
+                savePrepareConversation(memberId, request, response);
+                return ResponseEntity.badRequest().body(response);
             }
 
             Map<String, Object> defaultLocation = evAiChatDAO.findDefaultLocationForAi(memberId);
             if (defaultLocation == null || defaultLocation.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "AI가 주변 충전소를 추천하려면 기본 출발지를 먼저 설정해야 합니다. 충전소 찾기 화면에서 출발지를 등록하고 기본으로 설정해주세요."
-                ));
+                Map<String, Object> response = buildActionResponse(
+                        "AI가 주변 충전소를 추천하려면 기본 출발지를 먼저 설정해야 합니다. 충전소 찾기 화면에서 출발지를 등록하고 기본으로 설정해주세요.",
+                        "LOCATION_REGISTER",
+                        "충전소 찾기에서 출발지 설정",
+                        "/stations"
+                );
+                savePrepareConversation(memberId, request, response);
+                return ResponseEntity.badRequest().body(response);
             }
 
             List<Map<String, Object>> rawCandidateList = evAiChatDAO.findAiReservationCandidates(
@@ -120,14 +129,16 @@ public class EvAiReservationApiController {
             List<Map<String, Object>> candidateList = normalizeCandidateList(rawCandidateList, startDateTime, currentSoc, targetSoc);
 
             if (candidateList.isEmpty()) {
-                return ResponseEntity.ok(Map.of(
-                        "success", false,
-                        "message", buildEmptyCandidateMessage(defaultLocation, vehicle, startDateTime),
-                        "sort", sort,
-                        "location", defaultLocation,
-                        "vehicle", vehicle,
-                        "candidates", List.of()
-                ));
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("success", false);
+                response.put("message", buildEmptyCandidateMessage(defaultLocation, vehicle, startDateTime));
+                response.put("intent", "AI_RESERVATION_PREPARE");
+                response.put("sort", sort);
+                response.put("location", defaultLocation);
+                response.put("vehicle", vehicle);
+                response.put("candidates", List.of());
+                savePrepareConversation(memberId, request, response);
+                return ResponseEntity.ok(response);
             }
 
             saveCandidates(memberId, candidateList);
@@ -142,7 +153,9 @@ public class EvAiReservationApiController {
             response.put("vehicle", vehicle);
             response.put("candidates", candidateList);
             response.put("ttlSeconds", CANDIDATE_TTL.toSeconds());
+            response.put("intent", "AI_RESERVATION_PREPARE");
 
+            savePrepareConversation(memberId, request, response);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
@@ -244,6 +257,41 @@ public class EvAiReservationApiController {
         } catch (Exception e) {
             log.error("@# ai reservation confirm fail", e);
             return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "AI 예약 확정 중 오류가 발생했습니다."));
+        }
+    }
+
+    private Map<String, Object> buildActionResponse(String message,
+                                                   String actionType,
+                                                   String buttonText,
+                                                   String actionUrl) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("success", false);
+        response.put("message", message);
+        response.put("intent", "AI_RESERVATION_PREPARE");
+        response.put("actionType", actionType);
+        response.put("buttonText", buttonText);
+        response.put("actionUrl", actionUrl);
+        return response;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void savePrepareConversation(Long memberId, Map<String, Object> request, Map<String, Object> response) {
+        log.info("@# EvAiReservationApiController.savePrepareConversation()");
+
+        try {
+            String userMessage = String.valueOf(request.getOrDefault("message", "AI 예약 후보 조회"));
+            String answer = String.valueOf(response.getOrDefault("message", "AI 예약 후보 조회 결과입니다."));
+
+            EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer, String.valueOf(response.getOrDefault("intent", "AI_RESERVATION_PREPARE")));
+            responseDTO.setLocation((Map<String, Object>) response.get("location"));
+            responseDTO.setCandidates((List<Map<String, Object>>) response.get("candidates"));
+            responseDTO.setActionType((String) response.get("actionType"));
+            responseDTO.setButtonText((String) response.get("buttonText"));
+            responseDTO.setActionUrl((String) response.get("actionUrl"));
+
+            evAiChatService.saveConversationMessage(memberId, userMessage, responseDTO);
+        } catch (Exception e) {
+            log.warn("@# ai reservation prepare conversation save fail => {}", e.getMessage());
         }
     }
 

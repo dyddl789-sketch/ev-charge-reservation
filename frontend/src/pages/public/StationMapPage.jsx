@@ -16,6 +16,8 @@ const CONNECTOR_TYPE_OPTIONS = [
 
 const MAP_FOCUS_LEVEL = 5;
 const NEARBY_STATION_LIMIT = 10;
+const AI_CHAT_MAP_CONTEXT_KEY = "ev_ai_chat_map_origin_context_v1";
+const AI_CHAT_LOCATION_REFRESH_KEY = "ev_ai_chat_location_refresh_v1";
 
 const loadKakaoMapScript = () => {
   const kakaoJavascriptKey = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
@@ -181,11 +183,64 @@ const sortLocationList = (locations, selectedLocationId = null) => {
   });
 };
 
+const readAiMapContext = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawValue = window.sessionStorage.getItem(AI_CHAT_MAP_CONTEXT_KEY);
+    return rawValue ? JSON.parse(rawValue) : null;
+  } catch (error) {
+    console.log("AI 지도 이동 컨텍스트 읽기 실패", error);
+    return null;
+  }
+};
+
+const requestAiLocationRefresh = (location, trigger) => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const context = readAiMapContext();
+
+  if (!context) {
+    return null;
+  }
+
+  const refreshRequest = {
+    requestId: `${Date.now()}-${trigger}`,
+    trigger,
+    createdAt: Date.now(),
+    location: {
+      locationId: location.locationId,
+      locationName: location.locationName,
+      address: location.address,
+      latitude: location.latitude,
+      longitude: location.longitude,
+    },
+    context,
+  };
+
+  try {
+    window.sessionStorage.setItem(
+      AI_CHAT_LOCATION_REFRESH_KEY,
+      JSON.stringify(refreshRequest)
+    );
+
+    console.log("AI 출발지 변경 재검색 요청 저장", location, trigger, context);
+    return refreshRequest;
+  } catch (error) {
+    console.log("AI 출발지 변경 재검색 요청 저장 실패", error);
+    return null;
+  }
+};
+
 const StationMapPage = () => {
   console.log("StationMapPage 렌더링");
 
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const mapElementRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -193,6 +248,7 @@ const StationMapPage = () => {
   const infoWindowRef = useRef(null);
   const originMarkerRef = useRef(null);
   const routeLineRef = useRef(null);
+  const ignoreInitialMapFocusRef = useRef(false);
 
   const [keyword, setKeyword] = useState("");
   const [connectorType, setConnectorType] = useState("");
@@ -212,6 +268,7 @@ const StationMapPage = () => {
     address: "",
     isDefault: true,
   });
+  const [aiRefreshBanner, setAiRefreshBanner] = useState(null);
 
   const mockLocations = [
     {
@@ -225,6 +282,10 @@ const StationMapPage = () => {
   ];
 
   const getQueryMapFocus = () => {
+    if (ignoreInitialMapFocusRef.current) {
+      return null;
+    }
+
     const focusType = searchParams.get("focusType") || "";
     const stationId = searchParams.get("stationId");
     const latitude = toNumber(searchParams.get("lat"));
@@ -400,6 +461,44 @@ const StationMapPage = () => {
       setLocationList(mockLocations);
       return [];
     }
+  };
+
+  const clearInitialMapFocus = () => {
+    ignoreInitialMapFocusRef.current = true;
+
+    if (searchParams.toString()) {
+      setSearchParams({}, { replace: true });
+    }
+  };
+
+  const openAiRefreshBanner = (location, refreshRequest) => {
+    if (!refreshRequest) {
+      setAiRefreshBanner(null);
+      return;
+    }
+
+    console.log("AI 재추천 안내 배너 표시", location, refreshRequest);
+
+    setAiRefreshBanner({
+      requestId: refreshRequest.requestId,
+      locationName: location.locationName || "변경한 출발지",
+      address: location.address || "",
+    });
+  };
+
+  const moveAiRefreshToChat = () => {
+    console.log("AI에서 다시 추천 보기 클릭", aiRefreshBanner);
+    navigate("/ai-chat");
+  };
+
+  const closeAiRefreshBanner = () => {
+    console.log("지도 계속 보기 클릭");
+
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(AI_CHAT_LOCATION_REFRESH_KEY);
+    }
+
+    setAiRefreshBanner(null);
   };
 
   const clearRouteLine = () => {
@@ -702,6 +801,7 @@ const StationMapPage = () => {
 
   const searchStation = () => {
     console.log("충전소 검색 실행", keyword);
+    clearInitialMapFocus();
     clearRouteLine();
     getStationMapData(keyword.trim(), currentOrigin, connectorType);
   };
@@ -711,6 +811,7 @@ const StationMapPage = () => {
     console.log("커넥터 타입 변경", nextConnectorType);
 
     setConnectorType(nextConnectorType);
+    clearInitialMapFocus();
     clearRouteLine();
     getStationMapData(keyword.trim(), currentOrigin, nextConnectorType);
   };
@@ -877,11 +978,15 @@ const StationMapPage = () => {
           savedLocation.locationId
         );
 
+        const nextOrigin = { ...savedLocation, isDefault: true };
         setLocationList(sortedLocations);
-        setCurrentOrigin({ ...savedLocation, isDefault: true });
+        setCurrentOrigin(nextOrigin);
+        clearInitialMapFocus();
+        const refreshRequest = requestAiLocationRefresh(nextOrigin, "CREATE_DEFAULT_LOCATION");
+        openAiRefreshBanner(nextOrigin, refreshRequest);
         clearRouteLine();
-        getStationMapData(keyword.trim(), savedLocation, connectorType);
-        moveMapTo(savedLocation.latitude, savedLocation.longitude, MAP_FOCUS_LEVEL);
+        getStationMapData(keyword.trim(), nextOrigin, connectorType);
+        moveMapTo(nextOrigin.latitude, nextOrigin.longitude, MAP_FOCUS_LEVEL);
       }
     } catch (error) {
       console.log("출발지 등록 실패", error);
@@ -926,6 +1031,9 @@ const StationMapPage = () => {
 
       setLocationList(sortLocationList(updatedLocations, selectedDefault.locationId));
       setCurrentOrigin(selectedDefault);
+      clearInitialMapFocus();
+      const refreshRequest = requestAiLocationRefresh(selectedDefault, "CHANGE_DEFAULT_LOCATION");
+      openAiRefreshBanner(selectedDefault, refreshRequest);
       clearRouteLine();
       getStationMapData(keyword.trim(), selectedDefault, connectorType);
       moveMapTo(selectedDefault.latitude, selectedDefault.longitude, MAP_FOCUS_LEVEL);
@@ -960,6 +1068,8 @@ const StationMapPage = () => {
       );
 
       setCurrentOrigin(defaultLocation || null);
+      clearInitialMapFocus();
+      setAiRefreshBanner(null);
       clearRouteLine();
       getStationMapData(keyword.trim(), defaultLocation || null, connectorType);
     } catch (error) {
@@ -981,6 +1091,7 @@ const StationMapPage = () => {
     // 버튼은 현재 선택된 출발지로 이동한다.
     // 저장된 출발지가 없을 때만 브라우저 현재 위치를 새 출발지로 사용한다.
     if (currentOrigin?.latitude && currentOrigin?.longitude) {
+      clearInitialMapFocus();
       clearRouteLine();
       getStationMapData(keyword.trim(), currentOrigin, connectorType);
       moveMapTo(currentOrigin.latitude, currentOrigin.longitude, MAP_FOCUS_LEVEL);
@@ -993,6 +1104,7 @@ const StationMapPage = () => {
 
     if (origin) {
       setCurrentOrigin(origin);
+      clearInitialMapFocus();
       clearRouteLine();
       getStationMapData(keyword.trim(), origin, connectorType);
       moveMapTo(origin.latitude, origin.longitude, MAP_FOCUS_LEVEL);
@@ -1216,6 +1328,23 @@ const StationMapPage = () => {
             ref={mapElementRef}
             className={useKakaoMap ? "kakao-map" : "kakao-map hidden"}
           />
+
+          {aiRefreshBanner && (
+            <div className="ai-map-refresh-banner">
+              <div>
+                <strong>출발지가 “{aiRefreshBanner.locationName}”로 변경되었습니다.</strong>
+                <p>AI가 새 출발지 기준으로 예약 가능한 충전소 후보를 다시 추천할 수 있습니다.</p>
+              </div>
+              <div className="ai-map-refresh-actions">
+                <button type="button" onClick={moveAiRefreshToChat}>
+                  AI에서 다시 추천 보기
+                </button>
+                <button type="button" className="secondary" onClick={closeAiRefreshBanner}>
+                  지도 계속 보기
+                </button>
+              </div>
+            </div>
+          )}
 
           {!useKakaoMap && (
             <div className="mock-map">
