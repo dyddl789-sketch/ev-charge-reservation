@@ -196,6 +196,18 @@ export const complaints = (params = {}) => {
   return api.get('/admin/complaints', { params });
 };
 
+// MIS 민원 답변 완료
+export const answerComplaint = (complaintId, answerData) => {
+  console.log('관리자 민원 답변 완료 요청', complaintId, answerData);
+  return api.post(`/admin/complaints/${complaintId}/answer`, answerData);
+};
+
+// MIS 민원 기반 장애 접수
+export const registerComplaintFault = (complaintId, faultData = {}) => {
+  console.log('관리자 민원 장애 접수 요청', complaintId, faultData);
+  return api.post(`/admin/complaints/${complaintId}/register-fault`, faultData);
+};
+
 // MIS 장애·점검 목록
 export const faults = (params = {}) => {
   console.log('관리자 장애·점검 목록 요청', params);
@@ -254,6 +266,12 @@ export const faultEngineers = () => {
 export const assignFault = (faultId, assignData) => {
   console.log('관리자 장애 담당자 배정 요청', faultId, assignData);
   return api.post(`/admin/faults/${faultId}/assign`, assignData);
+};
+
+// MIS 장애 접수취소
+export const cancelFault = (faultId) => {
+  console.log('관리자 장애 접수취소 요청', faultId);
+  return api.post(`/admin/faults/${faultId}/cancel`);
 };
 
 // MIS 점검 시작

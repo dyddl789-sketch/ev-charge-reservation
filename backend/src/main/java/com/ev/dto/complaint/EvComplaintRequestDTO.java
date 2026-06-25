@@ -24,4 +24,6 @@ public class EvComplaintRequestDTO {
     private Boolean notifyEmail;
     private Boolean notifySms;
     private Boolean notifySite;
+
+    private String aiSummary;
 }

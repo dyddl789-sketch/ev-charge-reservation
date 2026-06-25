@@ -90,10 +90,22 @@ public class SecurityConfig {
                     .hasRole("ADMIN")
                 .requestMatchers("/admin/simulation/fault")
                     .hasAnyRole("ADMIN", "MANAGER", "ENGINEER")
-                .requestMatchers("/admin/employees", "/admin/employees/**", "/admin/departments", "/admin/departments/**")
-                    .hasAnyRole("ADMIN", "MANAGER")
                 .requestMatchers("/admin/system", "/admin/system/**")
                     .hasRole("ADMIN")
+                .requestMatchers("/admin/statistics/**", "/admin/usage/**", "/admin/sales/**")
+                    .hasAnyRole("ADMIN", "MANAGER")
+                .requestMatchers("/admin/employees", "/admin/employees/**", "/admin/departments", "/admin/departments/**")
+                    .hasAnyRole("ADMIN", "MANAGER")
+
+                // 민원은 운영담당자 중심, 시설담당자는 접근 불가
+                .requestMatchers("/admin/complaints/**")
+                    .hasAnyRole("ADMIN", "MANAGER", "OPERATOR")
+
+                // 장애 배정/취소는 운영관리자 이상만 가능
+                .requestMatchers("/admin/faults/*/assign", "/admin/faults/*/cancel", "/admin/faults/engineers")
+                    .hasAnyRole("ADMIN", "MANAGER")
+                .requestMatchers("/admin/faults/**")
+                    .hasAnyRole("ADMIN", "MANAGER", "ENGINEER")
 
                 // 관리자 MIS API 접근 권한
                 .requestMatchers("/admin/**")

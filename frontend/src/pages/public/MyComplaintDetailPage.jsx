@@ -67,6 +67,14 @@ const MyComplaintDetailPage = () => {
           <p>{complaint.content}</p>
         </div>
 
+        <div className="detail-content result">
+          <h3>처리 결과</h3>
+          <p>{complaint.answerContent || complaint.adminMemo || '아직 처리 결과가 등록되지 않았습니다.'}</p>
+          {complaint.linkedFaultId && (
+            <p className="linked-fault-text">연결 장애번호 #{complaint.linkedFaultId} · 현재 상태 {complaint.linkedFaultStatus || '-'}</p>
+          )}
+        </div>
+
         <div className="history-area">
           <h3>처리 이력</h3>
           {(complaint.histories || complaint.historyList || []).length === 0 && <div className="empty-box">아직 처리 이력이 없습니다.</div>}

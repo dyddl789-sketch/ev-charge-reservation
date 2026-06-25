@@ -41,7 +41,7 @@ const adminMenus = [
   {
     title: '민원관리',
     path: '/admin/complaints',
-    roles: ['ADMIN', 'MANAGER', 'OPERATOR', 'ENGINEER'],
+    roles: ['ADMIN', 'MANAGER', 'OPERATOR'],
   },
   {
     title: '장애·점검관리',

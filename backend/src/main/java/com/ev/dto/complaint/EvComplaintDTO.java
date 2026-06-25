@@ -43,6 +43,19 @@ public class EvComplaintDTO {
     private String aiSummary;
     private String adminMemo;
 
+    // 사용자에게 표시할 처리 답변은 현재 DB의 admin_memo를 사용한다.
+    private String answerContent;
+
+    // 민원에서 장애 접수 시 연결되는 장애 번호/상태
+    private Long linkedFaultId;
+    private String linkedFaultStatus;
+
+    // AI 분류 라벨 표시용 필드
+    private String aiCategory;
+    private String aiLabel;
+    private Double aiConfidence;
+    private String aiReason;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime closedAt;

@@ -1,6 +1,8 @@
 package com.ev.service.admin;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -12,6 +14,7 @@ import com.ev.dto.admin.employee.EvAdminEmployeeDTO;
 import com.ev.dto.admin.fault.EvAdminActionCompleteRequestDTO;
 import com.ev.dto.admin.fault.EvAdminFaultAssignRequestDTO;
 import com.ev.dto.admin.fault.EvAdminFaultDTO;
+import com.ev.dto.admin.fault.EvAdminFaultSearchDTO;
 import com.ev.dto.admin.fault.EvAdminInspectionResultRequestDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -34,7 +37,46 @@ public class EvAdminFaultServiceImpl implements EvAdminFaultService {
         log.info("@# EvAdminFaultServiceImpl.getFaultList()");
         log.info("@# status => {}, severity => {}, keyword => {}", status, severity, keyword);
 
-        return evAdminFaultDAO.findFaultList(emptyToNull(status), emptyToNull(severity), emptyToNull(keyword));
+        EvAdminFaultSearchDTO searchDTO = new EvAdminFaultSearchDTO();
+        searchDTO.setStatus(emptyToNull(status));
+        searchDTO.setKeyword(emptyToNull(keyword));
+        searchDTO.setPage(1);
+        searchDTO.setSize(100);
+        return evAdminFaultDAO.findFaultList(searchDTO);
+    }
+
+    @Override
+    public Map<String, Object> getFaultPage(Long requesterMemberId, EvAdminFaultSearchDTO searchDTO) {
+        log.info("@# EvAdminFaultServiceImpl.getFaultPage()");
+        log.info("@# requesterMemberId => {}, searchDTO => {}", requesterMemberId, searchDTO);
+
+        normalizeSearch(searchDTO);
+        String role = requireRole(requesterMemberId, "ADMIN", "MANAGER", "ENGINEER");
+        Long requesterEmployeeId = findAdminEmployeeId(requesterMemberId);
+
+        searchDTO.setRequesterRole(role);
+        searchDTO.setRequesterEmployeeId(requesterEmployeeId);
+
+        List<EvAdminFaultDTO> list = evAdminFaultDAO.findFaultList(searchDTO);
+        for (EvAdminFaultDTO faultDTO : list) {
+            faultDTO.setHistoryList(evAdminFaultDAO.findFaultHistoryList(faultDTO.getFaultId()));
+        }
+
+        int totalCount = evAdminFaultDAO.countFaultList(searchDTO);
+        int size = searchDTO.getLimit();
+        int totalPages = (int) Math.ceil(totalCount / (double) size);
+        Map<String, Object> summary = evAdminFaultDAO.countFaultSummary(searchDTO);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("items", list);
+        result.put("list", list);
+        result.put("page", searchDTO.getPage() < 1 ? 1 : searchDTO.getPage());
+        result.put("size", size);
+        result.put("totalCount", totalCount);
+        result.put("totalPages", totalPages);
+        result.put("summary", summary);
+
+        return result;
     }
 
     @Override
@@ -63,14 +105,19 @@ public class EvAdminFaultServiceImpl implements EvAdminFaultService {
         log.info("@# EvAdminFaultServiceImpl.assignFault()");
         log.info("@# adminMemberId => {}, faultId => {}, requestDTO => {}", adminMemberId, faultId, requestDTO);
 
-        validateFaultExists(faultId);
+        requireRole(adminMemberId, "ADMIN", "MANAGER");
+        EvAdminFaultDTO faultDTO = validateFaultExists(faultId);
+
+        if (!"접수".equals(faultDTO.getStatus())) {
+            throw new IllegalArgumentException("접수 상태의 장애만 담당자 배정이 가능합니다.");
+        }
 
         if (requestDTO == null || requestDTO.getEmployeeId() == null) {
             throw new IllegalArgumentException("배정할 시설관리담당자를 선택해 주세요.");
         }
 
         Long adminEmployeeId = findAdminEmployeeId(adminMemberId);
-        String beforeStatus = evAdminFaultDAO.findFaultStatus(faultId);
+        String beforeStatus = faultDTO.getStatus();
 
         evAdminFaultDAO.updateFaultAssignee(faultId, requestDTO.getEmployeeId());
         evAdminFaultDAO.insertFaultHistory(
@@ -89,17 +136,52 @@ public class EvAdminFaultServiceImpl implements EvAdminFaultService {
 
     @Override
     @Transactional
+    public EvAdminFaultDTO cancelFault(Long adminMemberId, Long faultId) {
+        log.info("@# EvAdminFaultServiceImpl.cancelFault()");
+        log.info("@# adminMemberId => {}, faultId => {}", adminMemberId, faultId);
+
+        requireRole(adminMemberId, "ADMIN", "MANAGER");
+        EvAdminFaultDTO faultDTO = validateFaultExists(faultId);
+
+        if (!"접수".equals(faultDTO.getStatus())) {
+            throw new IllegalArgumentException("접수 상태의 장애만 접수취소할 수 있습니다.");
+        }
+
+        Long adminEmployeeId = findAdminEmployeeId(adminMemberId);
+        evAdminFaultDAO.updateFaultStatus(faultId, "취소", true);
+        evAdminFaultDAO.updateChargerStatusByFaultId(faultId, "사용가능");
+        evAdminFaultDAO.updateLinkedComplaintStatus(faultId, "완료", true, "장애 접수가 취소되어 민원이 완료 처리되었습니다.");
+        evAdminFaultDAO.insertFaultHistory(
+                faultId,
+                adminEmployeeId,
+                "접수",
+                "취소",
+                "접수취소",
+                "운영관리자가 장애 접수를 취소했습니다."
+        );
+
+        return getFaultDetail(faultId);
+    }
+
+    @Override
+    @Transactional
     public EvAdminFaultDTO startInspection(Long adminMemberId, Long faultId) {
         log.info("@# EvAdminFaultServiceImpl.startInspection()");
         log.info("@# adminMemberId => {}, faultId => {}", adminMemberId, faultId);
 
         EvAdminFaultDTO faultDTO = validateFaultExists(faultId);
         Long adminEmployeeId = findAdminEmployeeId(adminMemberId);
+        requireEngineerOwnerOrAdmin(adminMemberId, faultDTO, "점검 시작");
+
         Long inspectorId = faultDTO.getAssignedEmployeeId();
         String beforeStatus = faultDTO.getStatus();
 
         if ("완료".equals(beforeStatus) || "취소".equals(beforeStatus)) {
             throw new IllegalArgumentException("이미 종료된 장애는 점검을 시작할 수 없습니다.");
+        }
+
+        if ("결재대기".equals(beforeStatus)) {
+            throw new IllegalArgumentException("결재대기 상태의 장애는 점검을 다시 시작할 수 없습니다.");
         }
 
         if (inspectorId == null) {
@@ -137,6 +219,11 @@ public class EvAdminFaultServiceImpl implements EvAdminFaultService {
 
         EvAdminFaultDTO faultDTO = validateFaultExists(faultId);
         Long adminEmployeeId = findAdminEmployeeId(adminMemberId);
+        requireEngineerOwnerOrAdmin(adminMemberId, faultDTO, "점검 결과 등록");
+
+        if (!"점검중".equals(faultDTO.getStatus())) {
+            throw new IllegalArgumentException("점검중 상태의 장애만 점검 결과를 등록할 수 있습니다.");
+        }
 
         if (requestDTO == null || !StringUtils.hasText(requestDTO.getInspectionResult())) {
             throw new IllegalArgumentException("점검 결과를 선택해 주세요.");
@@ -210,6 +297,12 @@ public class EvAdminFaultServiceImpl implements EvAdminFaultService {
 
         EvAdminFaultDTO faultDTO = validateFaultExists(faultId);
         Long adminEmployeeId = findAdminEmployeeId(adminMemberId);
+        requireEngineerOwnerOrAdmin(adminMemberId, faultDTO, "조치 완료");
+
+        if (!"조치중".equals(faultDTO.getStatus())) {
+            throw new IllegalArgumentException("조치중 상태의 장애만 조치 완료 처리할 수 있습니다.");
+        }
+
         Long actionId = evAdminFaultDAO.findLatestActionId(faultId);
 
         if (actionId == null) {
@@ -255,6 +348,31 @@ public class EvAdminFaultServiceImpl implements EvAdminFaultService {
         return faultDTO;
     }
 
+    private String requireRole(Long memberId, String... allowedRoles) {
+        String userType = evAdminFaultDAO.findUserTypeByMemberId(memberId);
+        if (!StringUtils.hasText(userType)) {
+            throw new IllegalArgumentException("권한 정보를 확인할 수 없습니다.");
+        }
+        for (String role : allowedRoles) {
+            if (role.equals(userType)) {
+                return userType;
+            }
+        }
+        throw new IllegalArgumentException("현재 권한으로 처리할 수 없는 업무입니다.");
+    }
+
+    private void requireEngineerOwnerOrAdmin(Long memberId, EvAdminFaultDTO faultDTO, String actionName) {
+        String role = requireRole(memberId, "ADMIN", "ENGINEER");
+        if ("ADMIN".equals(role)) {
+            return;
+        }
+
+        Long employeeId = findAdminEmployeeId(memberId);
+        if (faultDTO.getAssignedEmployeeId() == null || !faultDTO.getAssignedEmployeeId().equals(employeeId)) {
+            throw new IllegalArgumentException("본인에게 배정된 장애만 " + actionName + " 처리할 수 있습니다.");
+        }
+    }
+
     private Long findAdminEmployeeId(Long adminMemberId) {
         Long employeeId = evAdminFaultDAO.findEmployeeIdByMemberId(adminMemberId);
         if (employeeId == null) {
@@ -262,6 +380,24 @@ public class EvAdminFaultServiceImpl implements EvAdminFaultService {
         }
 
         return employeeId;
+    }
+
+    private void normalizeSearch(EvAdminFaultSearchDTO searchDTO) {
+        searchDTO.setStatus(emptyToNull(searchDTO.getStatus()));
+        searchDTO.setKeyword(emptyToNull(searchDTO.getKeyword()));
+        searchDTO.setReportedFrom(emptyToNull(searchDTO.getReportedFrom()));
+        searchDTO.setReportedTo(emptyToNull(searchDTO.getReportedTo()));
+        searchDTO.setResolvedFrom(emptyToNull(searchDTO.getResolvedFrom()));
+        searchDTO.setResolvedTo(emptyToNull(searchDTO.getResolvedTo()));
+        if (searchDTO.getPage() < 1) {
+            searchDTO.setPage(1);
+        }
+        if (searchDTO.getSize() < 1) {
+            searchDTO.setSize(10);
+        }
+        if (searchDTO.getSize() > 100) {
+            searchDTO.setSize(100);
+        }
     }
 
     private String defaultMemo(String value, String defaultValue) {

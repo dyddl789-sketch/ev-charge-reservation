@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import * as adminApi from "../../apis/adminApi";
 
-const statusOptions = ["", "접수", "점검중", "조치중", "결재대기", "완료", "취소"];
-const severityOptions = ["", "LOW", "NORMAL", "HIGH", "CRITICAL"];
+const statusOptions = ["", "접수", "점검중", "조치중", "결재대기", "완료"];
 
 const getBadgeClass = (value) => {
-  if (["CRITICAL", "고장", "반려"].includes(value)) {
+  if (["고장", "반려"].includes(value)) {
     return "danger";
   }
 
-  if (["HIGH", "결재대기", "조치중", "점검중"].includes(value)) {
+  if (["결재대기", "조치중", "점검중"].includes(value)) {
     return "warning";
   }
 
@@ -17,11 +16,21 @@ const getBadgeClass = (value) => {
     return "green";
   }
 
-  if (["접수", "LOW", "NORMAL"].includes(value)) {
+  if (["접수"].includes(value)) {
     return "blue";
   }
 
   return "purple";
+};
+
+const formatDate = (value) => {
+  if (!value) {
+    return "-";
+  }
+  if (typeof value === "string") {
+    return value.replace("T", " ").slice(0, 16);
+  }
+  return value;
 };
 
 const ProgressModal = ({ title, description, progress, children, onClose }) => {
@@ -41,7 +50,7 @@ const ProgressModal = ({ title, description, progress, children, onClose }) => {
         <div className="fault-repair-visual">
           <div className="fault-repair-icon" aria-hidden="true">🛠️</div>
           <div>
-            <strong>뚝딱뚝딱 점검 작업 진행 중</strong>
+            <strong>{title}</strong>
             <p>{description}</p>
           </div>
         </div>
@@ -119,7 +128,6 @@ const AssignModal = ({ fault, engineers, onClose, onSubmit }) => {
     </div>
   );
 };
-
 
 const ApprovalSubmitModal = ({ fault, onClose, onSubmit }) => {
   console.log("ApprovalSubmitModal 렌더링", fault?.faultId);
@@ -267,7 +275,9 @@ const FaultPage = () => {
   const [engineers, setEngineers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [filters, setFilters] = useState({ status: "", severity: "", keyword: "" });
+  const [filters, setFilters] = useState({ status: "", keyword: "", reportedFrom: "", reportedTo: "", resolvedFrom: "", resolvedTo: "" });
+  const [pageInfo, setPageInfo] = useState({ page: 1, size: 10, totalCount: 0, totalPages: 0 });
+  const [serverSummary, setServerSummary] = useState({});
   const [assignFault, setAssignFault] = useState(null);
   const [inspectionModal, setInspectionModal] = useState(null);
   const [actionModal, setActionModal] = useState(null);
@@ -276,26 +286,62 @@ const FaultPage = () => {
   const [actionResult, setActionResult] = useState("현장 조치 및 충전기 동작 확인을 완료했습니다.");
 
   const kpi = useMemo(() => {
-    const countByStatus = (status) => faults.filter((fault) => fault.status === status).length;
+    const getCount = (key, fallbackStatus) => Number(serverSummary[key] || serverSummary[key?.toUpperCase?.()] || faults.filter((fault) => fault.status === fallbackStatus).length || 0);
 
     return {
-      received: countByStatus("접수"),
-      inspecting: countByStatus("점검중"),
-      action: countByStatus("조치중"),
-      approval: countByStatus("결재대기"),
-      critical: faults.filter((fault) => fault.severity === "CRITICAL").length,
+      received: getCount("received", "접수"),
+      inspecting: getCount("inspecting", "점검중"),
+      action: getCount("action", "조치중"),
+      approval: getCount("approval", "결재대기"),
+      completed: getCount("completed", "완료"),
     };
-  }, [faults]);
+  }, [faults, serverSummary]);
 
-  const loadFaults = async (customFilters = filters) => {
-    console.log("장애·점검 목록 조회", customFilters);
+  const normalizeListResponse = (data) => {
+    console.log("장애 목록 응답 정규화", data);
+
+    if (Array.isArray(data)) {
+      return {
+        items: data,
+        page: 1,
+        size: 10,
+        totalCount: data.length,
+        totalPages: data.length > 10 ? Math.ceil(data.length / 10) : 1,
+        summary: {},
+      };
+    }
+
+    return {
+      items: data?.items || data?.list || [],
+      page: data?.page || 1,
+      size: data?.size || 10,
+      totalCount: data?.totalCount || 0,
+      totalPages: data?.totalPages || 0,
+      summary: data?.summary || {},
+    };
+  };
+
+  const loadFaults = async (nextPage = pageInfo.page, customFilters = filters) => {
+    console.log("장애·점검 목록 조회", customFilters, nextPage);
     setLoading(true);
     setMessage("");
 
     try {
-      const response = await adminApi.faults(customFilters);
+      const response = await adminApi.faults({
+        ...customFilters,
+        page: nextPage,
+        size: pageInfo.size,
+      });
       console.log("장애·점검 목록 응답", response.data);
-      setFaults(Array.isArray(response.data) ? response.data : []);
+      const normalized = normalizeListResponse(response.data);
+      setFaults(Array.isArray(normalized.items) ? normalized.items : []);
+      setServerSummary(normalized.summary || {});
+      setPageInfo({
+        page: normalized.page,
+        size: normalized.size,
+        totalCount: normalized.totalCount,
+        totalPages: normalized.totalPages,
+      });
     } catch (error) {
       console.log("장애·점검 목록 조회 실패", error);
       setMessage(error.response?.data?.message || "장애·점검 목록을 불러오지 못했습니다.");
@@ -318,7 +364,7 @@ const FaultPage = () => {
   };
 
   useEffect(() => {
-    loadFaults();
+    loadFaults(1);
     loadEngineers();
   }, []);
 
@@ -378,6 +424,13 @@ const FaultPage = () => {
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
+  const resetFilters = () => {
+    console.log("장애 필터 초기화");
+    const nextFilters = { status: "", keyword: "", reportedFrom: "", reportedTo: "", resolvedFrom: "", resolvedTo: "" };
+    setFilters(nextFilters);
+    loadFaults(1, nextFilters);
+  };
+
   const runFaultSimulation = async () => {
     console.log("장애 시뮬레이션 등록 클릭");
 
@@ -385,7 +438,7 @@ const FaultPage = () => {
       const response = await adminApi.triggerFaultSimulation();
       console.log("장애 시뮬레이션 등록 응답", response.data);
       alert(response.data?.message || "장애 시뮬레이션이 등록되었습니다.");
-      loadFaults();
+      loadFaults(1);
     } catch (error) {
       console.log("장애 시뮬레이션 등록 실패", error);
       alert(error.response?.data?.message || "장애 시뮬레이션 등록에 실패했습니다.");
@@ -398,10 +451,27 @@ const FaultPage = () => {
     try {
       await adminApi.assignFault(assignFault.faultId, assignData);
       setAssignFault(null);
-      loadFaults();
+      loadFaults(pageInfo.page);
     } catch (error) {
       console.log("장애 담당자 배정 실패", error);
       alert(error.response?.data?.message || "담당자 배정에 실패했습니다.");
+    }
+  };
+
+  const cancelFault = async (fault) => {
+    console.log("장애 접수취소 클릭", fault?.faultId);
+
+    if (!window.confirm("아직 점검이 시작되지 않은 장애 접수를 취소할까요?")) {
+      return;
+    }
+
+    try {
+      await adminApi.cancelFault(fault.faultId);
+      alert("장애 접수가 취소되었습니다.");
+      loadFaults(pageInfo.page);
+    } catch (error) {
+      console.log("장애 접수취소 실패", error);
+      alert(error.response?.data?.message || "장애 접수취소에 실패했습니다.");
     }
   };
 
@@ -418,7 +488,7 @@ const FaultPage = () => {
         description: "충전기 전원, 커넥터, 통신 상태를 점검했습니다.",
       });
       setInspectionModal({ fault: updatedFault, progress: 0, phase: "progress" });
-      loadFaults();
+      loadFaults(pageInfo.page);
     } catch (error) {
       console.log("점검 시작 실패", error);
       alert(error.response?.data?.message || "점검을 시작하지 못했습니다.");
@@ -443,7 +513,7 @@ const FaultPage = () => {
       const updatedFault = response.data;
 
       setInspectionModal(null);
-      loadFaults();
+      loadFaults(pageInfo.page);
 
       if (resultForm.inspectionResult === "조치필요") {
         setActionResult("커넥터 접점 정리, 통신 상태 확인, 충전 테스트를 완료했습니다.");
@@ -471,10 +541,9 @@ const FaultPage = () => {
     }
 
     try {
-      const response = await adminApi.completeFaultAction(actionModal.fault.faultId, { actionResult });
-      console.log("조치 완료 응답", response.data);
+      await adminApi.completeFaultAction(actionModal.fault.faultId, { actionResult });
       setActionModal(null);
-      loadFaults();
+      loadFaults(pageInfo.page);
       alert("조치가 완료되어 충전기가 사용가능 상태로 복구되었습니다.");
     } catch (error) {
       console.log("조치 완료 실패", error);
@@ -490,10 +559,9 @@ const FaultPage = () => {
     }
 
     try {
-      const response = await adminApi.submitFaultApproval(approvalFault.faultId, approvalData);
-      console.log("전자결재 상신 응답", response.data);
+      await adminApi.submitFaultApproval(approvalFault.faultId, approvalData);
       setApprovalFault(null);
-      loadFaults();
+      loadFaults(pageInfo.page);
       alert("전자결재 문서가 상신되었습니다. 전자결재 화면에서 진행 상태를 확인할 수 있습니다.");
     } catch (error) {
       console.log("전자결재 상신 실패", error);
@@ -501,8 +569,18 @@ const FaultPage = () => {
     }
   };
 
+  const canAssign = (fault) => fault.status === "접수";
+  const canCancel = (fault) => fault.status === "접수";
   const canStartInspection = (fault) => Boolean(fault.assignedEmployeeId) && !["완료", "취소", "결재대기"].includes(fault.status);
   const canCompleteAction = (fault) => fault.status === "조치중";
+
+  const movePage = (nextPage) => {
+    console.log("장애 페이지 이동", nextPage);
+    if (nextPage < 1 || nextPage > pageInfo.totalPages || nextPage === pageInfo.page) {
+      return;
+    }
+    loadFaults(nextPage);
+  };
 
   return (
     <section className="admin-page">
@@ -510,45 +588,71 @@ const FaultPage = () => {
         <div>
           <p>장애·점검관리</p>
           <h1>장애 등록·점검·조치 관리</h1>
-          <span>장애 접수부터 담당자 배정, 점검 게이지, 조치 완료까지 한 화면에서 처리합니다.</span>
+          <span>장애 접수부터 담당자 배정, 점검 진행, 조치 완료까지 한 화면에서 처리합니다.</span>
         </div>
         <button type="button" onClick={runFaultSimulation}>장애 시뮬레이션 등록</button>
       </div>
 
       <div className="admin-kpi-grid five fault-kpi-grid">
-        <article className="admin-kpi-card"><span>접수 장애</span><strong>{kpi.received}건</strong><p>담당자 배정 대기</p></article>
-        <article className="admin-kpi-card"><span>점검중</span><strong>{kpi.inspecting}건</strong><p>게이지 점검 가능</p></article>
-        <article className="admin-kpi-card"><span>조치중</span><strong>{kpi.action}건</strong><p>수리 게이지 진행</p></article>
-        <article className="admin-kpi-card"><span>결재대기</span><strong>{kpi.approval}건</strong><p>교체필요 문서 상신</p></article>
-        <article className="admin-kpi-card"><span>긴급 장애</span><strong>{kpi.critical}건</strong><p>CRITICAL 등급</p></article>
+        <article className="admin-kpi-card"><span>접수</span><strong>{kpi.received}건</strong><p>담당자 배정 대기</p></article>
+        <article className="admin-kpi-card"><span>점검중</span><strong>{kpi.inspecting}건</strong><p>현장 점검 진행</p></article>
+        <article className="admin-kpi-card"><span>조치중</span><strong>{kpi.action}건</strong><p>수리 작업 진행</p></article>
+        <article className="admin-kpi-card"><span>결재대기</span><strong>{kpi.approval}건</strong><p>교체 문서 상신</p></article>
+        <article className="admin-kpi-card"><span>완료</span><strong>{kpi.completed}건</strong><p>처리 완료</p></article>
       </div>
 
       <div className="admin-panel">
         <div className="admin-panel-title">
           <div>
             <strong>장애·점검 처리 흐름</strong>
-            <p>점검 결과가 정상이면 즉시 완료, 조치필요면 수리 게이지 진행, 교체필요면 전자결재 단계로 넘어갑니다.</p>
+            <p>점검 결과가 정상이면 즉시 완료, 조치필요면 수리 진행, 교체필요면 전자결재 단계로 넘어갑니다.</p>
           </div>
         </div>
         <div className="admin-flow-row fault-flow-row">
-          {["장애 접수", "담당자 배정", "점검 게이지", "결과 판단", "조치/결재", "완료"].map((step, index) => (
+          {["장애 접수", "담당자 배정", "점검 진행", "결과 판단", "조치/결재", "완료"].map((step, index) => (
             <div className="admin-flow-step" key={step}><span>{index + 1}</span><b>{step}</b></div>
           ))}
         </div>
       </div>
 
       <div className="admin-panel">
-        <div className="admin-panel-title">
-          <strong>장애·점검 목록</strong>
-          <div className="admin-filter-row compact fault-filter-row">
+        <div className="admin-panel-title fault-title-wrap">
+          <div>
+            <strong>장애·점검 목록</strong>
+            <p>총 {pageInfo.totalCount}건 · {pageInfo.page}/{Math.max(pageInfo.totalPages, 1)}페이지</p>
+          </div>
+        </div>
+
+        <div className="admin-search-panel fault-search-panel">
+          <label>
+            상태
             <select name="status" value={filters.status} onChange={changeFilter}>
               {statusOptions.map((status) => <option value={status} key={status || "all"}>{status || "전체 상태"}</option>)}
             </select>
-            <select name="severity" value={filters.severity} onChange={changeFilter}>
-              {severityOptions.map((severity) => <option value={severity} key={severity || "all"}>{severity || "전체 등급"}</option>)}
-            </select>
-            <input name="keyword" value={filters.keyword} onChange={changeFilter} placeholder="충전소, 충전기, 장애명 검색" />
-            <button type="button" onClick={() => loadFaults(filters)}>조회</button>
+          </label>
+          <label>
+            접수 시작일
+            <input type="date" name="reportedFrom" value={filters.reportedFrom} onChange={changeFilter} />
+          </label>
+          <label>
+            접수 종료일
+            <input type="date" name="reportedTo" value={filters.reportedTo} onChange={changeFilter} />
+          </label>
+          <label>
+            완료 시작일
+            <input type="date" name="resolvedFrom" value={filters.resolvedFrom} onChange={changeFilter} />
+          </label>
+          <label>
+            완료 종료일
+            <input type="date" name="resolvedTo" value={filters.resolvedTo} onChange={changeFilter} />
+          </label>
+          <label className="search-wide">
+            검색어
+            <input name="keyword" value={filters.keyword} onChange={changeFilter} placeholder="충전소, 충전기, 장애명, 장애번호 검색" />
+          </label>
+          <div className="search-button-row">
+            <button type="button" onClick={() => loadFaults(1, filters)}>조회</button>
+            <button type="button" className="line" onClick={resetFilters}>초기화</button>
           </div>
         </div>
 
@@ -567,9 +671,9 @@ const FaultPage = () => {
               <div className="admin-work-main">
                 <div>
                   <div className="fault-badge-row">
-                    <em className={`admin-badge ${getBadgeClass(fault.severity)}`}>{fault.severity}</em>
                     <em className={`admin-badge ${getBadgeClass(fault.sourceType)}`}>{fault.sourceType}</em>
                     <em className={`admin-badge ${getBadgeClass(fault.chargerStatus)}`}>충전기 {fault.chargerStatus}</em>
+                    <em className={`admin-badge ${getBadgeClass(fault.status)}`}>{fault.status}</em>
                   </div>
                   <h3>{fault.title}</h3>
                   <p>{fault.stationName} · {fault.chargerName} · {fault.connectorType}</p>
@@ -581,6 +685,8 @@ const FaultPage = () => {
                 <span>점검자 <b>{fault.assignedEmployeeName || "미배정"}</b></span>
                 <span>점검결과 <b>{fault.latestInspectionResult || "미진행"}</b></span>
                 <span>조치상태 <b>{fault.latestActionStatus || "-"}</b></span>
+                <span>접수일 <b>{fault.reportedAtText || formatDate(fault.reportedAt)}</b></span>
+                <span>완료일 <b>{fault.resolvedAtText || formatDate(fault.resolvedAt)}</b></span>
                 <span>장애번호 <b>#{fault.faultId}</b></span>
                 {fault.approvalDocumentId && <span>결재문서 <b>APR-{String(fault.approvalDocumentId).padStart(6, "0")}</b></span>}
               </div>
@@ -599,7 +705,8 @@ const FaultPage = () => {
               )}
 
               <div className="admin-action-row right">
-                <button type="button" onClick={() => setAssignFault(fault)}>담당자 배정</button>
+                {canAssign(fault) && <button type="button" onClick={() => setAssignFault(fault)}>담당자 배정</button>}
+                {canCancel(fault) && <button type="button" className="line" onClick={() => cancelFault(fault)}>접수취소</button>}
                 <button type="button" disabled={!canStartInspection(fault)} onClick={() => startInspection(fault)}>점검 시작</button>
                 <button type="button" disabled={!canCompleteAction(fault)} onClick={() => setActionModal({ fault, progress: 0, phase: "progress" })}>조치 진행</button>
                 <button
@@ -614,6 +721,23 @@ const FaultPage = () => {
             </article>
           ))}
         </div>
+
+        {pageInfo.totalPages > 1 && (
+          <div className="admin-pagination">
+            <button type="button" onClick={() => movePage(pageInfo.page - 1)} disabled={pageInfo.page <= 1}>이전</button>
+            {Array.from({ length: pageInfo.totalPages }, (_, index) => index + 1).map((pageNo) => (
+              <button
+                type="button"
+                key={pageNo}
+                className={pageNo === pageInfo.page ? "active" : ""}
+                onClick={() => movePage(pageNo)}
+              >
+                {pageNo}
+              </button>
+            ))}
+            <button type="button" onClick={() => movePage(pageInfo.page + 1)} disabled={pageInfo.page >= pageInfo.totalPages}>다음</button>
+          </div>
+        )}
       </div>
 
       {assignFault && (
@@ -653,7 +777,7 @@ const FaultPage = () => {
       {actionModal && (
         <ProgressModal
           title={actionModal.phase === "progress" ? "조치 진행 중" : "조치 완료 확인"}
-          description="시설관리담당자가 수리 작업을 진행하고 충전 테스트를 확인하고 있습니다."
+          description="수리 작업과 충전기 상태 복구를 진행하고 있습니다."
           progress={actionModal.progress}
           onClose={() => setActionModal(null)}
         >

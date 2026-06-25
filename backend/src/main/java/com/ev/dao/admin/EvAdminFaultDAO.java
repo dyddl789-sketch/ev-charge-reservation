@@ -1,6 +1,7 @@
 package com.ev.dao.admin;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -8,6 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import com.ev.dto.admin.employee.EvAdminEmployeeDTO;
 import com.ev.dto.admin.fault.EvAdminFaultDTO;
 import com.ev.dto.admin.fault.EvAdminFaultHistoryDTO;
+import com.ev.dto.admin.fault.EvAdminFaultSearchDTO;
 
 /*
  * 관리자 장애·점검 DAO
@@ -15,9 +17,11 @@ import com.ev.dto.admin.fault.EvAdminFaultHistoryDTO;
 @Mapper
 public interface EvAdminFaultDAO {
 
-    List<EvAdminFaultDTO> findFaultList(@Param("status") String status,
-                                        @Param("severity") String severity,
-                                        @Param("keyword") String keyword);
+    List<EvAdminFaultDTO> findFaultList(EvAdminFaultSearchDTO searchDTO);
+
+    int countFaultList(EvAdminFaultSearchDTO searchDTO);
+
+    Map<String, Object> countFaultSummary(EvAdminFaultSearchDTO searchDTO);
 
     EvAdminFaultDTO findFaultDetail(@Param("faultId") Long faultId);
 
@@ -26,6 +30,8 @@ public interface EvAdminFaultDAO {
     List<EvAdminEmployeeDTO> findEngineerList();
 
     Long findEmployeeIdByMemberId(@Param("memberId") Long memberId);
+
+    String findUserTypeByMemberId(@Param("memberId") Long memberId);
 
     String findFaultStatus(@Param("faultId") Long faultId);
 

@@ -694,3 +694,19 @@
     margin-left: 0;
   }
 }
+
+/* 민원 처리 결과 표시 */
+.detail-content.result {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.detail-content.result h3 {
+  color: #15803d;
+}
+
+.linked-fault-text {
+  margin-top: 10px !important;
+  color: #2563eb !important;
+  font-weight: 900 !important;
+}

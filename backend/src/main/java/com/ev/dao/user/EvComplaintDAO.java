@@ -26,6 +26,12 @@ public interface EvComplaintDAO {
     // 관리자 민원 목록 조회
     List<EvComplaintDTO> findAdminComplaintList(EvComplaintSearchDTO searchDTO);
 
+    // 관리자 민원 목록 총 개수
+    int countAdminComplaintList(EvComplaintSearchDTO searchDTO);
+
+    // 관리자 민원 요약 카운트
+    java.util.Map<String, Object> countAdminComplaintSummary(EvComplaintSearchDTO searchDTO);
+
     // 관리자 민원 상세 조회
     EvComplaintDTO findAdminComplaintDetail(Long complaintId);
 
@@ -43,6 +49,26 @@ public interface EvComplaintDAO {
                                @Param("assignedDepartmentId") Long assignedDepartmentId,
                                @Param("assignedEmployeeId") Long assignedEmployeeId);
 
+    // 민원 답변 저장 및 완료 처리
+    void updateComplaintAnswer(@Param("complaintId") Long complaintId,
+                               @Param("answerContent") String answerContent);
+
+    // 민원 기반 장애 접수 전 중복 확인
+    int countFaultByComplaintId(@Param("complaintId") Long complaintId);
+
+    // 민원 기반 장애 접수
+    void insertFaultFromComplaint(@Param("complaintId") Long complaintId,
+                                  @Param("faultType") String faultType,
+                                  @Param("title") String title,
+                                  @Param("description") String description);
+
+    // 민원에 연결된 충전기 상태 변경
+    void updateChargerStatusByComplaintId(@Param("complaintId") Long complaintId,
+                                          @Param("status") String status);
+
+    // 장애 접수 후 연결 장애 번호 조회
+    Long findFaultIdByComplaintId(@Param("complaintId") Long complaintId);
+
     // 민원 처리 이력 저장
     void insertComplaintHistory(@Param("complaintId") Long complaintId,
                                 @Param("employeeId") Long employeeId,
@@ -53,4 +79,7 @@ public interface EvComplaintDAO {
 
     // 관리자 회원의 employee_id 조회
     Long findEmployeeIdByMemberId(Long memberId);
+
+    // 관리자 회원의 권한 조회
+    String findUserTypeByMemberId(Long memberId);
 }
