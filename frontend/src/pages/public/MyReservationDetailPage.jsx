@@ -54,12 +54,12 @@ const MyReservationDetailPage = () => {
 
   const verifyWindowText = useMemo(() => {
     if (!reservation?.startTime) {
-      return "예약 시작 10분 전부터 시작 후 10분까지 인증할 수 있습니다.";
+      return "예약 시작 5분 전부터 시작 후 5분까지 인증할 수 있습니다.";
     }
 
     const start = new Date(reservation.startTime);
-    const from = new Date(start.getTime() - 10 * 60 * 1000);
-    const to = new Date(start.getTime() + 10 * 60 * 1000);
+    const from = new Date(start.getTime() - 5 * 60 * 1000);
+    const to = new Date(start.getTime() + 5 * 60 * 1000);
 
     return `${formatDateTime(from)} ~ ${formatDateTime(to)}`;
   }, [reservation]);

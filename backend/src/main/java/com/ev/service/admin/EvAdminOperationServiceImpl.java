@@ -109,8 +109,20 @@ public class EvAdminOperationServiceImpl implements EvAdminOperationService {
 
         int updateCount = evAdminOperationDAO.updateChargerStatus(target.getChargerId(), "고장");
 
+        int openFaultCount = evAdminOperationDAO.countOpenFaultByCharger(target.getChargerId());
+        if (openFaultCount == 0) {
+            evAdminOperationDAO.insertSystemFaultFromCharger(
+                    target.getChargerId(),
+                    "통신장애",
+                    target.getStationName() + " " + target.getChargerName() + " 장애 감지",
+                    "시스템 시뮬레이션으로 충전기 이상 상태가 감지되었습니다.",
+                    "HIGH",
+                    "시스템감지"
+            );
+        }
+
         resultDTO.setSuccess(updateCount > 0);
-        resultDTO.setMessage("부산 지역 장애 시뮬레이션이 발생했습니다. 사용가능 충전기 1대가 고장 상태로 변경되었습니다.");
+        resultDTO.setMessage("부산 지역 장애 시뮬레이션이 발생했습니다. 충전기 1대가 고장 상태로 변경되고 장애점검관리에 등록되었습니다.");
         resultDTO.setUpdateCount(updateCount);
         resultDTO.setChargerId(target.getChargerId());
         resultDTO.setStationId(target.getStationId());

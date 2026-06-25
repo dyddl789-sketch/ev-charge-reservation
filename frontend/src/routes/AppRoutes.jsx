@@ -49,6 +49,7 @@ import StatisticsPage from "../pages/admin/StatisticsPage";
 import SalesStatPage from "../pages/admin/SalesStatPage";
 import UsageStatPage from "../pages/admin/UsageStatPage";
 import SystemPage from "../pages/admin/SystemPage";
+import AdminProfilePage from "../pages/admin/AdminProfilePage";
 
 const AppRoutes = () => {
   console.log("AppRoutes 렌더링");
@@ -120,6 +121,7 @@ const AppRoutes = () => {
           <Route path="statistics" element={<StatisticsPage />} />
           <Route path="statistics/usage" element={<UsageStatPage />} />
           <Route path="statistics/sales" element={<SalesStatPage />} />
+          <Route path="profile" element={<AdminProfilePage />} />
           <Route path="system" element={<SystemPage />} />
         </Route>
 

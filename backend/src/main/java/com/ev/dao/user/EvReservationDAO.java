@@ -114,7 +114,7 @@ public interface EvReservationDAO {
      * 조건:
      * - 본인 예약
      * - 예약완료 상태
-     * - 예약 시작 10분 전부터 종료 시간 사이
+     * - 예약 시작 5분 전부터 예약 시작 5분 후 사이
      */
     EvReservationDTO findVerifiableReservation(
             @Param("reservationId") Long reservationId,

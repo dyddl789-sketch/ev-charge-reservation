@@ -34,6 +34,57 @@ public class EvReservationServiceImpl implements EvReservationService {
     private static final long MAX_VERIFY_ATTEMPT = 5L;
 
     /*
+     * 예약 선점/중복 체크 여유 시간
+     * 예약 종료 예상 시간 이후 5분까지 같은 충전기 시간대를 막는다.
+     */
+    private static final long RESERVATION_SLOT_BUFFER_MINUTES = 5L;
+
+    /*
+     * 예약 가능한 충전소/충전기 상태인지 공통으로 확인한다.
+     *
+     * 기준:
+     * - 충전소는 운영중이어야 한다.
+     * - 충전기는 사용가능이어야 한다.
+     *
+     * 점검중/고장/운영중지 상태는 프론트에서 버튼을 막더라도
+     * 백엔드에서 한 번 더 차단해야 안전하다.
+     */
+    private boolean isReservableStationAndCharger(EvReservationChargerDTO charger) {
+        if (charger == null) {
+            return false;
+        }
+
+        boolean stationOpen = "운영중".equals(charger.getStationStatus());
+        boolean chargerAvailable = "사용가능".equals(charger.getChargerStatus());
+
+        log.info("@# stationStatus => {}", charger.getStationStatus());
+        log.info("@# chargerStatus => {}", charger.getChargerStatus());
+        log.info("@# reservable => {}", stationOpen && chargerAvailable);
+
+        return stationOpen && chargerAvailable;
+    }
+
+    private String buildNotReservableMessage(EvReservationChargerDTO charger) {
+        if (charger == null) {
+            return "선택한 충전기 정보를 찾을 수 없습니다.";
+        }
+
+        if (!"운영중".equals(charger.getStationStatus())) {
+            return "현재 운영중인 충전소가 아니므로 예약할 수 없습니다.";
+        }
+
+        if ("점검중".equals(charger.getChargerStatus())) {
+            return "현재 점검중인 충전기입니다. 다른 충전기를 선택해 주세요.";
+        }
+
+        if ("고장".equals(charger.getChargerStatus())) {
+            return "현재 고장 상태인 충전기입니다. 다른 충전기를 선택해 주세요.";
+        }
+
+        return "현재 예약 가능한 충전기가 아닙니다.";
+    }
+
+    /*
      * 예약 폼에서 보여줄 충전기 정보 조회
      */
     @Override
@@ -77,7 +128,7 @@ public class EvReservationServiceImpl implements EvReservationService {
      *
      * 중요:
      * - 인증코드는 예약 생성 즉시 DB와 Redis에 저장한다.
-     * - 실제 인증은 예약 시작 10분 전부터 예약 시작 10분 후까지만 허용한다.
+     * - 실제 인증은 예약 시작 5분 전부터 예약 시작 5분 후까지만 허용한다.
      */
     @Override
     @Transactional
@@ -167,35 +218,40 @@ public class EvReservationServiceImpl implements EvReservationService {
             throw new IllegalArgumentException("선택한 충전기 정보를 찾을 수 없습니다.");
         }
 
-        if (!"사용가능".equals(charger.getChargerStatus())) {
-            throw new IllegalArgumentException("현재 예약 가능한 충전기가 아닙니다.");
+        if (!isReservableStationAndCharger(charger)) {
+            throw new IllegalArgumentException(buildNotReservableMessage(charger));
         }
 
         /*
-         * 4. Redis 임시 점유 소유자 확인
+         * 4. Redis 시간 구간 임시 선점 소유자 확인
          *
-         * 예약 폼에서 내가 실제로 선택 중인 충전기만 예약할 수 있게 한다.
-         * TTL이 만료되었거나, 다른 사용자가 먼저 선점한 경우 예약을 막는다.
+         * 선점 기준:
+         * - 충전기 + 예약 시작 시간 + 예상 종료 시간(+5분)
+         * - 충전기 전체가 아니라 선택한 시간 구간만 선점한다.
          */
+        LocalDateTime holdEndTime = reservationDTO.getEndTime().plusMinutes(RESERVATION_SLOT_BUFFER_MINUTES);
+
         boolean holdOwner =
-                evChargerRedisService.isReservationHoldOwner(
+                evChargerRedisService.isReservationTimeSlotHoldOwner(
                         reservationDTO.getChargerId(),
-                        reservationDTO.getMemberId()
+                        reservationDTO.getMemberId(),
+                        reservationDTO.getStartTime(),
+                        holdEndTime
                 );
 
         if (!holdOwner) {
-            throw new IllegalArgumentException("충전기 선택 시간이 만료되었습니다. 충전기를 다시 선택해주세요.");
+            throw new IllegalArgumentException("선택한 시간대의 임시 선점 시간이 만료되었습니다. 예약 가능 여부를 다시 확인해 주세요.");
         }
 
         /*
          * 5. 충전기 예약 시간 중복 체크
          *
-         * 같은 충전기에 같은 시간대 예약이 이미 있으면 예약할 수 없다.
+         * 같은 충전기의 기존 예약 종료 시간 + 5분까지는 겹치는 예약으로 본다.
          */
         int overlapCount = reservationDAO.countReservationOverlap(
                 reservationDTO.getChargerId(),
                 reservationDTO.getStartTime(),
-                reservationDTO.getEndTime()
+                holdEndTime
         );
 
         if (overlapCount > 0) {
@@ -211,7 +267,7 @@ public class EvReservationServiceImpl implements EvReservationService {
         int vehicleOverlapCount = reservationDAO.countVehicleReservationOverlap(
                 reservationDTO.getVehicleId(),
                 reservationDTO.getStartTime(),
-                reservationDTO.getEndTime()
+                holdEndTime
         );
 
         if (vehicleOverlapCount > 0) {
@@ -254,7 +310,7 @@ public class EvReservationServiceImpl implements EvReservationService {
         /*
          * 인증코드는 예약 완료 즉시 생성한다.
          * 사용자는 내 예약 상세에서 언제든 확인할 수 있지만,
-         * 실제 인증은 예약 시작 10분 전 ~ 예약 시작 10분 후까지만 가능하다.
+         * 실제 인증은 예약 시작 5분 전 ~ 예약 시작 5분 후까지만 가능하다.
          */
 
         /*
@@ -262,7 +318,7 @@ public class EvReservationServiceImpl implements EvReservationService {
          */
         reservationDAO.insertReservation(reservationDTO);
 
-        LocalDateTime authCodeExpiresAt = reservationDTO.getStartTime().plusMinutes(10);
+        LocalDateTime authCodeExpiresAt = reservationDTO.getStartTime().plusMinutes(5);
         String authCode = evChargerRedisService.generateReservationAuthCode(
                 reservationDTO.getReservationId(),
                 reservationDTO.getChargerId(),
@@ -289,6 +345,7 @@ public class EvReservationServiceImpl implements EvReservationService {
          * "선택중" Redis key는 유지할 필요가 없다.
          * 이후 화면 상태는 DB 예약 상태를 기준으로 "예약중"으로 판단한다.
          */
+        evChargerRedisService.releaseAllReservationTimeSlotHolds(reservationDTO.getMemberId());
         evChargerRedisService.releaseChargerReservationHold(
                 reservationDTO.getChargerId(),
                 reservationDTO.getMemberId()
@@ -394,7 +451,7 @@ public class EvReservationServiceImpl implements EvReservationService {
             return reservation.getAuthCode();
         }
 
-        LocalDateTime authCodeExpiresAt = reservation.getStartTime().plusMinutes(10);
+        LocalDateTime authCodeExpiresAt = reservation.getStartTime().plusMinutes(5);
         String authCode = evChargerRedisService.generateReservationAuthCode(
                 reservationId,
                 reservation.getChargerId(),
@@ -783,16 +840,16 @@ public class EvReservationServiceImpl implements EvReservationService {
 
         for (EvReservationChargerDTO charger : chargerList) {
             boolean statusAvailable =
-                    "사용가능".equals(charger.getChargerStatus());
+                    isReservableStationAndCharger(charger);
 
-            boolean selectedByOther =
-                    evChargerRedisService.isReservationSelectedByOther(
-                            charger.getChargerId(),
-                            memberId
-                    );
+            /*
+             * 시간 구간 기반 선점으로 변경되었기 때문에
+             * 단순 충전소 진입 목록에서는 Redis 선점 여부를 표시하지 않는다.
+             * 선택 날짜/시간이 정해진 뒤 getChargerStatus()에서 다시 판단한다.
+             */
+            boolean selectedByOther = false;
 
-            boolean selectable =
-                    statusAvailable && !selectedByOther;
+            boolean selectable = statusAvailable;
 
             charger.setSelectedByOther(selectedByOther);
             charger.setSelectable(selectable);
@@ -834,8 +891,8 @@ public class EvReservationServiceImpl implements EvReservationService {
             throw new IllegalArgumentException("존재하지 않는 충전기입니다.");
         }
 
-        if (!"사용가능".equals(nextCharger.getChargerStatus())) {
-            throw new IllegalArgumentException("현재 선택할 수 없는 충전기입니다.");
+        if (!isReservableStationAndCharger(nextCharger)) {
+            throw new IllegalArgumentException(buildNotReservableMessage(nextCharger));
         }
 
         boolean holdSuccess =
@@ -856,6 +913,12 @@ public class EvReservationServiceImpl implements EvReservationService {
         log.info("@# oldChargerId => {}", oldChargerId);
         log.info("@# newChargerId => {}", newChargerId);
         log.info("@# memberId => {}", memberId);
+
+        EvReservationChargerDTO nextCharger = reservationDAO.findReservationChargerById(newChargerId);
+
+        if (!isReservableStationAndCharger(nextCharger)) {
+            throw new IllegalArgumentException(buildNotReservableMessage(nextCharger));
+        }
 
         return evChargerRedisService.changeReservationHold(
                 oldChargerId,
@@ -907,6 +970,7 @@ public class EvReservationServiceImpl implements EvReservationService {
 
         LocalDateTime startDateTime = LocalDateTime.parse(reservationDate + "T" + startTime);
         LocalDateTime endDateTime = startDateTime.plusMinutes(estimatedMinutes);
+        LocalDateTime holdEndDateTime = endDateTime.plusMinutes(RESERVATION_SLOT_BUFFER_MINUTES);
 
         /*
          * 1. DB 기준 충전기 상태 조회
@@ -917,7 +981,7 @@ public class EvReservationServiceImpl implements EvReservationService {
          * - 그 외: 사용가능
          */
         List<EvChargerDTO> chargerList =
-                reservationDAO.getChargerStatus(stationId, startDateTime, endDateTime);
+                reservationDAO.getChargerStatus(stationId, startDateTime, holdEndDateTime);
 
         /*
          * 2. Redis 기준 다른 사용자 임시 선점 상태 반영
@@ -928,9 +992,11 @@ public class EvReservationServiceImpl implements EvReservationService {
          */
         for (EvChargerDTO charger : chargerList) {
             boolean selectedByOther =
-                    evChargerRedisService.isReservationSelectedByOther(
+                    evChargerRedisService.isReservationTimeSlotSelectedByOther(
                             charger.getChargerId(),
-                            memberId
+                            memberId,
+                            startDateTime,
+                            holdEndDateTime
                     );
 
             /*
@@ -938,12 +1004,10 @@ public class EvReservationServiceImpl implements EvReservationService {
              * Redis 선점은 아직 예약 등록 전의 임시 상태이므로
              * 실제 예약/충전 상태보다 우선하면 안 된다.
              */
-            boolean occupiedByReservation =
-                    "사용중".equals(charger.getStatus())
-                    || "예약중".equals(charger.getStatus());
+            boolean unavailableByDbStatus = !"사용가능".equals(charger.getStatus());
 
-            if (selectedByOther && !occupiedByReservation) {
-                charger.setStatus("선택중");
+            if (selectedByOther && !unavailableByDbStatus) {
+                charger.setStatus("선점중");
                 charger.setReserved(true);
                 charger.setSelectedByOther(true);
             }
@@ -955,6 +1019,83 @@ public class EvReservationServiceImpl implements EvReservationService {
         }
 
         return chargerList;
+    }
+
+
+
+    @Override
+    public boolean holdReservationTimeSlot(Long chargerId,
+                                           Long memberId,
+                                           String reservationDate,
+                                           String startTime,
+                                           int estimatedMinutes) {
+        log.info("@# EvReservationServiceImpl.holdReservationTimeSlot()");
+        log.info("@# chargerId => {}", chargerId);
+        log.info("@# memberId => {}", memberId);
+        log.info("@# reservationDate => {}", reservationDate);
+        log.info("@# startTime => {}", startTime);
+        log.info("@# estimatedMinutes => {}", estimatedMinutes);
+
+        if (chargerId == null || memberId == null || reservationDate == null || startTime == null || estimatedMinutes <= 0) {
+            throw new IllegalArgumentException("예약 선점에 필요한 정보가 부족합니다.");
+        }
+
+        EvReservationChargerDTO charger = reservationDAO.findReservationChargerById(chargerId);
+
+        if (!isReservableStationAndCharger(charger)) {
+            throw new IllegalArgumentException(buildNotReservableMessage(charger));
+        }
+
+        LocalDateTime startDateTime = LocalDateTime.parse(reservationDate + "T" + startTime);
+        LocalDateTime endDateTime = startDateTime.plusMinutes(estimatedMinutes);
+        LocalDateTime holdEndDateTime = endDateTime.plusMinutes(RESERVATION_SLOT_BUFFER_MINUTES);
+
+        if (startDateTime.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("현재 시간보다 이전 시간으로 예약할 수 없습니다.");
+        }
+
+        int overlapCount = reservationDAO.countReservationOverlap(chargerId, startDateTime, holdEndDateTime);
+
+        if (overlapCount > 0) {
+            log.info("@# holdReservationTimeSlot overlapCount => {}", overlapCount);
+            return false;
+        }
+
+        return evChargerRedisService.holdReservationTimeSlot(
+                chargerId,
+                memberId,
+                startDateTime,
+                holdEndDateTime
+        );
+    }
+
+    @Override
+    public void releaseReservationTimeSlotHold(Long chargerId,
+                                               Long memberId,
+                                               String reservationDate,
+                                               String startTime,
+                                               int estimatedMinutes) {
+        log.info("@# EvReservationServiceImpl.releaseReservationTimeSlotHold()");
+        log.info("@# chargerId => {}", chargerId);
+        log.info("@# memberId => {}", memberId);
+        log.info("@# reservationDate => {}", reservationDate);
+        log.info("@# startTime => {}", startTime);
+        log.info("@# estimatedMinutes => {}", estimatedMinutes);
+
+        if (chargerId == null || memberId == null || reservationDate == null || startTime == null || estimatedMinutes <= 0) {
+            return;
+        }
+
+        LocalDateTime startDateTime = LocalDateTime.parse(reservationDate + "T" + startTime);
+        LocalDateTime endDateTime = startDateTime.plusMinutes(estimatedMinutes);
+        LocalDateTime holdEndDateTime = endDateTime.plusMinutes(RESERVATION_SLOT_BUFFER_MINUTES);
+
+        evChargerRedisService.releaseReservationTimeSlotHold(
+                chargerId,
+                memberId,
+                startDateTime,
+                holdEndDateTime
+        );
     }
 
 }

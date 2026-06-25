@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import * as adminApi from '../../apis/adminApi';
 import { getCreatableRoles, getRole } from '../../utils/adminRoleUtils';
+import {
+  filterMisDepartments,
+  findMappingByPosition,
+  getFirstAvailableDepartment,
+  getRoleOptionsByDepartment,
+} from '../../utils/adminEmployeeRoleMapping';
 
 const initialForm = {
   userId: '',
@@ -11,14 +17,12 @@ const initialForm = {
   phone: '',
   employeeNo: '',
   departmentId: '',
-  positionName: '운영담당자',
-  dutyName: '민원 및 예약 운영',
-  userType: 'OPERATOR',
+  positionName: '',
+  dutyName: '',
+  userType: '',
   status: 'ACTIVE',
   hiredAt: '',
 };
-
-const positionOptions = ['운영담당자', '시설관리담당자', '운영관리자', '기관장'];
 
 const EmployeeRegisterPage = () => {
   console.log('EmployeeRegisterPage 렌더링');
@@ -32,6 +36,14 @@ const EmployeeRegisterPage = () => {
   const [departmentList, setDepartmentList] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const roleOptions = useMemo(() => {
+    return getRoleOptionsByDepartment(departmentList, form.departmentId, creatableRoles);
+  }, [departmentList, form.departmentId, creatableRoles]);
+
+  const selectedRoleOption = useMemo(() => {
+    return findMappingByPosition(departmentList, form.departmentId, form.positionName, creatableRoles);
+  }, [departmentList, form.departmentId, form.positionName, creatableRoles]);
+
   useEffect(() => {
     const loadDepartments = async () => {
       console.log('직원 등록 부서 목록 조회');
@@ -39,12 +51,19 @@ const EmployeeRegisterPage = () => {
       try {
         const response = await adminApi.departments();
         console.log('직원 등록 부서 목록 응답', response.data);
-        const nextDepartments = response.data || [];
+        const nextDepartments = filterMisDepartments(response.data || []);
+        const firstDepartment = getFirstAvailableDepartment(nextDepartments, creatableRoles);
+        const firstRoleOption = firstDepartment
+          ? getRoleOptionsByDepartment(nextDepartments, firstDepartment.departmentId, creatableRoles)[0]
+          : null;
+
         setDepartmentList(nextDepartments);
         setForm((prev) => ({
           ...prev,
-          departmentId: prev.departmentId || String(nextDepartments[0]?.departmentId || ''),
-          userType: creatableRoles[0]?.value || 'OPERATOR',
+          departmentId: prev.departmentId || String(firstDepartment?.departmentId || ''),
+          positionName: prev.positionName || firstRoleOption?.positionName || '',
+          dutyName: prev.dutyName || firstRoleOption?.dutyName || '',
+          userType: prev.userType || firstRoleOption?.userType || '',
         }));
       } catch (error) {
         console.log('부서 목록 조회 실패', error);
@@ -59,6 +78,31 @@ const EmployeeRegisterPage = () => {
     const { name, value } = e.target;
     console.log('직원 등록 입력 변경', name, value);
 
+    if (name === 'departmentId') {
+      const firstRoleOption = getRoleOptionsByDepartment(departmentList, value, creatableRoles)[0];
+
+      setForm({
+        ...form,
+        departmentId: value,
+        positionName: firstRoleOption?.positionName || '',
+        dutyName: firstRoleOption?.dutyName || '',
+        userType: firstRoleOption?.userType || '',
+      });
+      return;
+    }
+
+    if (name === 'positionName') {
+      const nextRoleOption = findMappingByPosition(departmentList, form.departmentId, value, creatableRoles);
+
+      setForm({
+        ...form,
+        positionName: value,
+        dutyName: nextRoleOption?.dutyName || form.dutyName,
+        userType: nextRoleOption?.userType || form.userType,
+      });
+      return;
+    }
+
     setForm({
       ...form,
       [name]: value,
@@ -67,15 +111,20 @@ const EmployeeRegisterPage = () => {
 
   const submitEmployee = async (e) => {
     e.preventDefault();
-    console.log('직원 등록 제출', form);
+    console.log('직원 등록 제출', form, selectedRoleOption);
 
     if (creatableRoles.length === 0) {
       alert('직원 등록 권한이 없습니다.');
       return;
     }
 
-    if (!form.userId || !form.password || !form.memberName || !form.employeeNo || !form.departmentId) {
-      alert('아이디, 초기 비밀번호, 이름, 사번, 부서는 필수입니다.');
+    if (!form.userId || !form.password || !form.memberName || !form.employeeNo || !form.departmentId || !form.positionName) {
+      alert('아이디, 초기 비밀번호, 이름, 사번, 부서, 직책/업무역할은 필수입니다.');
+      return;
+    }
+
+    if (!selectedRoleOption) {
+      alert('부서와 직책/업무역할 조합을 확인해 주세요.');
       return;
     }
 
@@ -84,6 +133,9 @@ const EmployeeRegisterPage = () => {
       const response = await adminApi.registerEmployee({
         ...form,
         departmentId: Number(form.departmentId),
+        positionName: selectedRoleOption.positionName,
+        dutyName: form.dutyName || selectedRoleOption.dutyName,
+        userType: selectedRoleOption.userType,
         email: form.email || `${form.userId}@ev-mis.go.kr`,
       });
       console.log('직원 등록 응답', response.data);
@@ -103,7 +155,7 @@ const EmployeeRegisterPage = () => {
         <div>
           <p>인사관리</p>
           <h1>직원 등록</h1>
-          <span>직원 계정과 직원 정보를 DB에 함께 생성합니다. MANAGER는 OPERATOR/ENGINEER만 등록할 수 있습니다.</span>
+          <span>부서를 선택하면 직책/업무역할과 시스템 권한이 자동으로 연결됩니다.</span>
         </div>
       </div>
 
@@ -158,10 +210,10 @@ const EmployeeRegisterPage = () => {
             </label>
 
             <label>
-              직급/역할명
-              <select name="positionName" value={form.positionName} onChange={changeValue}>
-                {positionOptions.map((position) => (
-                  <option key={position} value={position}>{position}</option>
+              직책/업무역할 <b>*</b>
+              <select name="positionName" value={form.positionName} onChange={changeValue} disabled={roleOptions.length === 0}>
+                {roleOptions.map((option) => (
+                  <option key={option.userType} value={option.positionName}>{option.positionName}</option>
                 ))}
               </select>
             </label>
@@ -177,12 +229,8 @@ const EmployeeRegisterPage = () => {
             </label>
 
             <label className="full">
-              권한
-              <select name="userType" value={form.userType} onChange={changeValue} disabled={creatableRoles.length === 0}>
-                {creatableRoles.map((role) => (
-                  <option key={role.value} value={role.value}>{role.label}</option>
-                ))}
-              </select>
+              시스템 권한
+              <input type="text" value={selectedRoleOption ? `${selectedRoleOption.userType} - ${selectedRoleOption.positionName}` : ''} readOnly />
             </label>
 
             <div className="admin-action-row right full">
@@ -199,21 +247,21 @@ const EmployeeRegisterPage = () => {
         <article className="admin-panel">
           <div className="admin-panel-title">
             <div>
-              <strong>권한별 등록 기준</strong>
-              <p>본인보다 높은 권한을 생성하거나 수정할 수 없도록 제한합니다.</p>
+              <strong>부서·직책·권한 매핑</strong>
+              <p>직원이 담당하는 업무에 따라 시스템 권한을 자동 부여합니다.</p>
             </div>
           </div>
 
           <div className="admin-guide-list">
-            <p><b>ADMIN</b> 모든 직원과 권한을 등록/수정할 수 있습니다.</p>
-            <p><b>MANAGER</b> OPERATOR, ENGINEER만 등록/수정할 수 있습니다.</p>
-            <p><b>OPERATOR</b> 직원 등록과 권한 변경은 불가능합니다.</p>
-            <p><b>ENGINEER</b> 직원 등록과 권한 변경은 불가능합니다.</p>
+            <p><b>운영관리팀</b> 운영담당자(OPERATOR), 운영관리자(MANAGER)</p>
+            <p><b>시설관리팀</b> 시설관리담당자(ENGINEER)</p>
+            <p><b>시스템관리팀</b> 기관장(ADMIN)</p>
+            <p>경영관리팀은 현재 프로젝트 업무 흐름에서 사용하지 않아 선택 목록에서 제외했습니다.</p>
           </div>
 
           <div className="admin-role-grid compact">
-            <article className="admin-role-card"><span>ADMIN</span><strong>최고관리자</strong><p>전체 권한, 시뮬레이션 초기화</p></article>
-            <article className="admin-role-card"><span>MANAGER</span><strong>운영관리자</strong><p>운영 담당자/시설 담당자 등록</p></article>
+            <article className="admin-role-card"><span>ADMIN</span><strong>기관장</strong><p>최종 결재, 전체 권한 관리</p></article>
+            <article className="admin-role-card"><span>MANAGER</span><strong>운영관리자</strong><p>담당자 배정, 1차 결재</p></article>
             <article className="admin-role-card"><span>OPERATOR</span><strong>운영담당자</strong><p>민원, 예약 운영</p></article>
             <article className="admin-role-card"><span>ENGINEER</span><strong>시설관리</strong><p>장애, 점검 업무</p></article>
           </div>

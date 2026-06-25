@@ -130,3 +130,69 @@ on conflict (member_id) do update set
     , updated_at = current_timestamp;
 
 select 'MIS 권한/직원 시연용 계정 적용 완료' as result_message;
+
+
+insert into employee (
+      member_id
+    , department_id
+    , employee_no
+    , position_name
+    , duty_name
+    , status
+    , hired_at
+    , created_at
+    , updated_at
+)
+select
+      m.member_id
+    , case
+          when m.user_id = 'manager' then (select department_id from department where department_code = 'OPS')
+          when m.user_id = 'operator' then (select department_id from department where department_code = 'OPS')
+          when m.user_id = 'engineer' then (select department_id from department where department_code = 'FACILITY')
+      end as department_id
+    , case
+          when m.user_id = 'manager' then 'EMP-MANAGER-001'
+          when m.user_id = 'operator' then 'EMP-OPERATOR-001'
+          when m.user_id = 'engineer' then 'EMP-ENGINEER-001'
+      end as employee_no
+    , case
+          when m.user_id = 'manager' then '운영관리자'
+          when m.user_id = 'operator' then '운영담당자'
+          when m.user_id = 'engineer' then '시설관리담당자'
+      end as position_name
+    , case
+          when m.user_id = 'manager' then '운영 업무 배정 및 1차 승인'
+          when m.user_id = 'operator' then '민원 및 예약 운영'
+          when m.user_id = 'engineer' then '충전기 장애 및 점검 처리'
+      end as duty_name
+    , 'ACTIVE'
+    , current_date
+    , current_timestamp
+    , current_timestamp
+from app_member m
+where m.user_id in ('manager', 'operator', 'engineer')
+  and not exists (
+      select 1
+      from employee e
+      where e.member_id = m.member_id
+  );
+  
+  
+  --확인용
+  select
+      e.employee_id
+    , m.user_id
+    , m.member_name
+    , m.user_type
+    , m.status as member_status
+    , e.status as employee_status
+    , d.department_code
+    , d.department_name
+from employee e
+join app_member m
+    on e.member_id = m.member_id
+join department d
+    on e.department_id = d.department_id
+where e.status = 'ACTIVE'
+  and m.status = 'ACTIVE'
+  and m.user_type = 'ENGINEER';

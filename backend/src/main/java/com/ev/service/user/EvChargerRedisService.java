@@ -21,7 +21,7 @@ public interface EvChargerRedisService {
 
     /*
      * 예약별 인증코드 생성
-     * 예약 생성 시점에 코드를 만들고, 예약 시작 + 10분까지 Redis TTL을 유지한다.
+     * 예약 생성 시점에 코드를 만들고, 예약 시작 + 5분까지 Redis TTL을 유지한다.
      */
     String generateReservationAuthCode(Long reservationId, Long chargerId, java.time.LocalDateTime expiresAt);
 
@@ -125,4 +125,24 @@ public interface EvChargerRedisService {
      * 새 충전기 key를 Redis에 선점한다.
      */
     boolean changeReservationHold(Long oldChargerId, Long newChargerId, Long memberId);
+
+    /*
+     * 예약 입력 중 선택 시간 구간 임시 선점
+     *
+     * 선점 기준:
+     * - 충전기 + 예약 시작 시간 + 예상 종료 시간(+5분 버퍼)
+     */
+    boolean holdReservationTimeSlot(Long chargerId, Long memberId, java.time.LocalDateTime startTime, java.time.LocalDateTime holdEndTime);
+
+    /* 선택 시간 구간 임시 선점 소유자 확인 */
+    boolean isReservationTimeSlotHoldOwner(Long chargerId, Long memberId, java.time.LocalDateTime startTime, java.time.LocalDateTime holdEndTime);
+
+    /* 다른 사용자가 선택 시간 구간을 임시 선점 중인지 확인 */
+    boolean isReservationTimeSlotSelectedByOther(Long chargerId, Long memberId, java.time.LocalDateTime startTime, java.time.LocalDateTime holdEndTime);
+
+    /* 선택 시간 구간 임시 선점 해제 */
+    void releaseReservationTimeSlotHold(Long chargerId, Long memberId, java.time.LocalDateTime startTime, java.time.LocalDateTime holdEndTime);
+
+    /* 현재 회원이 잡은 모든 예약 시간 구간 임시 선점 해제 */
+    void releaseAllReservationTimeSlotHolds(Long memberId);
 }

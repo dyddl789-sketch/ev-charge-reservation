@@ -148,6 +148,29 @@ const normalizeStation = (station) => {
   };
 };
 
+
+const isStationReservable = (station) => {
+  const stationOpen = station?.stationStatus === "운영중";
+  const availableCount = Number(station?.availableChargerCount || 0);
+  return stationOpen && availableCount > 0;
+};
+
+const getStationReserveMessage = (station) => {
+  if (!station) {
+    return "충전소를 선택해 주세요.";
+  }
+
+  if (station.stationStatus !== "운영중") {
+    return "현재 운영중인 충전소가 아니므로 예약할 수 없습니다.";
+  }
+
+  if (Number(station.availableChargerCount || 0) <= 0) {
+    return "현재 예약 가능한 충전기가 없습니다. 다른 충전소를 선택해 주세요.";
+  }
+
+  return "예약 가능한 충전소입니다.";
+};
+
 const normalizeLocation = (location) => ({
   ...location,
   latitude: toNumber(location.latitude),
@@ -838,6 +861,11 @@ const StationMapPage = () => {
       return;
     }
 
+    if (!isStationReservable(selectedStation)) {
+      alert(getStationReserveMessage(selectedStation));
+      return;
+    }
+
     navigate(`/reservation?stationId=${selectedStation.stationId}`);
   };
 
@@ -1252,16 +1280,18 @@ const StationMapPage = () => {
                   type="button"
                   key={station.stationId}
                   className={
-                    selectedStation?.stationId === station.stationId
-                      ? "map-station-card active"
-                      : "map-station-card"
+                    `${
+                      selectedStation?.stationId === station.stationId
+                        ? "map-station-card active"
+                        : "map-station-card"
+                    } ${!isStationReservable(station) ? "unreservable" : ""}`
                   }
                   onClick={() => selectStation(station)}
                 >
                   <strong>{station.stationName}</strong>
                   <p>{station.address}</p>
                   <div>
-                    <span>{station.stationStatus}</span>
+                    <span className={station.stationStatus === "운영중" ? "" : "stop"}>{station.stationStatus}</span>
                     <em>
                       사용가능 {station.availableChargerCount} / 전체 {station.chargerCount}
                     </em>
@@ -1379,7 +1409,7 @@ const StationMapPage = () => {
               <p>{selectedStation.address}</p>
               <strong>운영기관: {selectedStation.operatorName || "-"}</strong>
               <span>
-                충전소 상태 <em>{selectedStation.stationStatus}</em>
+                충전소 상태 <em className={selectedStation.stationStatus === "운영중" ? "" : "stop"}>{selectedStation.stationStatus}</em>
               </span>
               {selectedStation.distanceKm !== null && selectedStation.distanceKm !== undefined && (
                 <b>출발지 기준 {selectedStation.distanceKm}km</b>
@@ -1395,10 +1425,22 @@ const StationMapPage = () => {
               <button type="button" className="route-btn" onClick={openRoute} disabled={isRouteLoading}>
                 {isRouteLoading ? "길찾기 중" : "길찾기"}
               </button>
-              <button type="button" className="reserve-btn" onClick={moveReservation}>
-                예약하기
+              <button
+                type="button"
+                className="reserve-btn"
+                onClick={moveReservation}
+                disabled={!isStationReservable(selectedStation)}
+                title={getStationReserveMessage(selectedStation)}
+              >
+                {isStationReservable(selectedStation) ? "예약하기" : "예약불가"}
               </button>
             </div>
+
+            {!isStationReservable(selectedStation) && (
+              <p className="map-reserve-help">
+                {getStationReserveMessage(selectedStation)}
+              </p>
+            )}
 
             <div className="charger-info-box">
               <h3>충전기 정보</h3>
@@ -1412,7 +1454,9 @@ const StationMapPage = () => {
                   </p>
                 </div>
 
-                <span>{selectedStation.stationStatus}</span>
+                <span className={selectedStation.stationStatus === "운영중" ? "" : "stop"}>
+                  {selectedStation.stationStatus}
+                </span>
               </div>
 
               <button type="button" onClick={moveDetail}>

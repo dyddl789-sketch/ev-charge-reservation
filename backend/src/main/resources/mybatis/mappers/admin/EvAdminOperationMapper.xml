@@ -46,6 +46,45 @@
          where charger_id = #{chargerId}
     </update>
 
+    <!-- 같은 충전기에 진행 중인 장애가 있는지 확인 -->
+    <select id="countOpenFaultByCharger" resultType="int">
+        select count(*)
+          from fault_report
+         where charger_id = #{chargerId}
+           and status in ('접수', '점검중', '조치중', '결재대기')
+    </select>
+
+    <!-- 시스템 감지/시뮬레이션 장애를 장애점검관리로 등록 -->
+    <insert id="insertSystemFaultFromCharger">
+        insert into fault_report (
+              station_id
+            , charger_id
+            , fault_type
+            , title
+            , description
+            , severity
+            , status
+            , source_type
+            , reported_at
+            , created_at
+            , updated_at
+        )
+        select
+              c.station_id
+            , c.charger_id
+            , #{faultType}
+            , #{title}
+            , #{description}
+            , #{severity}
+            , '접수'
+            , #{sourceType}
+            , current_timestamp
+            , current_timestamp
+            , current_timestamp
+          from charger c
+         where c.charger_id = #{chargerId}
+    </insert>
+
     <!-- 발표/테스트 초기화: 고장 충전기만 사용가능으로 되돌린다. 이력은 남기지 않는다. -->
     <update id="resetBrokenChargers">
         update charger

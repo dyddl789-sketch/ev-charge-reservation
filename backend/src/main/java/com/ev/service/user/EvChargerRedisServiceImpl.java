@@ -2,6 +2,7 @@ package com.ev.service.user;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ThreadLocalRandom;
@@ -56,6 +57,11 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
     private static final Duration RESERVATION_HOLD_TTL = Duration.ofSeconds(20);
 
     /*
+     * 예약 시간 구간 Redis key에서 사용하는 날짜/시간 포맷
+     */
+    private static final DateTimeFormatter RESERVATION_HOLD_SLOT_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+
+    /*
      * 충전기 인증코드 Redis key
      */
     private String getAuthCodeKey(Long chargerId) {
@@ -85,6 +91,19 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
      */
     private String getReservationHoldKey(Long chargerId) {
         return "ev:reservation:hold:charger:" + chargerId;
+    }
+
+    /*
+     * 예약 입력 중 시간 구간 임시 선점 Redis key
+     *
+     * key 예:
+     * ev:reservation:hold:slot:1:202606251255:202606251351
+     */
+    private String getReservationHoldSlotKey(Long chargerId, LocalDateTime startTime, LocalDateTime holdEndTime) {
+        return "ev:reservation:hold:slot:"
+                + chargerId + ":"
+                + startTime.format(RESERVATION_HOLD_SLOT_FORMATTER) + ":"
+                + holdEndTime.format(RESERVATION_HOLD_SLOT_FORMATTER);
     }
 
     /*
@@ -539,6 +558,240 @@ public class EvChargerRedisServiceImpl implements EvChargerRedisService {
         log.info("@# newKey => {}", newKey);
 
         return true;
+    }
+
+
+    /*
+     * 예약 시간 구간 임시 선점 시도
+     *
+     * 선점 구간:
+     * - 예약 시작 시간 ~ 예상 종료 시간 + 5분
+     * - 같은 충전기라도 이 구간과 겹치지 않으면 다른 사용자가 예약할 수 있다.
+     */
+    @Override
+    public boolean holdReservationTimeSlot(Long chargerId,
+                                           Long memberId,
+                                           LocalDateTime startTime,
+                                           LocalDateTime holdEndTime) {
+        log.info("@# EvChargerRedisServiceImpl.holdReservationTimeSlot()");
+        log.info("@# chargerId => {}", chargerId);
+        log.info("@# memberId => {}", memberId);
+        log.info("@# startTime => {}", startTime);
+        log.info("@# holdEndTime => {}", holdEndTime);
+
+        if (chargerId == null || memberId == null || startTime == null || holdEndTime == null) {
+            log.info("@# reservation time slot hold failed - required value missing");
+            return false;
+        }
+
+        if (!startTime.isBefore(holdEndTime)) {
+            log.info("@# reservation time slot hold failed - invalid range");
+            return false;
+        }
+
+        if (existsOverlappingHoldByOther(chargerId, memberId, startTime, holdEndTime)) {
+            log.info("@# reservation time slot hold failed - overlap by other");
+            return false;
+        }
+
+        String redisKey = getReservationHoldSlotKey(chargerId, startTime, holdEndTime);
+        String currentMemberId = String.valueOf(memberId);
+        String savedMemberId = stringRedisTemplate.opsForValue().get(redisKey);
+
+        log.info("@# redisKey => {}", redisKey);
+        log.info("@# savedMemberId => {}", savedMemberId);
+
+        if (savedMemberId != null && !currentMemberId.equals(savedMemberId)) {
+            log.info("@# reservation time slot hold failed - exact key selected by other");
+            return false;
+        }
+
+        if (savedMemberId == null) {
+            Boolean success = stringRedisTemplate.opsForValue()
+                    .setIfAbsent(redisKey, currentMemberId, RESERVATION_HOLD_TTL);
+
+            if (!Boolean.TRUE.equals(success)) {
+                String savedAfterSet = stringRedisTemplate.opsForValue().get(redisKey);
+                log.info("@# savedAfterSet => {}", savedAfterSet);
+
+                if (!currentMemberId.equals(savedAfterSet)) {
+                    log.info("@# reservation time slot hold failed after setIfAbsent");
+                    return false;
+                }
+            }
+        }
+
+        stringRedisTemplate.expire(redisKey, RESERVATION_HOLD_TTL);
+        deleteMyReservationTimeSlotHoldsExcept(memberId, redisKey);
+
+        log.info("@# reservation time slot hold success or extended");
+        return true;
+    }
+
+    @Override
+    public boolean isReservationTimeSlotHoldOwner(Long chargerId,
+                                                  Long memberId,
+                                                  LocalDateTime startTime,
+                                                  LocalDateTime holdEndTime) {
+        log.info("@# EvChargerRedisServiceImpl.isReservationTimeSlotHoldOwner()");
+        log.info("@# chargerId => {}", chargerId);
+        log.info("@# memberId => {}", memberId);
+        log.info("@# startTime => {}", startTime);
+        log.info("@# holdEndTime => {}", holdEndTime);
+
+        if (chargerId == null || memberId == null || startTime == null || holdEndTime == null) {
+            return false;
+        }
+
+        String redisKey = getReservationHoldSlotKey(chargerId, startTime, holdEndTime);
+        String savedMemberId = stringRedisTemplate.opsForValue().get(redisKey);
+        boolean isOwner = String.valueOf(memberId).equals(savedMemberId);
+
+        log.info("@# redisKey => {}", redisKey);
+        log.info("@# savedMemberId => {}", savedMemberId);
+        log.info("@# isOwner => {}", isOwner);
+
+        return isOwner;
+    }
+
+    @Override
+    public boolean isReservationTimeSlotSelectedByOther(Long chargerId,
+                                                        Long memberId,
+                                                        LocalDateTime startTime,
+                                                        LocalDateTime holdEndTime) {
+        log.info("@# EvChargerRedisServiceImpl.isReservationTimeSlotSelectedByOther()");
+        log.info("@# chargerId => {}", chargerId);
+        log.info("@# memberId => {}", memberId);
+        log.info("@# startTime => {}", startTime);
+        log.info("@# holdEndTime => {}", holdEndTime);
+
+        return existsOverlappingHoldByOther(chargerId, memberId, startTime, holdEndTime);
+    }
+
+    @Override
+    public void releaseReservationTimeSlotHold(Long chargerId,
+                                               Long memberId,
+                                               LocalDateTime startTime,
+                                               LocalDateTime holdEndTime) {
+        log.info("@# EvChargerRedisServiceImpl.releaseReservationTimeSlotHold()");
+        log.info("@# chargerId => {}", chargerId);
+        log.info("@# memberId => {}", memberId);
+        log.info("@# startTime => {}", startTime);
+        log.info("@# holdEndTime => {}", holdEndTime);
+
+        if (chargerId == null || memberId == null || startTime == null || holdEndTime == null) {
+            return;
+        }
+
+        String redisKey = getReservationHoldSlotKey(chargerId, startTime, holdEndTime);
+        String savedMemberId = stringRedisTemplate.opsForValue().get(redisKey);
+
+        if (String.valueOf(memberId).equals(savedMemberId)) {
+            stringRedisTemplate.delete(redisKey);
+            log.info("@# reservation time slot hold released => {}", redisKey);
+            return;
+        }
+
+        log.info("@# reservation time slot hold release skipped");
+        log.info("@# redisKey => {}", redisKey);
+        log.info("@# savedMemberId => {}", savedMemberId);
+    }
+
+    @Override
+    public void releaseAllReservationTimeSlotHolds(Long memberId) {
+        log.info("@# EvChargerRedisServiceImpl.releaseAllReservationTimeSlotHolds()");
+        log.info("@# memberId => {}", memberId);
+
+        deleteMyReservationTimeSlotHoldsExcept(memberId, null);
+    }
+
+    private boolean existsOverlappingHoldByOther(Long chargerId,
+                                                 Long memberId,
+                                                 LocalDateTime startTime,
+                                                 LocalDateTime holdEndTime) {
+        String pattern = "ev:reservation:hold:slot:" + chargerId + ":*";
+        Set<String> keys = stringRedisTemplate.keys(pattern);
+
+        if (keys == null || keys.isEmpty()) {
+            log.info("@# reservation time slot keys empty");
+            return false;
+        }
+
+        String currentMemberId = String.valueOf(memberId);
+
+        for (String key : keys) {
+            String savedMemberId = stringRedisTemplate.opsForValue().get(key);
+
+            if (savedMemberId == null || currentMemberId.equals(savedMemberId)) {
+                continue;
+            }
+
+            LocalDateTime[] range = parseReservationHoldSlotRange(key);
+
+            if (range == null) {
+                continue;
+            }
+
+            boolean overlap = range[0].isBefore(holdEndTime) && range[1].isAfter(startTime);
+
+            log.info("@# hold overlap check key => {}, savedMemberId => {}, overlap => {}", key, savedMemberId, overlap);
+
+            if (overlap) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private LocalDateTime[] parseReservationHoldSlotRange(String key) {
+        try {
+            String[] parts = key.split(":");
+
+            if (parts.length < 7) {
+                log.info("@# invalid reservation hold slot key => {}", key);
+                return null;
+            }
+
+            LocalDateTime startTime = LocalDateTime.parse(parts[5], RESERVATION_HOLD_SLOT_FORMATTER);
+            LocalDateTime holdEndTime = LocalDateTime.parse(parts[6], RESERVATION_HOLD_SLOT_FORMATTER);
+
+            return new LocalDateTime[] { startTime, holdEndTime };
+        } catch (Exception e) {
+            log.info("@# reservation hold slot key parse fail => {}, message => {}", key, e.getMessage());
+            return null;
+        }
+    }
+
+    private void deleteMyReservationTimeSlotHoldsExcept(Long memberId, String excludeKey) {
+        log.info("@# EvChargerRedisServiceImpl.deleteMyReservationTimeSlotHoldsExcept()");
+        log.info("@# memberId => {}", memberId);
+        log.info("@# excludeKey => {}", excludeKey);
+
+        String pattern = "ev:reservation:hold:slot:*";
+        Set<String> keys = stringRedisTemplate.keys(pattern);
+
+        if (keys == null || keys.isEmpty()) {
+            log.info("@# reservation time slot hold keys empty");
+            return;
+        }
+
+        String currentMemberId = String.valueOf(memberId);
+
+        for (String key : keys) {
+            String savedMemberId = stringRedisTemplate.opsForValue().get(key);
+
+            if (!currentMemberId.equals(savedMemberId)) {
+                continue;
+            }
+
+            if (excludeKey != null && key.equals(excludeKey)) {
+                continue;
+            }
+
+            stringRedisTemplate.delete(key);
+            log.info("@# deleted my old reservation time slot hold key => {}", key);
+        }
     }
 
     /*

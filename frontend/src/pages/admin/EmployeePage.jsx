@@ -1,16 +1,22 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import * as adminApi from '../../apis/adminApi';
 import { getCreatableRoles, getRole, canCreateEmployeeRole } from '../../utils/adminRoleUtils';
+import {
+  filterMisDepartments,
+  findMappingByPosition,
+  findMappingByRole,
+  getRoleOptionsByDepartment,
+} from '../../utils/adminEmployeeRoleMapping';
 
 const statusOptions = ['ACTIVE', 'INACTIVE', 'RETIRED'];
-const positionOptions = ['운영담당자', '시설관리담당자', '운영관리자', '기관장'];
 
 const roleLabelMap = {
   OPERATOR: '운영담당자',
   ENGINEER: '시설관리담당자',
   MANAGER: '운영관리자',
-  ADMIN: '최고관리자',
+  ADMIN: '기관장',
 };
 
 const getRoleBadgeClass = (role) => {
@@ -33,6 +39,9 @@ const EmployeePage = () => {
   const [departmentFilter, setDepartmentFilter] = useState('전체');
   const [selected, setSelected] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordModalEmployee, setPasswordModalEmployee] = useState(null);
+  const [passwordForm, setPasswordForm] = useState({ newPassword: '', newPasswordConfirm: '' });
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const filteredEmployees = useMemo(() => {
     console.log('직원 목록 필터링', keyword, departmentFilter);
@@ -76,7 +85,7 @@ const EmployeePage = () => {
     try {
       const response = await adminApi.departments();
       console.log('부서 목록 API 응답', response.data);
-      setDepartmentList(response.data || []);
+      setDepartmentList(filterMisDepartments(response.data || []));
     } catch (error) {
       console.log('부서 목록 조회 실패', error);
     }
@@ -87,22 +96,73 @@ const EmployeePage = () => {
     loadEmployees();
   }, []);
 
+  const getPositionOptions = (employee) => {
+    const options = getRoleOptionsByDepartment(departmentList, employee.departmentId, creatableRoles);
+
+    if (options.length > 0) {
+      return options;
+    }
+
+    const currentOption = findMappingByRole(departmentList, employee.departmentId, employee.userType, [
+      { value: employee.userType },
+    ]);
+
+    return currentOption ? [currentOption] : [];
+  };
+
   const updateEmployeeField = async (employee, fieldName, value) => {
     console.log('직원 정보 변경', employee.employeeId, fieldName, value);
 
-    if (!canCreateEmployeeRole(currentRole, fieldName === 'userType' ? value : employee.userType)) {
+    if (!canCreateEmployeeRole(currentRole, employee.userType)) {
       alert('해당 직원 권한을 수정할 수 없습니다.');
       return;
     }
 
-    const nextEmployee = {
+    let nextEmployee = {
       ...employee,
       [fieldName]: value,
     };
 
     if (fieldName === 'departmentId') {
       const department = departmentList.find((item) => String(item.departmentId) === String(value));
-      nextEmployee.departmentName = department?.departmentName || employee.departmentName;
+      const roleOptions = getRoleOptionsByDepartment(departmentList, value, creatableRoles);
+      const nextRoleOption = roleOptions[0];
+
+      if (!nextRoleOption) {
+        alert('선택한 부서에서 부여 가능한 직책/권한이 없습니다.');
+        return;
+      }
+
+      nextEmployee = {
+        ...nextEmployee,
+        departmentId: Number(value),
+        departmentName: department?.departmentName || employee.departmentName,
+        departmentCode: department?.departmentCode || employee.departmentCode,
+        positionName: nextRoleOption.positionName,
+        dutyName: nextRoleOption.dutyName,
+        userType: nextRoleOption.userType,
+      };
+    }
+
+    if (fieldName === 'positionName') {
+      const nextRoleOption = findMappingByPosition(departmentList, employee.departmentId, value, creatableRoles);
+
+      if (!nextRoleOption) {
+        alert('부서와 직책/업무역할 조합을 확인해 주세요.');
+        return;
+      }
+
+      nextEmployee = {
+        ...nextEmployee,
+        positionName: nextRoleOption.positionName,
+        dutyName: nextRoleOption.dutyName,
+        userType: nextRoleOption.userType,
+      };
+    }
+
+    if (!canCreateEmployeeRole(currentRole, nextEmployee.userType)) {
+      alert('해당 권한으로 직원을 수정할 수 없습니다.');
+      return;
     }
 
     try {
@@ -123,13 +183,72 @@ const EmployeePage = () => {
     setSelected(employee);
   };
 
+  const openPasswordResetModal = (employee) => {
+    console.log('직원 비밀번호 초기화 모달 열기', employee);
+
+    if (!canCreateEmployeeRole(currentRole, employee.userType)) {
+      alert('해당 직원의 비밀번호를 초기화할 권한이 없습니다.');
+      return;
+    }
+
+    setPasswordModalEmployee(employee);
+    setPasswordForm({ newPassword: '', newPasswordConfirm: '' });
+  };
+
+  const changePasswordForm = (e) => {
+    const { name, value } = e.target;
+    console.log('직원 비밀번호 초기화 입력 변경', name);
+
+    setPasswordForm({
+      ...passwordForm,
+      [name]: value,
+    });
+  };
+
+  const submitPasswordReset = async (e) => {
+    e.preventDefault();
+    console.log('직원 비밀번호 초기화 제출', passwordModalEmployee);
+
+    if (!passwordModalEmployee) {
+      return;
+    }
+
+    if (!passwordForm.newPassword) {
+      alert('새 임시 비밀번호를 입력해 주세요.');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.newPasswordConfirm) {
+      alert('새 임시 비밀번호와 확인값이 일치하지 않습니다.');
+      return;
+    }
+
+    const confirmed = window.confirm(`${passwordModalEmployee.memberName} 직원의 비밀번호를 초기화하시겠습니까?`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setIsResettingPassword(true);
+      await adminApi.resetEmployeePassword(passwordModalEmployee.employeeId, passwordForm);
+      alert('직원 비밀번호가 초기화되었습니다. 임시 비밀번호를 직원에게 안내해 주세요.');
+      setPasswordModalEmployee(null);
+      setPasswordForm({ newPassword: '', newPasswordConfirm: '' });
+    } catch (error) {
+      console.log('직원 비밀번호 초기화 실패', error);
+      alert(error.response?.data?.message || '비밀번호 초기화 중 오류가 발생했습니다.');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   return (
     <section className="admin-page">
       <div className="admin-page-header">
         <div>
           <p>인사관리</p>
           <h1>직원 관리</h1>
-          <span>직원 목록을 조회하고 부서, 직급, 권한, 재직 상태를 실제 DB 기준으로 변경합니다.</span>
+          <span>부서와 직책/업무역할에 따라 시스템 권한이 자동으로 연결됩니다.</span>
         </div>
         <div className="admin-action-row">
           <button type="button" className="gray" onClick={loadEmployees} disabled={isLoading}>{isLoading ? '조회 중' : '새로고침'}</button>
@@ -176,8 +295,8 @@ const EmployeePage = () => {
                   <th>사번</th>
                   <th>직원명</th>
                   <th>부서</th>
-                  <th>직급</th>
-                  <th>권한</th>
+                  <th>직책/업무역할</th>
+                  <th>시스템 권한</th>
                   <th>상태</th>
                   <th>관리</th>
                 </tr>
@@ -185,6 +304,7 @@ const EmployeePage = () => {
               <tbody>
                 {filteredEmployees.map((employee) => {
                   const editable = canCreateEmployeeRole(currentRole, employee.userType);
+                  const positionOptions = getPositionOptions(employee);
 
                   return (
                     <tr key={employee.employeeId} className={!editable ? 'locked-row' : ''}>
@@ -209,21 +329,19 @@ const EmployeePage = () => {
                       <td>
                         <select
                           value={employee.positionName || ''}
-                          disabled={!editable}
+                          disabled={!editable || positionOptions.length === 0}
                           onChange={(e) => updateEmployeeField(employee, 'positionName', e.target.value)}
                         >
-                          {positionOptions.map((position) => <option key={position} value={position}>{position}</option>)}
+                          {positionOptions.map((option) => <option key={option.userType} value={option.positionName}>{option.positionName}</option>)}
+                          {!positionOptions.some((option) => option.positionName === employee.positionName) && (
+                            <option value={employee.positionName}>{employee.positionName}</option>
+                          )}
                         </select>
                       </td>
                       <td>
-                        <select
-                          value={employee.userType || ''}
-                          disabled={!editable}
-                          onChange={(e) => updateEmployeeField(employee, 'userType', e.target.value)}
-                        >
-                          {creatableRoles.map((role) => <option key={role.value} value={role.value}>{role.value}</option>)}
-                          {!creatableRoles.some((role) => role.value === employee.userType) && <option value={employee.userType}>{employee.userType}</option>}
-                        </select>
+                        <em className={`admin-badge ${getRoleBadgeClass(employee.userType)}`}>
+                          {employee.userType}
+                        </em>
                       </td>
                       <td>
                         <select
@@ -244,7 +362,14 @@ const EmployeePage = () => {
         </article>
 
         <article className="admin-panel">
-          <div className="admin-panel-title"><strong>직원 상세</strong></div>
+          <div className="admin-panel-title">
+            <strong>직원 상세</strong>
+            {selected && canCreateEmployeeRole(currentRole, selected.userType) && (
+              <button type="button" className="warning" onClick={() => openPasswordResetModal(selected)}>
+                비밀번호 초기화
+              </button>
+            )}
+          </div>
 
           {selected ? (
             <div className="admin-detail-box">
@@ -253,7 +378,7 @@ const EmployeePage = () => {
 
               <dl>
                 <div><dt>부서</dt><dd>{selected.departmentName}</dd></div>
-                <div><dt>직급</dt><dd>{selected.positionName}</dd></div>
+                <div><dt>직책/업무역할</dt><dd>{selected.positionName}</dd></div>
                 <div><dt>담당업무</dt><dd>{selected.dutyName || '-'}</dd></div>
                 <div><dt>이메일</dt><dd>{selected.email || '-'}</dd></div>
                 <div><dt>전화번호</dt><dd>{selected.phone || '-'}</dd></div>
@@ -274,6 +399,64 @@ const EmployeePage = () => {
           )}
         </article>
       </div>
+
+      {passwordModalEmployee && (
+        <div className="admin-modal-backdrop">
+          <div className="admin-modal employee-password-modal">
+            <div className="admin-modal-head">
+              <div>
+                <p>인사관리</p>
+                <h2>직원 비밀번호 초기화</h2>
+              </div>
+              <button type="button" onClick={() => setPasswordModalEmployee(null)}>닫기</button>
+            </div>
+
+            <div className="admin-detail-box compact">
+              <dl>
+                <div><dt>직원명</dt><dd>{passwordModalEmployee.memberName}</dd></div>
+                <div><dt>아이디</dt><dd>{passwordModalEmployee.userId}</dd></div>
+                <div><dt>권한</dt><dd>{passwordModalEmployee.userType}</dd></div>
+                <div><dt>사번</dt><dd>{passwordModalEmployee.employeeNo}</dd></div>
+              </dl>
+            </div>
+
+            <form className="admin-form-grid single" onSubmit={submitPasswordReset}>
+              <label>
+                새 임시 비밀번호
+                <input
+                  type="password"
+                  name="newPassword"
+                  value={passwordForm.newPassword}
+                  onChange={changePasswordForm}
+                  placeholder="직원에게 안내할 임시 비밀번호"
+                />
+              </label>
+
+              <label>
+                새 임시 비밀번호 확인
+                <input
+                  type="password"
+                  name="newPasswordConfirm"
+                  value={passwordForm.newPasswordConfirm}
+                  onChange={changePasswordForm}
+                  placeholder="비밀번호 확인"
+                />
+              </label>
+
+              <p className="admin-help-text">
+                관리자는 직원의 기존 비밀번호를 조회하지 않고 새 임시 비밀번호로 초기화만 할 수 있습니다.
+              </p>
+
+              <div className="admin-action-row right">
+                <button type="button" className="gray" onClick={() => setPasswordModalEmployee(null)}>취소</button>
+                <button type="submit" className="warning" disabled={isResettingPassword}>
+                  {isResettingPassword ? '초기화 중' : '비밀번호 초기화'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

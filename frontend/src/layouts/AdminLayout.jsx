@@ -66,6 +66,7 @@ const AdminLayout = () => {
 
           <div className="admin-topbar-actions">
             <Link to="/admin/dashboard">대시보드</Link>
+            <Link to="/admin/profile">내 정보</Link>
             <Link to="/">사용자 화면</Link>
             <button type="button" onClick={logout}>
               로그아웃

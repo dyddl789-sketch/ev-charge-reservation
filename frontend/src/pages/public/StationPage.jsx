@@ -3,6 +3,25 @@ import { Link } from "react-router-dom";
 import * as stationApi from "../../apis/stationApi";
 import "../../styles/station-reservation.css";
 
+
+const isStationReservable = (station) => {
+  const stationOpen = station?.stationStatus === "운영중";
+  const availableCount = Number(station?.availableChargerCount || 0);
+  return stationOpen && availableCount > 0;
+};
+
+const getStationReserveMessage = (station) => {
+  if (station?.stationStatus !== "운영중") {
+    return "현재 운영중인 충전소가 아닙니다.";
+  }
+
+  if (Number(station?.availableChargerCount || 0) <= 0) {
+    return "현재 예약 가능한 충전기가 없습니다.";
+  }
+
+  return "예약 가능한 충전기가 있습니다.";
+};
+
 const mockStations = [
   {
     stationId: 1,
@@ -98,7 +117,18 @@ const StationPage = () => {
                 </div>
                 <div className="station-actions">
                   <Link to={`/stations/${station.stationId}`}>상세보기</Link>
-                  <Link to={`/reservation?stationId=${station.stationId}`}>예약하기</Link>
+                  {isStationReservable(station) ? (
+                    <Link to={`/reservation?stationId=${station.stationId}`}>예약하기</Link>
+                  ) : (
+                    <button
+                      type="button"
+                      className="station-reserve-disabled"
+                      disabled
+                      title={getStationReserveMessage(station)}
+                    >
+                      예약불가
+                    </button>
+                  )}
                 </div>
               </div>
             </article>

@@ -18,6 +18,15 @@ public interface EvAdminOperationDAO {
     int updateChargerStatus(@Param("chargerId") Long chargerId,
                             @Param("status") String status);
 
+    int countOpenFaultByCharger(@Param("chargerId") Long chargerId);
+
+    int insertSystemFaultFromCharger(@Param("chargerId") Long chargerId,
+                                     @Param("faultType") String faultType,
+                                     @Param("title") String title,
+                                     @Param("description") String description,
+                                     @Param("severity") String severity,
+                                     @Param("sourceType") String sourceType);
+
     int resetBrokenChargers();
 
     int countBrokenChargers();

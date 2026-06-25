@@ -902,3 +902,38 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* =========================
+   Reservation Status Guard Patch
+========================= */
+.map-station-card.unreservable {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.map-station-card span.stop,
+.charger-info-row span.stop {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.reserve-btn:disabled {
+  background: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.map-reserve-help {
+  margin: -14px 0 24px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.station-detail-title em.stop {
+  color: #dc2626;
+}

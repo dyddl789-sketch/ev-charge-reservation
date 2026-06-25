@@ -52,7 +52,7 @@ public interface EvReservationService {
      * 조건:
      * - 로그인한 회원 본인의 예약
      * - 예약 상태가 '예약완료'
-     * - 예약 시작 10분 전부터 예약 종료 시간 사이
+     * - 예약 시작 5분 전부터 예약 시작 5분 후 사이
      */
     String issueAuthCode(Long reservationId, Long memberId);
 
@@ -62,7 +62,7 @@ public interface EvReservationService {
      * 조건:
      * - 로그인한 회원 본인의 예약
      * - 예약 상태가 '예약완료'
-     * - 예약 시작 10분 전부터 예약 종료 시간 사이
+     * - 예약 시작 5분 전부터 예약 시작 5분 후 사이
      * - Redis에 저장된 인증코드와 입력 코드 일치
      */
     void verifyReservation(Long reservationId, Long memberId, String authCode);
@@ -142,4 +142,21 @@ public interface EvReservationService {
                                         String startTime,
                                         int estimatedMinutes,
                                         Long memberId);
+
+    /*
+     * 예약 폼에서 선택한 시간 구간 기준 Redis 임시 선점
+     * 선점 구간은 예약 시작 시간 ~ 예상 종료 시간 + 5분이다.
+     */
+    boolean holdReservationTimeSlot(Long chargerId,
+                                    Long memberId,
+                                    String reservationDate,
+                                    String startTime,
+                                    int estimatedMinutes);
+
+    /* 예약 폼에서 선택한 시간 구간 Redis 임시 선점 해제 */
+    void releaseReservationTimeSlotHold(Long chargerId,
+                                        Long memberId,
+                                        String reservationDate,
+                                        String startTime,
+                                        int estimatedMinutes);
 }

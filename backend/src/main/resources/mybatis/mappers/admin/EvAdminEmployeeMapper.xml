@@ -83,6 +83,44 @@
          where e.employee_id = #{employeeId}
     </select>
 
+
+
+    <select id="findEmployeeByMemberId" resultType="com.ev.dto.admin.employee.EvAdminEmployeeDTO">
+        select
+              e.employee_id as employeeId
+            , e.member_id as memberId
+            , e.department_id as departmentId
+            , m.user_id as userId
+            , m.member_name as memberName
+            , m.nickname as nickname
+            , m.phone as phone
+            , m.email as email
+            , m.user_type as userType
+            , m.login_type as loginType
+            , e.employee_no as employeeNo
+            , d.department_name as departmentName
+            , d.department_code as departmentCode
+            , e.position_name as positionName
+            , e.duty_name as dutyName
+            , e.status as status
+            , e.hired_at as hiredAt
+            , e.retired_at as retiredAt
+            , e.created_at as createdAt
+            , e.updated_at as updatedAt
+          from employee e
+          join app_member m
+            on e.member_id = m.member_id
+          join department d
+            on e.department_id = d.department_id
+         where e.member_id = #{memberId}
+    </select>
+
+    <select id="findPasswordByMemberId" resultType="string">
+        select password
+          from app_member
+         where member_id = #{memberId}
+    </select>
+
     <select id="findDepartments" resultType="com.ev.dto.admin.employee.EvAdminDepartmentDTO">
         select
               department_id as departmentId
@@ -92,7 +130,25 @@
             , is_active as isActive
           from department
          where is_active = true
-         order by department_id asc
+           and department_code in ('OPS', 'FACILITY', 'SYSTEM')
+         order by case department_code
+                    when 'OPS' then 1
+                    when 'FACILITY' then 2
+                    when 'SYSTEM' then 3
+                    else 9
+                  end
+    </select>
+
+    <select id="findDepartmentById" resultType="com.ev.dto.admin.employee.EvAdminDepartmentDTO">
+        select
+              department_id as departmentId
+            , department_name as departmentName
+            , department_code as departmentCode
+            , description
+            , is_active as isActive
+          from department
+         where department_id = #{departmentId}
+           and is_active = true
     </select>
 
     <insert id="insertMember" useGeneratedKeys="true" keyProperty="memberId" keyColumn="member_id">
@@ -192,6 +248,23 @@
           from employee e
          where e.member_id = m.member_id
            and e.employee_id = #{employeeId}
+    </update>
+
+
+
+    <update id="updateMyProfile">
+        update app_member
+           set email = coalesce(nullif(#{email}, ''), email),
+               phone = nullif(#{phone}, ''),
+               updated_at = current_timestamp
+         where member_id = #{memberId}
+    </update>
+
+    <update id="updateMemberPassword">
+        update app_member
+           set password = #{password},
+               updated_at = current_timestamp
+         where member_id = #{memberId}
     </update>
 
     <select id="existsByUserId" resultType="int">

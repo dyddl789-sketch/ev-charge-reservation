@@ -237,3 +237,82 @@ export const deleteNotice = (noticeId) => {
   console.log('관리자 공지사항 삭제 요청', noticeId);
   return api.delete(`/admin/notice/${noticeId}`);
 };
+
+// MIS 장애·점검 상세
+export const faultDetail = (faultId) => {
+  console.log('관리자 장애·점검 상세 요청', faultId);
+  return api.get(`/admin/faults/${faultId}`);
+};
+
+// MIS 장애·점검 시설관리담당자 목록
+export const faultEngineers = () => {
+  console.log('관리자 장애·점검 시설관리담당자 목록 요청');
+  return api.get('/admin/faults/engineers');
+};
+
+// MIS 장애 담당자 배정
+export const assignFault = (faultId, assignData) => {
+  console.log('관리자 장애 담당자 배정 요청', faultId, assignData);
+  return api.post(`/admin/faults/${faultId}/assign`, assignData);
+};
+
+// MIS 점검 시작
+export const startFaultInspection = (faultId) => {
+  console.log('관리자 장애 점검 시작 요청', faultId);
+  return api.post(`/admin/faults/${faultId}/inspection/start`);
+};
+
+// MIS 점검 결과 저장
+export const saveFaultInspectionResult = (faultId, resultData) => {
+  console.log('관리자 장애 점검 결과 저장 요청', faultId, resultData);
+  return api.post(`/admin/faults/${faultId}/inspection/result`, resultData);
+};
+
+// MIS 조치 완료
+export const completeFaultAction = (faultId, actionData) => {
+  console.log('관리자 장애 조치 완료 요청', faultId, actionData);
+  return api.post(`/admin/faults/${faultId}/action/complete`, actionData);
+};
+
+// MIS 전자결재 상세
+export const approvalDetail = (documentId) => {
+  console.log('관리자 전자결재 상세 요청', documentId);
+  return api.get(`/admin/approvals/${documentId}`);
+};
+
+// MIS 장애 교체필요 전자결재 상신
+export const submitFaultApproval = (faultId, approvalData) => {
+  console.log('관리자 장애 전자결재 상신 요청', faultId, approvalData);
+  return api.post(`/admin/approvals/faults/${faultId}/submit`, approvalData);
+};
+
+
+// MIS 전자결재 승인
+export const approveApproval = (documentId, decisionData) => {
+  console.log('관리자 전자결재 승인 요청', documentId, decisionData);
+  return api.post(`/admin/approvals/${documentId}/approve`, decisionData);
+};
+
+// MIS 전자결재 반려
+export const rejectApproval = (documentId, decisionData) => {
+  console.log('관리자 전자결재 반려 요청', documentId, decisionData);
+  return api.post(`/admin/approvals/${documentId}/reject`, decisionData);
+};
+
+// MIS 내 정보 조회
+export const adminProfile = () => {
+  console.log('MIS 내 정보 조회 요청');
+  return api.get('/admin/profile');
+};
+
+// MIS 내 정보 수정
+export const updateAdminProfile = (profileData) => {
+  console.log('MIS 내 정보 수정 요청', profileData);
+  return api.put('/admin/profile', profileData);
+};
+
+// MIS 인사관리: 직원 비밀번호 초기화
+export const resetEmployeePassword = (employeeId, passwordData) => {
+  console.log('관리자 직원 비밀번호 초기화 요청', employeeId);
+  return api.post(`/admin/employees/${employeeId}/password/reset`, passwordData);
+};

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import * as reservationApi from "../../apis/reservationApi";
 
@@ -12,7 +12,7 @@ const MyReservationPage = () => {
   const [reservationList, setReservationList] = useState([]);
   const [issuedCodeInfo, setIssuedCodeInfo] = useState(null);
 
-  const getReservationList = async () => {
+  const getReservationList = useCallback(async () => {
     console.log("getReservationList 실행", month);
 
     try {
@@ -24,11 +24,18 @@ const MyReservationPage = () => {
       alert(error.response?.data?.message || "내 예약 목록을 불러오지 못했습니다.");
       setReservationList([]);
     }
-  };
+  }, [month]);
 
   useEffect(() => {
     getReservationList();
-  }, []);
+
+    const timer = window.setInterval(() => {
+      console.log("내 예약 목록 자동 재조회");
+      getReservationList();
+    }, 60000);
+
+    return () => window.clearInterval(timer);
+  }, [getReservationList]);
 
   const searchByMonth = (e) => {
     e.preventDefault();
@@ -193,6 +200,10 @@ const MyReservationPage = () => {
                     <span>예약번호</span>
                     <strong>{item.reservationId}</strong>
                   </div>
+                  <div>
+                    <span>인증 가능</span>
+                    <strong>{item.verifyAvailable ? "가능" : "예약 5분 전~5분 후"}</strong>
+                  </div>
                 </div>
 
                 <div className="mypage-list-actions">
@@ -209,9 +220,11 @@ const MyReservationPage = () => {
                     <button
                       type="button"
                       className="mypage-outline-btn"
+                      disabled={!item.verifyAvailable}
+                      title={item.verifyAvailable ? "현재 인증 가능한 시간입니다." : "예약 시작 5분 전부터 시작 후 5분까지 인증할 수 있습니다."}
                       onClick={() => verifyReservation(item.reservationId)}
                     >
-                      인증하기
+                      {item.verifyAvailable ? "인증하기" : "인증 대기"}
                     </button>
                   )}
                   {item.status === "예약완료" && (

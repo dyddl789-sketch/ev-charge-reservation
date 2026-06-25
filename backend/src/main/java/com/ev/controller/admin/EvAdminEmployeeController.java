@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ev.dto.admin.employee.EvAdminDepartmentDTO;
 import com.ev.dto.admin.employee.EvAdminEmployeeDTO;
+import com.ev.dto.admin.employee.EvAdminMyProfileUpdateRequestDTO;
+import com.ev.dto.admin.employee.EvAdminPasswordResetRequestDTO;
 import com.ev.security.EvUserDetails;
 import com.ev.service.admin.EvAdminEmployeeService;
 
@@ -100,6 +102,45 @@ public class EvAdminEmployeeController {
                 "message", "직원 상태가 변경되었습니다.",
                 "employeeId", employeeId,
                 "status", status
+        );
+    }
+
+
+    @GetMapping("/profile")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','OPERATOR','ENGINEER')")
+    public EvAdminEmployeeDTO myProfile(@AuthenticationPrincipal EvUserDetails userDetails) {
+        log.info("@# EvAdminEmployeeController.myProfile()");
+        return evAdminEmployeeService.getMyProfile(userDetails.getMemberId());
+    }
+
+    @PutMapping("/profile")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','OPERATOR','ENGINEER')")
+    public EvAdminEmployeeDTO updateMyProfile(
+            @RequestBody EvAdminMyProfileUpdateRequestDTO requestDTO,
+            @AuthenticationPrincipal EvUserDetails userDetails) {
+
+        log.info("@# EvAdminEmployeeController.updateMyProfile()");
+        log.info("@# updateMyProfile memberId => {}", userDetails.getMemberId());
+
+        return evAdminEmployeeService.updateMyProfile(userDetails.getMemberId(), requestDTO);
+    }
+
+    @PostMapping("/employees/{employeeId}/password/reset")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public Map<String, Object> resetEmployeePassword(
+            @PathVariable("employeeId") Long employeeId,
+            @RequestBody EvAdminPasswordResetRequestDTO requestDTO,
+            @AuthenticationPrincipal EvUserDetails userDetails) {
+
+        log.info("@# EvAdminEmployeeController.resetEmployeePassword() employeeId => {}", employeeId);
+        log.info("@# reset password actorRole => {}", userDetails.getUserType());
+
+        evAdminEmployeeService.resetEmployeePassword(employeeId, requestDTO, userDetails.getUserType());
+
+        return Map.of(
+                "success", true,
+                "message", "직원 비밀번호가 초기화되었습니다.",
+                "employeeId", employeeId
         );
     }
 }

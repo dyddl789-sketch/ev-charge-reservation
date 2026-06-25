@@ -83,6 +83,36 @@ export const chargerStatus = ({ stationId, reservationDate, startTime, estimated
   });
 };
 
+
+
+// 선택 시간 구간 임시 선점
+export const holdTimeSlot = ({ chargerId, reservationDate, startTime, estimatedMinutes }) => {
+  console.log("reservation holdTimeSlot 요청", { chargerId, reservationDate, startTime, estimatedMinutes });
+  return api.post(
+    "/reservation/lock/time-slot",
+    new URLSearchParams({ chargerId, reservationDate, startTime, estimatedMinutes }),
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+    }
+  );
+};
+
+// 선택 시간 구간 임시 선점 해제
+export const releaseTimeSlot = ({ chargerId, reservationDate, startTime, estimatedMinutes }) => {
+  console.log("reservation releaseTimeSlot 요청", { chargerId, reservationDate, startTime, estimatedMinutes });
+  return api.post(
+    "/reservation/lock/time-slot/release",
+    new URLSearchParams({ chargerId, reservationDate, startTime, estimatedMinutes }),
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+    }
+  );
+};
+
 // 내 예약 목록 조회
 export const myList = (month = "") => {
   console.log("reservation myList 요청", month);

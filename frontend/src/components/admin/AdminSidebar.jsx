@@ -8,6 +8,11 @@ const adminMenus = [
     roles: ['ADMIN', 'MANAGER', 'OPERATOR', 'ENGINEER'],
   },
   {
+    title: '내 정보',
+    path: '/admin/profile',
+    roles: ['ADMIN', 'MANAGER', 'OPERATOR', 'ENGINEER'],
+  },
+  {
     title: '회원관리',
     roles: ['ADMIN', 'MANAGER', 'OPERATOR'],
     children: [{ title: '회원 목록', path: '/admin/members', roles: ['ADMIN', 'MANAGER', 'OPERATOR'] }],

@@ -23,6 +23,8 @@ public interface EvAdminEmployeeDAO {
 
     List<EvAdminDepartmentDTO> findDepartments();
 
+    EvAdminDepartmentDTO findDepartmentById(@Param("departmentId") Long departmentId);
+
     int insertMember(EvAdminEmployeeDTO employeeDTO);
 
     int insertEmployee(EvAdminEmployeeDTO employeeDTO);
@@ -45,4 +47,16 @@ public interface EvAdminEmployeeDAO {
 
     int existsByEmployeeNo(@Param("employeeNo") String employeeNo,
                            @Param("excludeEmployeeId") Long excludeEmployeeId);
+
+
+    EvAdminEmployeeDTO findEmployeeByMemberId(@Param("memberId") Long memberId);
+
+    String findPasswordByMemberId(@Param("memberId") Long memberId);
+
+    int updateMyProfile(@Param("memberId") Long memberId,
+                        @Param("email") String email,
+                        @Param("phone") String phone);
+
+    int updateMemberPassword(@Param("memberId") Long memberId,
+                             @Param("password") String password);
 }
