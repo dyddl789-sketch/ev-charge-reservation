@@ -61,11 +61,6 @@ const adminMenus = [
       { title: '매출 통계', path: '/admin/statistics/sales', roles: ['ADMIN', 'MANAGER'] },
     ],
   },
-  {
-    title: '시스템관리',
-    path: '/admin/system',
-    roles: ['ADMIN'],
-  },
 ];
 
 const LockedMenu = ({ title }) => (

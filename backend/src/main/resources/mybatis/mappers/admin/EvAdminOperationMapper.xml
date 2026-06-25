@@ -153,4 +153,241 @@
          limit 5
     </select>
 
+
+    <!-- 통계 시연용 회원 계정 생성: 반복 실행해도 중복 생성되지 않는다. -->
+    <insert id="insertStatisticsDemoMembers">
+        insert into app_member (
+              user_id
+            , password
+            , member_name
+            , nickname
+            , phone
+            , email
+            , user_type
+            , login_type
+            , status
+            , created_at
+            , updated_at
+        )
+        select
+              concat('stat_user_', lpad(gs::text, 3, '0'))
+            , null
+            , concat('통계회원', gs)
+            , concat('통계회원', gs)
+            , concat('010-77', lpad(gs::text, 2, '0'), '-', lpad(gs::text, 4, '0'))
+            , concat('stat_user_', lpad(gs::text, 3, '0'), '@evcharge.test')
+            , 'USER'
+            , 'LOCAL'
+            , 'ACTIVE'
+            , current_timestamp - (gs || ' days')::interval
+            , current_timestamp
+          from generate_series(1, 30) gs
+        on conflict (user_id) do nothing
+    </insert>
+
+    <!-- 통계 시연용 차량 생성: 통계 회원마다 대표 차량 1대를 보장한다. -->
+    <insert id="insertStatisticsDemoVehicles">
+        with model_upsert as (
+            insert into vehicle_model (
+                  manufacturer
+                , model_name
+                , battery_capacity_kwh
+                , connector_type
+                , max_charging_speed_kw
+                , created_at
+                , updated_at
+            ) values (
+                  '현대'
+                , '아이오닉5'
+                , 72.60
+                , 'DC콤보'
+                , 200.00
+                , current_timestamp
+                , current_timestamp
+            )
+            on conflict (manufacturer, model_name) do nothing
+            returning model_id
+        ), model_pick as (
+            select model_id
+              from model_upsert
+            union all
+            select model_id
+              from vehicle_model
+             where manufacturer = '현대'
+               and model_name = '아이오닉5'
+             limit 1
+        )
+        insert into vehicle (
+              member_id
+            , model_id
+            , vehicle_nickname
+            , plate_number
+            , is_default
+            , created_at
+            , updated_at
+        )
+        select
+              m.member_id
+            , (select model_id from model_pick limit 1)
+            , '통계 시연 차량'
+            , concat('STAT', lpad(m.member_id::text, 4, '0'))
+            , true
+            , current_timestamp
+            , current_timestamp
+          from app_member m
+         where m.user_id like 'stat_user_%'
+           and not exists (
+                select 1
+                  from vehicle v
+                 where v.member_id = m.member_id
+                   and coalesce(v.is_deleted, false) = false
+           )
+    </insert>
+
+    <!-- 실제 충전소/충전기 목록을 기준으로 예약 완료 + 충전 완료 데이터를 생성한다. -->
+    <insert id="insertStatisticsSampleSessions">
+        with seed as (
+            select
+                  gs.n
+                , mv.member_id
+                , mv.vehicle_id
+                , ch.charger_id
+                , ch.price_per_kwh
+                , ch.charging_speed_kw
+                , (
+                    current_date
+                    - (floor(random() * #{days})::int)
+                  )::timestamp
+                  + ((floor(random() * 15) + 6)::int * interval '1 hour')
+                  + (floor(random() * 4)::int * interval '15 minutes') as start_time
+                , (20 + floor(random() * 45))::int as current_soc
+                , (70 + floor(random() * 25))::int as target_soc
+              from generate_series(1, #{count}) gs(n)
+              cross join lateral (
+                    select m.member_id, v.vehicle_id
+                      from app_member m
+                      join vehicle v
+                        on m.member_id = v.member_id
+                       and coalesce(v.is_deleted, false) = false
+                     where m.status = 'ACTIVE'
+                     order by random() + gs.n * 0
+                     limit 1
+              ) mv
+              cross join lateral (
+                    select c.charger_id, c.price_per_kwh, c.charging_speed_kw
+                      from charger c
+                      join charging_station st
+                        on c.station_id = st.station_id
+                     where coalesce(c.is_deleted, false) = false
+                       and coalesce(st.is_deleted, false) = false
+                       and c.status in ('사용가능', '사용중', '예약중')
+                     order by random() + gs.n * 0
+                     limit 1
+              ) ch
+        ), calc as (
+            select
+                  n
+                , member_id
+                , vehicle_id
+                , charger_id
+                , price_per_kwh
+                , charging_speed_kw
+                , start_time
+                , current_soc
+                , target_soc
+                , round((45 + random() * 28)::numeric, 2) as required_kwh
+                , greatest(1, ceil((45 + random() * 28) / greatest(charging_speed_kw, 7) * 60))::int as estimated_minutes
+              from seed
+             where target_soc > current_soc
+        ), inserted_reservation as (
+            insert into reservation (
+                  member_id
+                , vehicle_id
+                , charger_id
+                , reservation_date
+                , start_time
+                , end_time
+                , current_soc
+                , target_soc
+                , required_kwh
+                , estimated_minutes
+                , estimated_cost
+                , status
+                , auth_code
+                , verified_at
+                , created_at
+                , updated_at
+            )
+            select
+                  member_id
+                , vehicle_id
+                , charger_id
+                , start_time::date
+                , start_time
+                , start_time + (estimated_minutes || ' minutes')::interval
+                , current_soc
+                , target_soc
+                , required_kwh
+                , estimated_minutes
+                , round(required_kwh * price_per_kwh, 0)
+                , '완료'
+                , concat('STAT_', to_char(clock_timestamp(), 'HH24MISSMS'), '_', n)
+                , start_time
+                , start_time - interval '15 minutes'
+                , current_timestamp
+            from calc
+            returning
+                  reservation_id
+                , member_id
+                , vehicle_id
+                , charger_id
+                , start_time
+                , end_time
+                , current_soc
+                , target_soc
+                , required_kwh
+                , estimated_minutes
+                , estimated_cost
+        )
+        insert into charging_session (
+              reservation_id
+            , member_id
+            , vehicle_id
+            , charger_id
+            , actual_start_time
+            , actual_end_time
+            , start_soc
+            , end_soc
+            , actual_kwh
+            , actual_minutes
+            , actual_cost
+            , status
+            , created_at
+            , updated_at
+        )
+        select
+              reservation_id
+            , member_id
+            , vehicle_id
+            , charger_id
+            , start_time
+            , end_time
+            , current_soc
+            , target_soc
+            , required_kwh
+            , greatest(1, estimated_minutes)
+            , estimated_cost
+            , '완료'
+            , current_timestamp
+            , current_timestamp
+        from inserted_reservation
+    </insert>
+
+    <select id="countCompletedChargingSessions" resultType="int">
+        select count(*)
+          from charging_session
+         where status = '완료'
+    </select>
+
+
 </mapper>

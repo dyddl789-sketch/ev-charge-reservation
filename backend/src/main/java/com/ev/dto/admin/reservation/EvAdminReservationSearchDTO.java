@@ -17,10 +17,27 @@ public class EvAdminReservationSearchDTO {
     private LocalDate startDate;
     private LocalDate endDate;
 
+    private String startTime;
+    private String endTime;
+
     private Integer page = 1;
     private Integer size = 10;
 
     public int getOffset() {
-        return (page - 1) * size;
+        return (getPage() - 1) * getSize();
+    }
+
+    public Integer getPage() {
+        if (page == null || page < 1) {
+            return 1;
+        }
+        return page;
+    }
+
+    public Integer getSize() {
+        if (size == null || size < 1) {
+            return 10;
+        }
+        return size;
     }
 }

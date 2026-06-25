@@ -40,4 +40,13 @@ public interface EvAdminOperationDAO {
                                @Param("errorMessage") String errorMessage);
 
     List<EvAdminSimulationChargerDTO> findRecentBrokenChargers();
+
+    int insertStatisticsDemoMembers();
+
+    int insertStatisticsDemoVehicles();
+
+    int insertStatisticsSampleSessions(@Param("days") int days,
+                                       @Param("count") int count);
+
+    int countCompletedChargingSessions();
 }

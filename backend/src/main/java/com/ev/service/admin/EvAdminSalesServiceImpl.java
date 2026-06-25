@@ -16,33 +16,19 @@ public class EvAdminSalesServiceImpl implements EvAdminSalesService {
     private final EvAdminSalesDAO evAdminSalesDAO;
 
     @Override
-    public EvAdminSalesStatDTO getSalesStat(String startDate, String endDate) {
+    public EvAdminSalesStatDTO getSalesStat(String startDate, String endDate, String region, Long stationId, String chargerType) {
 
         log.info("@# EvAdminSalesServiceImpl.getSalesStat()");
-        log.info("@# startDate => {}", startDate);
-        log.info("@# endDate => {}", endDate);
+        log.info("@# startDate => {}, endDate => {}, region => {}, stationId => {}, chargerType => {}",
+                startDate, endDate, region, stationId, chargerType);
 
         EvAdminSalesStatDTO salesStatDTO = new EvAdminSalesStatDTO();
 
-        salesStatDTO.setSummary(
-                evAdminSalesDAO.findSalesSummary(startDate, endDate)
-        );
-
-        salesStatDTO.setDailyList(
-                evAdminSalesDAO.findDailySalesList(startDate, endDate)
-        );
-
-        salesStatDTO.setTypeList(
-                evAdminSalesDAO.findSalesTypeList(startDate, endDate)
-        );
-
-        salesStatDTO.setStationRankList(
-                evAdminSalesDAO.findStationSalesRankList(startDate, endDate)
-        );
-
-        salesStatDTO.setHistoryList(
-                evAdminSalesDAO.findSalesHistoryList(startDate, endDate)
-        );
+        salesStatDTO.setSummary(evAdminSalesDAO.findSalesSummary(startDate, endDate, region, stationId, chargerType));
+        salesStatDTO.setDailyList(evAdminSalesDAO.findDailySalesList(startDate, endDate, region, stationId, chargerType));
+        salesStatDTO.setTypeList(evAdminSalesDAO.findSalesTypeList(startDate, endDate, region, stationId, chargerType));
+        salesStatDTO.setStationRankList(evAdminSalesDAO.findStationSalesRankList(startDate, endDate, region, stationId, chargerType));
+        salesStatDTO.setHistoryList(evAdminSalesDAO.findSalesHistoryList(startDate, endDate, region, stationId, chargerType));
 
         return salesStatDTO;
     }

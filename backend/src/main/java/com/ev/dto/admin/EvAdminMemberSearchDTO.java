@@ -11,6 +11,7 @@ import lombok.Data;
 public class EvAdminMemberSearchDTO {
 
     private String status;
+    private String userType;
     private LocalDate joinStart;
     private LocalDate joinEnd;
 
@@ -18,7 +19,7 @@ public class EvAdminMemberSearchDTO {
     private String keyword;
 
     private Integer page = 1;
-    private Integer size = 10;
+    private Integer size = 20;
 
     public int getOffset() {
         return (getPage() - 1) * getSize();
@@ -34,7 +35,7 @@ public class EvAdminMemberSearchDTO {
 
     public Integer getSize() {
         if (size == null || size < 1) {
-            return 10;
+            return 20;
         }
 
         return size;

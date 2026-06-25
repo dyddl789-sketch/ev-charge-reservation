@@ -14,6 +14,17 @@ export const syncPublicChargerSample = (limitPerRegion = 10) => {
   });
 };
 
+// 통계분석: 이용/매출 샘플 데이터 생성
+export const generateStatisticsSampleData = (params = {}) => {
+  console.log('통계 샘플 데이터 생성 요청', params);
+  return api.post('/admin/statistics/sample-data', null, {
+    params: {
+      days: params.days ?? 60,
+      count: params.count ?? 300,
+    },
+  });
+};
+
 // MIS 대시보드: 장애 시뮬레이션 발생
 export const triggerFaultSimulation = () => {
   console.log('장애 시뮬레이션 발생 요청');
@@ -79,11 +90,11 @@ export const updateStation = (stationData) => {
 };
 
 // 충전소 상태 변경
-export const updateStationStatus = (stationId, status) => {
-  console.log('관리자 충전소 상태 변경 요청', stationId, status);
+export const updateStationStatus = (stationId, stationStatus) => {
+  console.log('관리자 충전소 상태 변경 요청', stationId, stationStatus);
   return api.post('/admin/station/status', {
     stationId,
-    status,
+    stationStatus,
   });
 };
 
@@ -303,7 +314,6 @@ export const submitFaultApproval = (faultId, approvalData) => {
   console.log('관리자 장애 전자결재 상신 요청', faultId, approvalData);
   return api.post(`/admin/approvals/faults/${faultId}/submit`, approvalData);
 };
-
 
 // MIS 전자결재 승인
 export const approveApproval = (documentId, decisionData) => {

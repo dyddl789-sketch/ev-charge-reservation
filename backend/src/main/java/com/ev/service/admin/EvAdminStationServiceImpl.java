@@ -26,20 +26,18 @@ public class EvAdminStationServiceImpl implements EvAdminStationService {
     public EvAdminStationPageDTO getStationPage(EvAdminStationSearchDTO searchDTO) {
 
         log.info("@# EvAdminStationServiceImpl.getStationPage()");
+        normalizeSearch(searchDTO);
 
-        Long totalCount = evAdminStationDAO.countTotalStations();
-        Long activeCount = evAdminStationDAO.countActiveStations();
-        Long checkCount = evAdminStationDAO.countCheckStations();
+        Long totalCount = safeLong(evAdminStationDAO.countTotalStations());
+        Long activeCount = safeLong(evAdminStationDAO.countActiveStations());
+        Long checkCount = safeLong(evAdminStationDAO.countCheckStations());
 
-        Long searchCount = evAdminStationDAO.countStationList(searchDTO);
-        List<EvAdminStationListDTO> stationList =
-                evAdminStationDAO.findStationList(searchDTO);
+        Long searchCount = safeLong(evAdminStationDAO.countStationList(searchDTO));
+        List<EvAdminStationListDTO> stationList = evAdminStationDAO.findStationList(searchDTO);
 
-        int size = searchDTO.getSize();
-        int totalPage = (int) Math.ceil((double) searchCount / size);
+        int totalPage = calcTotalPage(searchCount, searchDTO.getSize());
 
         EvAdminStationPageDTO pageDTO = new EvAdminStationPageDTO();
-
         pageDTO.setTotalCount(totalCount);
         pageDTO.setActiveCount(activeCount);
         pageDTO.setCheckCount(checkCount);
@@ -58,98 +56,182 @@ public class EvAdminStationServiceImpl implements EvAdminStationService {
         log.info("@# EvAdminStationServiceImpl.getStationForm()");
         log.info("@# stationId => {}", stationId);
 
-        EvAdminStationFormDTO stationDTO =
-                evAdminStationDAO.findStationForm(stationId);
+        EvAdminStationFormDTO stationDTO = evAdminStationDAO.findStationForm(stationId);
 
         if (stationDTO == null) {
             throw new IllegalArgumentException("충전소 정보를 찾을 수 없습니다.");
         }
 
-        List<EvAdminChargerFormDTO> chargerList =
-                evAdminStationDAO.findChargerFormList(stationId);
-
-        stationDTO.setChargerList(chargerList);
+        stationDTO.setChargerList(evAdminStationDAO.findChargerFormList(stationId));
 
         return stationDTO;
     }
 
     @Override
+    public List<EvAdminChargerFormDTO> getStationChargers(Long stationId) {
+        log.info("@# EvAdminStationServiceImpl.getStationChargers()");
+        log.info("@# stationId => {}", stationId);
+        return evAdminStationDAO.findChargerFormList(stationId);
+    }
+
+    @Override
     @Transactional
-    public void registerStation(EvAdminStationFormDTO stationDTO) {
+    public EvAdminStationFormDTO registerStation(EvAdminStationFormDTO stationDTO) {
 
         log.info("@# EvAdminStationServiceImpl.registerStation()");
         log.info("@# stationName => {}", stationDTO.getStationName());
 
-        evAdminStationDAO.insertStation(stationDTO);
+        validateStation(stationDTO);
 
+        evAdminStationDAO.insertStation(stationDTO);
         Long stationId = stationDTO.getStationId();
 
         log.info("@# inserted stationId => {}", stationId);
 
-        if (stationDTO.getChargerList() == null
-                || stationDTO.getChargerList().isEmpty()) {
+        if (stationDTO.getChargerList() != null) {
+            for (EvAdminChargerFormDTO chargerDTO : stationDTO.getChargerList()) {
+                if (chargerDTO.getChargerName() == null || chargerDTO.getChargerName().isBlank()) {
+                    continue;
+                }
 
-            log.info("@# chargerList empty");
-            return;
+                log.info("@# insert charger => {}", chargerDTO.getChargerName());
+                evAdminStationDAO.insertCharger(stationId, chargerDTO);
+            }
         }
 
-        for (EvAdminChargerFormDTO chargerDTO : stationDTO.getChargerList()) {
+        return getStationForm(stationId);
+    }
 
-            log.info("@# insert charger => {}", chargerDTO.getChargerName());
+    @Override
+    @Transactional
+    public EvAdminStationFormDTO updateStation(EvAdminStationFormDTO stationDTO) {
 
-            evAdminStationDAO.insertCharger(stationId, chargerDTO);
+        log.info("@# EvAdminStationServiceImpl.updateStation()");
+        log.info("@# stationId => {}", stationDTO.getStationId());
+
+        if (stationDTO.getStationId() == null) {
+            throw new IllegalArgumentException("충전소 번호가 필요합니다.");
+        }
+
+        validateStation(stationDTO);
+        evAdminStationDAO.updateStation(stationDTO);
+
+        Long stationId = stationDTO.getStationId();
+
+        if (stationDTO.getDeleteChargerIds() != null) {
+            for (Long chargerId : stationDTO.getDeleteChargerIds()) {
+                log.info("@# delete charger request => {}", chargerId);
+                evAdminStationDAO.deleteChargerIfUnused(stationId, chargerId);
+            }
+        }
+
+        if (stationDTO.getChargerList() != null) {
+            for (EvAdminChargerFormDTO chargerDTO : stationDTO.getChargerList()) {
+                if (chargerDTO.getChargerName() == null || chargerDTO.getChargerName().isBlank()) {
+                    continue;
+                }
+
+                if (chargerDTO.getChargerId() != null) {
+                    log.info("@# update charger => {}", chargerDTO.getChargerId());
+                    evAdminStationDAO.updateCharger(stationId, chargerDTO);
+                } else {
+                    log.info("@# insert new charger => {}", chargerDTO.getChargerName());
+                    evAdminStationDAO.insertCharger(stationId, chargerDTO);
+                }
+            }
+        }
+
+        return getStationForm(stationId);
+    }
+
+    @Override
+    @Transactional
+    public void updateStationStatus(Long stationId, String stationStatus) {
+        log.info("@# EvAdminStationServiceImpl.updateStationStatus()");
+        log.info("@# stationId => {}, stationStatus => {}", stationId, stationStatus);
+
+        int updateCount = evAdminStationDAO.updateStationStatus(stationId, stationStatus);
+        if (updateCount == 0) {
+            throw new IllegalArgumentException("충전소 상태를 변경할 수 없습니다.");
         }
     }
 
     @Override
     @Transactional
-    public void updateStation(EvAdminStationFormDTO stationDTO) {
+    public EvAdminChargerFormDTO registerCharger(Long stationId, EvAdminChargerFormDTO chargerDTO) {
+        log.info("@# EvAdminStationServiceImpl.registerCharger()");
+        log.info("@# stationId => {}, chargerName => {}", stationId, chargerDTO.getChargerName());
 
-        log.info("@# EvAdminStationServiceImpl.updateStation()");
-        log.info("@# stationId => {}", stationDTO.getStationId());
-
-        // 충전소 기본 정보 수정
-        evAdminStationDAO.updateStation(stationDTO);
-
-        Long stationId = stationDTO.getStationId();
-
-        // 삭제 요청된 기존 충전기 처리
-        if (stationDTO.getDeleteChargerIds() != null) {
-
-            for (Long chargerId : stationDTO.getDeleteChargerIds()) {
-
-                log.info("@# delete charger request => {}", chargerId);
-
-                int deleteCount =
-                        evAdminStationDAO.deleteChargerIfUnused(stationId, chargerId);
-
-                log.info("@# delete charger result => {}", deleteCount);
-            }
+        if (stationId == null) {
+            throw new IllegalArgumentException("충전소 번호가 필요합니다.");
         }
 
-        if (stationDTO.getChargerList() == null
-                || stationDTO.getChargerList().isEmpty()) {
+        evAdminStationDAO.insertCharger(stationId, chargerDTO);
+        List<EvAdminChargerFormDTO> chargerList = evAdminStationDAO.findChargerFormList(stationId);
 
-            log.info("@# chargerList empty");
-            return;
+        return chargerList.stream()
+                .filter(charger -> chargerDTO.getChargerName().equals(charger.getChargerName()))
+                .reduce((first, second) -> second)
+                .orElse(chargerDTO);
+    }
+
+    @Override
+    @Transactional
+    public void updateChargerStatus(Long chargerId, String status) {
+        log.info("@# EvAdminStationServiceImpl.updateChargerStatus()");
+        log.info("@# chargerId => {}, status => {}", chargerId, status);
+
+        int updateCount = evAdminStationDAO.updateChargerStatus(chargerId, status);
+        if (updateCount == 0) {
+            throw new IllegalArgumentException("충전기 상태를 변경할 수 없습니다.");
+        }
+    }
+
+    private void normalizeSearch(EvAdminStationSearchDTO searchDTO) {
+        if (searchDTO.getPage() == null || searchDTO.getPage() < 1) {
+            searchDTO.setPage(1);
         }
 
-        for (EvAdminChargerFormDTO chargerDTO : stationDTO.getChargerList()) {
-
-            if (chargerDTO.getChargerId() != null) {
-
-                // 기존 충전기 수정: charger_id 유지
-                log.info("@# update charger => {}", chargerDTO.getChargerId());
-
-                evAdminStationDAO.updateCharger(stationId, chargerDTO);
-
-            } else {
-
-                // 새 충전기 추가
-                log.info("@# insert new charger => {}", chargerDTO.getChargerName());
-
-                evAdminStationDAO.insertCharger(stationId, chargerDTO);
-            }
+        if (searchDTO.getSize() == null || searchDTO.getSize() < 1) {
+            searchDTO.setSize(10);
         }
+    }
+
+    private void validateStation(EvAdminStationFormDTO stationDTO) {
+        if (stationDTO.getStationName() == null || stationDTO.getStationName().isBlank()) {
+            throw new IllegalArgumentException("충전소명을 입력해 주세요.");
+        }
+
+        if (stationDTO.getAddress() == null || stationDTO.getAddress().isBlank()) {
+            throw new IllegalArgumentException("주소를 입력해 주세요.");
+        }
+
+        if (stationDTO.getLatitude() == null || stationDTO.getLongitude() == null) {
+            throw new IllegalArgumentException("위도와 경도를 입력해 주세요.");
+        }
+
+        if (stationDTO.getOpenTime() == null || stationDTO.getOpenTime().isBlank()) {
+            stationDTO.setOpenTime("00:00");
+        }
+
+        if (stationDTO.getCloseTime() == null || stationDTO.getCloseTime().isBlank()) {
+            stationDTO.setCloseTime("23:59");
+        }
+
+        if (stationDTO.getStationStatus() == null || stationDTO.getStationStatus().isBlank()) {
+            stationDTO.setStationStatus("운영중");
+        }
+    }
+
+    private Long safeLong(Long value) {
+        return value == null ? 0L : value;
+    }
+
+    private int calcTotalPage(Long totalCount, Integer size) {
+        if (totalCount == null || totalCount == 0) {
+            return 1;
+        }
+
+        return (int) Math.ceil(totalCount / (double) size);
     }
 }

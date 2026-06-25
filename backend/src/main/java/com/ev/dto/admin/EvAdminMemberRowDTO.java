@@ -22,6 +22,11 @@ public class EvAdminMemberRowDTO {
     private String loginType;
     private String status;
 
+    private Long vehicleCount;
+    private Long reservationCount;
+    private Long completedSessionCount;
+    private Long totalPaymentAmount;
+
     private LocalDateTime createdAt;
 
     public String getCreatedAtText() {
@@ -33,50 +38,17 @@ public class EvAdminMemberRowDTO {
     }
 
     public String getUserTypeText() {
-        if ("ADMIN".equals(userType)) {
-            return "관리자";
-        }
-
+        if ("ADMIN".equals(userType)) return "최고관리자";
+        if ("MANAGER".equals(userType)) return "운영관리자";
+        if ("OPERATOR".equals(userType)) return "운영담당자";
+        if ("ENGINEER".equals(userType)) return "시설관리담당자";
         return "회원";
     }
 
-    public String getUserTypeClass() {
-        if ("ADMIN".equals(userType)) {
-            return "admin";
-        }
-
-        return "user";
-    }
-
     public String getStatusText() {
-        if ("ACTIVE".equals(status)) {
-            return "활성";
-        }
-
-        if ("INACTIVE".equals(status)) {
-            return "탈퇴";
-        }
-
-        if ("BLOCKED".equals(status)) {
-            return "정지";
-        }
-
+        if ("ACTIVE".equals(status)) return "활성";
+        if ("INACTIVE".equals(status)) return "탈퇴";
+        if ("BLOCKED".equals(status)) return "정지";
         return status;
-    }
-
-    public String getStatusClass() {
-        if ("ACTIVE".equals(status)) {
-            return "active";
-        }
-
-        if ("INACTIVE".equals(status)) {
-            return "withdraw";
-        }
-
-        if ("BLOCKED".equals(status)) {
-            return "blocked";
-        }
-
-        return "withdraw";
     }
 }

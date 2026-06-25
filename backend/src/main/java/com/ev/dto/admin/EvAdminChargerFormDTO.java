@@ -10,6 +10,8 @@ public class EvAdminChargerFormDTO {
 
     private Long chargerId;
 
+    private Long stationId;
+
     private String chargerName;
     private String chargerType;
     private String connectorType;

@@ -12,4 +12,6 @@ public interface EvAdminOperationService {
     EvAdminOperationResultDTO triggerFaultSimulation();
 
     EvAdminOperationResultDTO resetSimulation();
+
+    EvAdminOperationResultDTO generateStatisticsSampleData(int days, int count);
 }

@@ -16,33 +16,19 @@ public class EvAdminUsageServiceImpl implements EvAdminUsageService {
     private final EvAdminUsageDAO evAdminUsageDAO;
 
     @Override
-    public EvAdminUsageStatDTO getUsageStat(String startDate, String endDate) {
+    public EvAdminUsageStatDTO getUsageStat(String startDate, String endDate, String region, Long stationId, String chargerType) {
 
         log.info("@# EvAdminUsageServiceImpl.getUsageStat()");
-        log.info("@# startDate => {}", startDate);
-        log.info("@# endDate => {}", endDate);
+        log.info("@# startDate => {}, endDate => {}, region => {}, stationId => {}, chargerType => {}",
+                startDate, endDate, region, stationId, chargerType);
 
         EvAdminUsageStatDTO usageStatDTO = new EvAdminUsageStatDTO();
 
-        usageStatDTO.setSummary(
-                evAdminUsageDAO.findUsageSummary(startDate, endDate)
-        );
-
-        usageStatDTO.setDailyList(
-                evAdminUsageDAO.findDailyUsageList(startDate, endDate)
-        );
-
-        usageStatDTO.setHourlyList(
-                evAdminUsageDAO.findHourlyUsageList(startDate, endDate)
-        );
-
-        usageStatDTO.setTypeList(
-                evAdminUsageDAO.findUsageTypeList(startDate, endDate)
-        );
-
-        usageStatDTO.setStationRankList(
-                evAdminUsageDAO.findStationUsageRankList(startDate, endDate)
-        );
+        usageStatDTO.setSummary(evAdminUsageDAO.findUsageSummary(startDate, endDate, region, stationId, chargerType));
+        usageStatDTO.setDailyList(evAdminUsageDAO.findDailyUsageList(startDate, endDate, region, stationId, chargerType));
+        usageStatDTO.setHourlyList(evAdminUsageDAO.findHourlyUsageList(startDate, endDate, region, stationId, chargerType));
+        usageStatDTO.setTypeList(evAdminUsageDAO.findUsageTypeList(startDate, endDate, region, stationId, chargerType));
+        usageStatDTO.setStationRankList(evAdminUsageDAO.findStationUsageRankList(startDate, endDate, region, stationId, chargerType));
 
         return usageStatDTO;
     }

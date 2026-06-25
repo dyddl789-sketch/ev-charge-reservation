@@ -3,11 +3,11 @@ package com.ev.controller.admin;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.ev.dto.admin.usage.EvAdminUsageStatDTO;
 import com.ev.service.admin.EvAdminUsageService;
@@ -16,44 +16,36 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Controller
+@RestController
 @RequestMapping("/admin/usage")
 @RequiredArgsConstructor
 public class EvAdminUsageController {
 
     private final EvAdminUsageService evAdminUsageService;
 
-    // 이용 통계 화면
+    // 이용 통계 JSON API
     @GetMapping
-    public String usageStat(
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public EvAdminUsageStatDTO usageStat(
             @RequestParam(value = "startDate", required = false) String startDate,
             @RequestParam(value = "endDate", required = false) String endDate,
-            Model model) {
+            @RequestParam(value = "region", required = false) String region,
+            @RequestParam(value = "stationId", required = false) Long stationId,
+            @RequestParam(value = "chargerType", required = false) String chargerType) {
 
         log.info("@# EvAdminUsageController.usageStat()");
 
-        // 기간 값이 없으면 이번 달 1일 ~ 오늘 기준으로 조회
         if (startDate == null || startDate.isBlank()) {
-            startDate = LocalDate.now()
-                    .withDayOfMonth(1)
-                    .format(DateTimeFormatter.ISO_DATE);
+            startDate = LocalDate.now().withDayOfMonth(1).format(DateTimeFormatter.ISO_DATE);
         }
 
         if (endDate == null || endDate.isBlank()) {
-            endDate = LocalDate.now()
-                    .format(DateTimeFormatter.ISO_DATE);
+            endDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
         }
 
-        log.info("@# startDate => {}", startDate);
-        log.info("@# endDate => {}", endDate);
+        log.info("@# startDate => {}, endDate => {}, region => {}, stationId => {}, chargerType => {}",
+                startDate, endDate, region, stationId, chargerType);
 
-        EvAdminUsageStatDTO usageStat =
-                evAdminUsageService.getUsageStat(startDate, endDate);
-
-        model.addAttribute("usageStat", usageStat);
-        model.addAttribute("startDate", startDate);
-        model.addAttribute("endDate", endDate);
-
-        return "admin/usage/usage_stat";
+        return evAdminUsageService.getUsageStat(startDate, endDate, region, stationId, chargerType);
     }
 }

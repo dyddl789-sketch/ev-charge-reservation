@@ -156,4 +156,34 @@ public class EvAdminOperationServiceImpl implements EvAdminOperationService {
 
         return resultDTO;
     }
+    @Override
+    @Transactional
+    public EvAdminOperationResultDTO generateStatisticsSampleData(int days, int count) {
+        log.info("@# EvAdminOperationServiceImpl.generateStatisticsSampleData()");
+        log.info("@# days => {}, count => {}", days, count);
+
+        int safeDays = days <= 0 ? 60 : Math.min(days, 365);
+        int safeCount = count <= 0 ? 300 : Math.min(count, 5000);
+
+        int memberCount = evAdminOperationDAO.insertStatisticsDemoMembers();
+        int vehicleCount = evAdminOperationDAO.insertStatisticsDemoVehicles();
+        int sessionCount = evAdminOperationDAO.insertStatisticsSampleSessions(safeDays, safeCount);
+        int totalCompletedSessionCount = evAdminOperationDAO.countCompletedChargingSessions();
+
+        EvAdminOperationResultDTO resultDTO = new EvAdminOperationResultDTO();
+        resultDTO.setSuccess(sessionCount > 0);
+        resultDTO.setMessage(sessionCount > 0
+                ? "이용/매출 통계 샘플 데이터가 생성되었습니다."
+                : "통계 샘플을 생성할 충전기 또는 차량 데이터가 부족합니다. 먼저 공공데이터 샘플을 적재해 주세요.");
+        resultDTO.setSaveCount(sessionCount);
+        resultDTO.setUpdateCount(memberCount + vehicleCount);
+        resultDTO.setResetCount(totalCompletedSessionCount);
+        resultDTO.setProcessedAt(LocalDateTime.now());
+
+        log.info("@# statistics memberCount => {}, vehicleCount => {}, sessionCount => {}",
+                memberCount, vehicleCount, sessionCount);
+
+        return resultDTO;
+    }
+
 }

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ev.dao.admin.EvAdminReservationDAO;
+import com.ev.dto.admin.reservation.EvAdminReservationDetailDTO;
 import com.ev.dto.admin.reservation.EvAdminReservationIssueDTO;
 import com.ev.dto.admin.reservation.EvAdminReservationListDTO;
 import com.ev.dto.admin.reservation.EvAdminReservationPageDTO;
@@ -60,6 +61,22 @@ public class EvAdminReservationServiceImpl implements EvAdminReservationService 
         pageDTO.setTotalPage(totalPage == 0 ? 1 : totalPage);
 
         return pageDTO;
+    }
+
+
+    @Override
+    public EvAdminReservationDetailDTO getReservationDetail(Long reservationId) {
+
+        log.info("@# EvAdminReservationServiceImpl.getReservationDetail()");
+        log.info("@# reservationId => {}", reservationId);
+
+        EvAdminReservationDetailDTO detailDTO = evAdminReservationDAO.findReservationDetail(reservationId);
+
+        if (detailDTO == null) {
+            throw new IllegalArgumentException("예약 정보를 찾을 수 없습니다.");
+        }
+
+        return detailDTO;
     }
 
     @Override

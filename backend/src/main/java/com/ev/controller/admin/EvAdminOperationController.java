@@ -35,6 +35,19 @@ public class EvAdminOperationController {
         return evAdminOperationService.syncPublicDataSample(limitPerRegion);
     }
 
+    // 이용/매출 통계가 실제 화면에 차도록 예약/충전완료 샘플 데이터를 생성한다.
+    @PostMapping("/statistics/sample-data")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public EvAdminOperationResultDTO generateStatisticsSampleData(
+            @RequestParam(value = "days", defaultValue = "60") int days,
+            @RequestParam(value = "count", defaultValue = "300") int count) {
+
+        log.info("@# EvAdminOperationController.generateStatisticsSampleData()");
+        log.info("@# days => {}, count => {}", days, count);
+
+        return evAdminOperationService.generateStatisticsSampleData(days, count);
+    }
+
     // 사용가능 충전기 중 하나를 고장 상태로 변경한다.
     @PostMapping("/simulation/fault")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ENGINEER')")
