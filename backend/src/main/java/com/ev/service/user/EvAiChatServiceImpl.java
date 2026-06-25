@@ -77,6 +77,21 @@ public class EvAiChatServiceImpl implements EvAiChatService {
             return responseDTO;
         }
 
+        // 내 차량 질문은 Gemini가 임의 답변하지 않도록 DB 대표차량만 사용한다.
+        if (isDefaultVehicleQuestion(message)) {
+            Map<String, Object> vehicle = evAiChatDAO.findDefaultVehicleForAi(memberId);
+            answer = buildDefaultVehicleAnswer(vehicle);
+            saveMessage(roomId, "AI", answer);
+
+            EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer, "DEFAULT_VEHICLE");
+            if (vehicle == null || vehicle.isEmpty()) {
+                responseDTO.setActionType("VEHICLE_REGISTER");
+                responseDTO.setButtonText("차량 등록하러 가기");
+                responseDTO.setActionUrl("/vehicles/register");
+            }
+            return responseDTO;
+        }
+
         // 내 예약 조회 질문은 예약 후보 추천이 아니라 실제 예약 내역을 조회한다.
         if (isMyReservationQuestion(message)) {
             List<Map<String, Object>> reservationList = evAiChatDAO.findMyReservationsForAi(memberId, 10);
@@ -115,7 +130,9 @@ public class EvAiChatServiceImpl implements EvAiChatService {
         }
 
         saveMessage(roomId, "AI", answer);
-        return new EvAiChatResponseDTO(answer);
+        EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer);
+        applyVehicleRegisterActionIfNeeded(answer, responseDTO);
+        return responseDTO;
     }
 
     // 이전 채팅 메시지 조회
@@ -231,10 +248,45 @@ public class EvAiChatServiceImpl implements EvAiChatService {
                 + "아래 지도 버튼을 누르면 충전소 찾기 화면에서 이 위치를 바로 확인할 수 있습니다.";
     }
 
+    private String buildDefaultVehicleAnswer(Map<String, Object> vehicle) {
+        log.info("@# EvAiChatServiceImpl.buildDefaultVehicleAnswer()");
+
+        if (vehicle == null || vehicle.isEmpty()) {
+            return buildDefaultVehicleRequiredAnswer();
+        }
+
+        String nickname = text(value(vehicle, "vehicleNickname", "vehicle_nickname"));
+        String vehicleName = text(value(vehicle, "manufacturer")) + " " + text(value(vehicle, "modelName", "model_name"));
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("현재 대표차량은 ");
+        if (!nickname.isBlank()) {
+            builder.append("“").append(nickname).append("”으로 등록된 ");
+        }
+        builder.append(vehicleName.trim()).append("입니다.\n");
+        builder.append("배터리 용량은 ").append(text(value(vehicle, "batteryCapacityKwh", "battery_capacity_kwh"))).append("kWh, ");
+        builder.append("커넥터 타입은 ").append(text(value(vehicle, "connectorType", "connector_type"))).append(", ");
+        builder.append("최대 충전 속도는 ").append(text(value(vehicle, "maxChargingSpeedKw", "max_charging_speed_kw"))).append("kW입니다.\n");
+        builder.append("AI 충전소 추천과 충전 시간/비용 계산은 이 대표차량 기준으로 진행합니다.");
+
+        return builder.toString();
+    }
+
+    private String buildDefaultVehicleRequiredAnswer() {
+        return "아직 대표차량이 등록되어 있지 않습니다.\n"
+                + "충전 시간과 비용 계산, 커넥터 타입에 맞는 충전소 추천을 위해 차량을 먼저 등록해 주세요.\n"
+                + "아래 버튼을 누르면 차량 등록 화면으로 이동할 수 있습니다.";
+    }
+
     private String buildStationRecommendAnswer(Long memberId,
                                                List<EvAiStationRecommendDTO> stationList,
                                                EvAiChatIntentDTO intentDTO) {
         log.info("@# EvAiChatServiceImpl.buildStationRecommendAnswer()");
+
+        Map<String, Object> vehicle = evAiChatDAO.findDefaultVehicleForAi(memberId);
+        if (vehicle == null || vehicle.isEmpty()) {
+            return buildDefaultVehicleRequiredAnswer();
+        }
 
         Map<String, Object> location = evAiChatDAO.findDefaultLocationForAi(memberId);
 
@@ -293,6 +345,11 @@ public class EvAiChatServiceImpl implements EvAiChatService {
 
     private String buildChargeAnswer(Long memberId, EvAiChatIntentDTO intentDTO) {
         log.info("@# EvAiChatServiceImpl.buildChargeAnswer()");
+
+        Map<String, Object> vehicle = evAiChatDAO.findDefaultVehicleForAi(memberId);
+        if (vehicle == null || vehicle.isEmpty()) {
+            return buildDefaultVehicleRequiredAnswer();
+        }
 
         if (intentDTO.getCurrentSoc() == null || intentDTO.getTargetSoc() == null) {
             return "현재 배터리 잔량과 목표 충전량을 %로 알려주세요.\n예) 30%에서 80%까지 충전하면 얼마나 걸려?";
@@ -419,6 +476,18 @@ public class EvAiChatServiceImpl implements EvAiChatService {
         }
 
         return builder.toString();
+    }
+
+    private void applyVehicleRegisterActionIfNeeded(String answer, EvAiChatResponseDTO responseDTO) {
+        if (answer == null || responseDTO == null) {
+            return;
+        }
+
+        if (answer.contains("대표차량이 등록되어 있지 않습니다") || answer.contains("대표차량이 필요합니다")) {
+            responseDTO.setActionType("VEHICLE_REGISTER");
+            responseDTO.setButtonText("차량 등록하러 가기");
+            responseDTO.setActionUrl("/vehicles/register");
+        }
     }
 
     private String callGeminiWithContext(List<EvAiChatMessageDTO> recentMessages, String message, String ragContext) {
@@ -596,6 +665,23 @@ public class EvAiChatServiceImpl implements EvAiChatService {
         boolean locationWord = value.contains("내위치") || value.contains("기본출발지") || value.contains("출발지") || value.contains("위치어디");
         boolean actionWord = value.contains("충전소") || value.contains("추천") || value.contains("찾") || value.contains("예약");
         return locationWord && !actionWord;
+    }
+
+    private boolean isDefaultVehicleQuestion(String message) {
+        if (message == null) {
+            return false;
+        }
+
+        String value = message.replace(" ", "").toLowerCase();
+        boolean vehicleWord = value.contains("내차")
+                || value.contains("내차량")
+                || value.contains("대표차량")
+                || value.contains("기본차량")
+                || value.contains("등록차량")
+                || value.contains("차량뭐")
+                || value.contains("차뭐");
+        boolean actionWord = value.contains("충전소") || value.contains("예약") || value.contains("추천") || value.contains("찾");
+        return vehicleWord && !actionWord;
     }
 
     private boolean isMyReservationQuestion(String message) {

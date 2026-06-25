@@ -121,6 +121,12 @@ public class EvAiChatController {
             response.put("reservations", responseDTO.getReservations());
         }
 
+        if (responseDTO.getActionType() != null) {
+            response.put("actionType", responseDTO.getActionType());
+            response.put("buttonText", responseDTO.getButtonText());
+            response.put("actionUrl", responseDTO.getActionUrl());
+        }
+
         return ResponseEntity.ok(response);
     }
 

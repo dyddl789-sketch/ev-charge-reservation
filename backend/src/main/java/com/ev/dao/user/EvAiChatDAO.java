@@ -42,6 +42,9 @@ public interface EvAiChatDAO {
     // AI가 사용자의 기본 출발지를 답변하거나 예약 추천 기준으로 사용할 때 조회
     Map<String, Object> findDefaultLocationForAi(@Param("memberId") Long memberId);
 
+    // AI가 사용자의 대표차량을 답변하거나 충전 계산 기준으로 사용할 때 조회
+    Map<String, Object> findDefaultVehicleForAi(@Param("memberId") Long memberId);
+
     // AI 예약 후보 조회: 대표 차량 + 기본 출발지 + 예약 가능 시간 + 사용가능 충전기 기준
     List<Map<String, Object>> findAiReservationCandidates(@Param("memberId") Long memberId,
                                                           @Param("startTime") LocalDateTime startTime,

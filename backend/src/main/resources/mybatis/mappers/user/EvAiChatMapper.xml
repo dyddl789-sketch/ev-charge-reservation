@@ -236,6 +236,28 @@
         limit 1
     </select>
 
+    <!-- AI가 현재 기준으로 사용하는 대표차량 조회 -->
+    <select id="findDefaultVehicleForAi" resultType="map">
+        select
+              v.vehicle_id as vehicleId
+            , v.vehicle_nickname as vehicleNickname
+            , v.plate_number as plateNumber
+            , v.is_default as isDefault
+            , vm.manufacturer
+            , vm.model_name as modelName
+            , vm.battery_capacity_kwh as batteryCapacityKwh
+            , vm.connector_type as connectorType
+            , vm.max_charging_speed_kw as maxChargingSpeedKw
+        from vehicle v
+        join vehicle_model vm
+          on v.model_id = vm.model_id
+        where v.member_id = #{memberId}
+          and v.is_default = true
+          and coalesce(v.is_deleted, false) = false
+        order by v.vehicle_id asc
+        limit 1
+    </select>
+
     <!--
         AI 예약 후보 조회
         기준:

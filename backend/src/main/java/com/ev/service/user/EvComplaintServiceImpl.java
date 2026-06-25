@@ -41,7 +41,8 @@ public class EvComplaintServiceImpl implements EvComplaintService {
         requestDTO.setComplaintType(defaultString(requestDTO.getComplaintType(), "이용문의"));
         requestDTO.setPriority(defaultString(requestDTO.getPriority(), "NORMAL"));
         requestDTO.setNotifyEmail(safeBoolean(requestDTO.getNotifyEmail()));
-        requestDTO.setNotifySms(safeBoolean(requestDTO.getNotifySms()));
+        // SMS 알림은 화면 정책에서 제거했으므로 DB 컬럼은 유지하되 항상 false로 저장한다.
+        requestDTO.setNotifySms(false);
         requestDTO.setNotifySite(requestDTO.getNotifySite() == null ? true : requestDTO.getNotifySite());
 
         requestDTO.setMemberId(memberId);

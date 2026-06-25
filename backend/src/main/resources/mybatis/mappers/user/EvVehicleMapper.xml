@@ -80,6 +80,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    set is_default = false,
 	        updated_at = current_timestamp
 	    where member_id = #{memberId}
+	      and is_deleted = false
 	
 	</update>
 	
@@ -91,6 +92,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	        updated_at = current_timestamp
 	    where member_id = #{memberId}
 	      and vehicle_id = #{vehicleId}
+	      and is_deleted = false
 	
 	</update>
 	

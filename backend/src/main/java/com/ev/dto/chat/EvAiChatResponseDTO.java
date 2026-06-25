@@ -25,6 +25,15 @@ public class EvAiChatResponseDTO {
     // 내 예약 조회 카드 데이터
     private List<Map<String, Object>> reservations;
 
+    // 프론트 액션 버튼 타입: VEHICLE_REGISTER 등
+    private String actionType;
+
+    // 프론트 액션 버튼 문구
+    private String buttonText;
+
+    // 프론트 이동 URL
+    private String actionUrl;
+
     public EvAiChatResponseDTO(String answer) {
         this.answer = answer;
     }

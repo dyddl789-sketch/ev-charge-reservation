@@ -77,14 +77,27 @@ public class EvAiReservationApiController {
             if (vehicleList == null || vehicleList.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
-                        "message", "AI 예약을 사용하려면 먼저 차량을 등록해주세요."
+                        "message", "AI 예약을 사용하려면 먼저 대표차량을 등록해 주세요.",
+                        "actionType", "VEHICLE_REGISTER",
+                        "buttonText", "차량 등록하러 가기",
+                        "actionUrl", "/vehicles/register"
                 ));
             }
 
             EvVehicleDTO vehicle = vehicleList.stream()
                     .filter(v -> Boolean.TRUE.equals(v.getIsDefault()))
                     .findFirst()
-                    .orElse(vehicleList.get(0));
+                    .orElse(null);
+
+            if (vehicle == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", "AI 예약을 사용하려면 대표차량이 필요합니다. 차량 등록 화면에서 기본 차량으로 설정해 주세요.",
+                        "actionType", "VEHICLE_REGISTER",
+                        "buttonText", "차량 등록하러 가기",
+                        "actionUrl", "/vehicles/register"
+                ));
+            }
 
             Map<String, Object> defaultLocation = evAiChatDAO.findDefaultLocationForAi(memberId);
             if (defaultLocation == null || defaultLocation.isEmpty()) {

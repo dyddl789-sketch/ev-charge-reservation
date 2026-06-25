@@ -28,6 +28,12 @@ public class EvVehicleServiceImpl implements EvVehicleService {
     @Override
     @Transactional
     public void registerVehicle(EvVehicleDTO vehicleDTO) {
+        log.info("@# EvVehicleServiceImpl.registerVehicle()");
+        log.info("@# memberId => {}", vehicleDTO == null ? null : vehicleDTO.getMemberId());
+
+        if (vehicleDTO == null) {
+            throw new IllegalArgumentException("차량 등록 정보가 없습니다.");
+        }
 
         if (vehicleDTO.getModelId() == null) {
             throw new IllegalArgumentException("차량 모델을 선택해 주세요.");
@@ -51,6 +57,13 @@ public class EvVehicleServiceImpl implements EvVehicleService {
 
         if (count > 0) {
             throw new IllegalArgumentException("이미 등록된 차량번호입니다.");
+        }
+
+        // 기본차량으로 등록하는 경우 같은 회원의 기존 기본차량을 먼저 해제한다.
+        // 프론트에서 체크박스를 제어해도 최종 보장은 백엔드 트랜잭션에서 처리한다.
+        if (Boolean.TRUE.equals(vehicleDTO.getIsDefault())) {
+            log.info("@# 신규 차량을 기본차량으로 등록 - 기존 기본차량 해제");
+            evVehicleDAO.clearDefaultVehicle(vehicleDTO.getMemberId());
         }
 
         evVehicleDAO.registerVehicle(vehicleDTO);

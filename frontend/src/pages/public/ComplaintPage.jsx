@@ -37,7 +37,7 @@ const ComplaintPage = () => {
     stationName: '',
     chargerName: '',
     notifyEmail: true,
-    notifySms: true,
+    notifySms: false,
     notifySite: true,
   });
 
@@ -185,6 +185,7 @@ const ComplaintPage = () => {
       setIsSubmitting(true);
       await complaintApi.createComplaint({
         ...form,
+        notifySms: false,
         stationId: form.stationId ? Number(form.stationId) : null,
         chargerId: form.chargerId ? Number(form.chargerId) : null,
       });
@@ -271,7 +272,6 @@ const ComplaintPage = () => {
           <label><span className="step">6</span>처리 결과 알림 <b>*</b></label>
           <div className="checkbox-group">
             <label><input type="checkbox" name="notifyEmail" checked={form.notifyEmail} onChange={changeValue} />이메일</label>
-            <label><input type="checkbox" name="notifySms" checked={form.notifySms} onChange={changeValue} />문자(SMS)</label>
             <label><input type="checkbox" name="notifySite" checked={form.notifySite} onChange={changeValue} />사이트 알림</label>
           </div>
         </div>

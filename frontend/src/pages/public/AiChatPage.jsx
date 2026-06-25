@@ -41,6 +41,7 @@ const guideMessages = [
 
 const quickQuestions = [
   "내 위치 알려줘",
+  "내 차량 뭐야",
   "내 예약 보여줘",
   "내 차량에 맞는 가까운 충전소 찾아줘",
   "오늘 예약 가능한 충전소 찾아줘",
@@ -155,10 +156,12 @@ const AiChatPage = () => {
   console.log("AiChatPage 렌더링");
 
   const navigate = useNavigate();
-  const bottomRef = useRef(null);
+  const messageListRef = useRef(null);
+  const historyClearedRef = useRef(false);
   const [messages, setMessages] = useState(guideMessages);
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [clearLoading, setClearLoading] = useState(false);
   const [reservationCandidates, setReservationCandidates] = useState([]);
   const [activeSort, setActiveSort] = useState("DISTANCE");
   const [reservationForm, setReservationForm] = useState({
@@ -173,7 +176,16 @@ const AiChatPage = () => {
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    console.log("AI 채팅창 내부 스크롤 이동");
+
+    const messageList = messageListRef.current;
+
+    if (!messageList) {
+      return;
+    }
+
+    // 전체 페이지가 아니라 채팅 메시지 영역 안에서만 아래로 이동
+    messageList.scrollTop = messageList.scrollHeight;
   }, [messages, loading]);
 
   const loadMessages = async () => {
@@ -184,8 +196,16 @@ const AiChatPage = () => {
       console.log("AI 채팅 이력 응답", response);
 
       const data = response.data;
+
+      if (historyClearedRef.current) {
+        console.log("AI 채팅 이력 로딩 응답 무시 - 초기화 직후");
+        return;
+      }
+
       if (Array.isArray(data) && data.length > 0) {
         setMessages(data);
+      } else {
+        setMessages(guideMessages);
       }
     } catch (error) {
       console.log("AI 채팅 이력 로딩 실패 - 기본 안내 메시지 사용", error);
@@ -276,7 +296,12 @@ const AiChatPage = () => {
       });
     } catch (error) {
       console.log("AI 예약 후보 조회 실패", error);
-      addAiMessage(error.response?.data?.message || "AI 예약 후보 조회 중 오류가 발생했습니다.");
+      const errorData = error.response?.data || {};
+      addAiMessage(errorData.message || "AI 예약 후보 조회 중 오류가 발생했습니다.", {
+        actionType: errorData.actionType,
+        buttonText: errorData.buttonText,
+        actionUrl: errorData.actionUrl,
+      });
     } finally {
       setLoading(false);
     }
@@ -321,6 +346,9 @@ const AiChatPage = () => {
           intent: data.intent,
           location: data.location,
           reservations: Array.isArray(data.reservations) ? data.reservations : [],
+          actionType: data.actionType,
+          buttonText: data.buttonText,
+          actionUrl: data.actionUrl,
         }
       );
     } catch (error) {
@@ -427,6 +455,19 @@ const AiChatPage = () => {
     navigate("/my-reservations");
   };
 
+  const moveAiAction = (item) => {
+    console.log("AI 액션 버튼 클릭", item);
+
+    if (item?.actionUrl) {
+      navigate(item.actionUrl);
+      return;
+    }
+
+    if (item?.actionType === "VEHICLE_REGISTER") {
+      navigate("/vehicles/register");
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     sendChatMessage(inputMessage);
@@ -466,15 +507,20 @@ const AiChatPage = () => {
       return;
     }
 
-    try {
-      await aiApi.clearMessages();
-    } catch (error) {
-      console.log("AI 채팅 이력 초기화 실패 - 화면만 초기화", error);
-      alert("서버 대화 이력 초기화에 실패했습니다. 화면만 초기화합니다.");
-    }
-
+    historyClearedRef.current = true;
+    setClearLoading(true);
     setReservationCandidates([]);
     setMessages(guideMessages);
+
+    try {
+      const response = await aiApi.clearMessages();
+      console.log("AI 채팅 이력 초기화 응답", response.data);
+    } catch (error) {
+      console.log("AI 채팅 이력 초기화 실패 - 화면만 초기화", error);
+      alert("서버 대화 이력 초기화에 실패했습니다. 화면은 초기화했습니다.");
+    } finally {
+      setClearLoading(false);
+    }
   };
 
   const minTime = reservationForm.reservationDate === getTodayText() ? getCurrentTimeText() : undefined;
@@ -490,8 +536,8 @@ const AiChatPage = () => {
               대표 차량, 기본 출발지, 예약 가능 시간, FAQ/공지/민원 데이터를 활용해 충전소 추천과 예약을 도와줍니다.
             </span>
           </div>
-          <button type="button" onClick={handleClear}>
-            대화 초기화
+          <button type="button" onClick={handleClear} disabled={clearLoading}>
+            {clearLoading ? "초기화 중..." : "대화 초기화"}
           </button>
         </div>
 
@@ -592,7 +638,7 @@ const AiChatPage = () => {
               {reservationCandidates.length > 0 && <em>{reservationCandidates.length}개 후보 조회됨</em>}
             </div>
 
-            <div className="chat-message-list chat-window-message-list">
+            <div ref={messageListRef} className="chat-message-list chat-window-message-list">
               {messages.map((item) => (
                 <div key={item.messageId} className={item.senderType === "USER" ? "chat-message user" : "chat-message ai"}>
                   <div className="chat-bubble">
@@ -603,6 +649,14 @@ const AiChatPage = () => {
                       <div className="ai-action-row">
                         <button type="button" className="ai-map-action-btn" onClick={() => moveLocationToMap(item.location)}>
                           지도에서 내 위치 보기
+                        </button>
+                      </div>
+                    )}
+
+                    {item.actionType && item.buttonText && (
+                      <div className="ai-action-row">
+                        <button type="button" className="ai-map-action-btn" onClick={() => moveAiAction(item)}>
+                          {item.buttonText}
                         </button>
                       </div>
                     )}
@@ -673,7 +727,6 @@ const AiChatPage = () => {
                 </div>
               )}
 
-              <div ref={bottomRef} />
             </div>
 
             <form className="chat-input-form chat-window-input-form" onSubmit={handleSubmit}>

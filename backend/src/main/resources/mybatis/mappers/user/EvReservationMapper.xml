@@ -717,15 +717,15 @@
         충전 시뮬레이션 완료 세션 저장
 
         실제 충전 완료 시간은 예약 종료 예정 시간이 아니라
-        actual_start_time + estimated_minutes 기준으로 저장한다.
-        프론트 화면에서는 이를 10~20초로 압축해 보여준다.
+        충전 게이지가 완료된 시점의 서버 현재 시각으로 저장한다.
+        시연 정책상 화면 게이지는 20초로 고정된다.
     -->
     <update id="completeChargingSessionForSimulation">
         update charging_session chs
-           set actual_end_time = chs.actual_start_time + (r.estimated_minutes * interval '1 minute')
+           set actual_end_time = current_timestamp
              , end_soc = r.target_soc
              , actual_kwh = r.required_kwh
-             , actual_minutes = r.estimated_minutes
+             , actual_minutes = greatest(1, ceil(extract(epoch from (current_timestamp - chs.actual_start_time)) / 60.0)::int)
              , actual_cost = r.estimated_cost
              , status = '완료'
              , updated_at = current_timestamp

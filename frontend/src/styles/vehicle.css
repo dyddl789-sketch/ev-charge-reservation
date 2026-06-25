@@ -42,3 +42,49 @@
 .form-group input, .form-group select, .vehicle-form-card input, .vehicle-form-card select { width: 100%; height: 46px; border: 1px solid #d1d5db; border-radius: 12px; padding: 0 14px; box-sizing: border-box; }
 .check-row { display: flex; gap: 8px; align-items: center; font-weight: 800; color: #374151; }
 @media (max-width: 900px) { .vehicle-card, .vehicle-register-layout { grid-template-columns: 1fr; } .vehicle-data, .vehicle-summary, .form-grid { grid-template-columns: 1fr; } .page-title { flex-direction: column; align-items: flex-start; } }
+
+/* 기본 차량 체크박스 UI 보정 */
+.vehicle-default-check-row {
+  justify-content: flex-start;
+  width: fit-content;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fafb;
+}
+
+.vehicle-form-card .vehicle-default-check-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  padding: 0;
+  margin: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.vehicle-default-check-row span {
+  line-height: 1;
+  cursor: pointer;
+}
+
+.vehicle-default-change-box {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.vehicle-default-change-box strong {
+  color: #c2410c;
+}
+
+.vehicle-form-card .form-buttons {
+  align-items: center;
+  justify-content: flex-start;
+}

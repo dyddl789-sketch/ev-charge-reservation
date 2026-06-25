@@ -521,8 +521,8 @@ public class EvReservationServiceImpl implements EvReservationService {
      * 핵심 설계:
      * - reservation.start_time/end_time은 예약 당시 예정 시간으로 보존한다.
      * - charging_session.actual_start_time은 인증 성공 시각을 사용한다.
-     * - charging_session.actual_end_time은 actual_start_time + estimated_minutes로 계산한다.
-     * - 화면에서는 10~20초로 압축해 보여주지만 DB에는 실제 세션 시간 개념을 저장한다.
+     * - charging_session.actual_end_time은 충전 게이지 완료 API가 호출된 서버 현재 시각을 사용한다.
+     * - 화면 게이지는 시연을 위해 20초로 고정하고, DB도 그 완료 시각을 실제 완료 시각으로 저장한다.
      */
     @Override
     @Transactional

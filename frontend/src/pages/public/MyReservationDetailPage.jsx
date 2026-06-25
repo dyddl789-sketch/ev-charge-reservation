@@ -24,8 +24,12 @@ const formatDateTime = (value) => {
   });
 };
 
-const addMinutes = (date, minutes) => {
-  return new Date(date.getTime() + Number(minutes || 0) * 60 * 1000);
+const CHARGE_SIMULATION_SECONDS = 20;
+const CHARGE_PROGRESS_STEP = 5;
+const CHARGE_PROGRESS_INTERVAL_MS = (CHARGE_SIMULATION_SECONDS * 1000) / (100 / CHARGE_PROGRESS_STEP);
+
+const addSeconds = (date, seconds) => {
+  return new Date(date.getTime() + Number(seconds || 0) * 1000);
 };
 
 const MyReservationDetailPage = () => {
@@ -189,7 +193,7 @@ const MyReservationDetailPage = () => {
 
     if (reservation?.status === "충전중") {
       const start = reservation?.actualStartTime ? new Date(reservation.actualStartTime) : new Date(reservation?.verifiedAt || Date.now());
-      const end = addMinutes(start, reservation?.estimatedMinutes || 0);
+      const end = addSeconds(new Date(), CHARGE_SIMULATION_SECONDS);
       setActualStartTime(start);
       setExpectedActualEndTime(end);
       setSimulationStep("CHARGING");
@@ -226,7 +230,7 @@ const MyReservationDetailPage = () => {
     setIsCompleting(false);
 
     chargeTimerRef.current = window.setInterval(() => {
-      current += 5;
+      current += CHARGE_PROGRESS_STEP;
       setChargeProgress(current);
 
       if (current >= 100) {
@@ -234,7 +238,7 @@ const MyReservationDetailPage = () => {
         chargeTimerRef.current = null;
         completeChargingSimulation();
       }
-    }, 650);
+    }, CHARGE_PROGRESS_INTERVAL_MS);
   };
 
   const verifyWithCode = async () => {
@@ -250,7 +254,7 @@ const MyReservationDetailPage = () => {
       alert(response.data?.message || "예약 인증이 완료되었습니다.");
 
       const start = new Date();
-      const end = addMinutes(start, reservation?.estimatedMinutes || 0);
+      const end = addSeconds(start, CHARGE_SIMULATION_SECONDS);
       setActualStartTime(start);
       setExpectedActualEndTime(end);
       setSimulationStep("CHARGING");
@@ -326,7 +330,7 @@ const MyReservationDetailPage = () => {
         {(reservation.actualStartTime || reservation.actualEndTime || reservation.status === "완료") && (
           <div className="actual-session-box">
             <h3>실제 충전 세션</h3>
-            <p>예약 예정 시간은 보존하고, 실제 충전 시간은 인증 성공 시각 기준으로 관리합니다.</p>
+            <p>예약 예정 시간은 보존하고, 실제 충전 시작/완료 시각은 충전 시뮬레이션 실행 시각 기준으로 관리합니다.</p>
             <div className="mypage-detail-grid two">
               <article><span>실제 충전 시작</span><strong>{reservation.actualStartTimeText || formatDateTime(reservation.actualStartTime)}</strong></article>
               <article><span>실제 충전 완료</span><strong>{reservation.actualEndTimeText || formatDateTime(reservation.actualEndTime)}</strong></article>
@@ -352,7 +356,7 @@ const MyReservationDetailPage = () => {
             <div className="simulation-head">
               <div>
                 <h2>충전 시작 시뮬레이션</h2>
-                <p>지도 이동은 발표용으로 압축해서 보여주고, 실제 충전 시간은 인증 성공 시각 기준으로 계산합니다.</p>
+                <p>지도 이동 후 인증코드를 입력하면 충전 게이지가 20초 동안 진행됩니다.</p>
               </div>
               <button type="button" onClick={closeSimulation}>닫기</button>
             </div>
@@ -397,10 +401,10 @@ const MyReservationDetailPage = () => {
                 <div className="simulation-charge-progress"><span style={{ width: `${chargeProgress}%` }} /></div>
                 <div className="simulation-charge-info">
                   <article><span>실제 충전 시작</span><strong>{formatDateTime(actualStartTime || reservation.actualStartTime || reservation.verifiedAt)}</strong></article>
-                  <article><span>예상 실제 완료</span><strong>{formatDateTime(expectedActualEndTime)}</strong></article>
+                  <article><span>시연 완료 예정</span><strong>{formatDateTime(expectedActualEndTime)}</strong></article>
                   <article><span>예약 종료 예정</span><strong>{reservation.endTimeText || formatDateTime(reservation.endTime)}</strong></article>
                 </div>
-                <p>화면에서는 충전 과정을 10~20초로 압축해 보여주고, 세션 시간은 인증 성공 시각 기준으로 저장합니다.</p>
+                <p>시연을 위해 충전 진행 과정은 20초로 고정해 표시합니다. 게이지 완료 시각이 실제 충전 완료 시각으로 저장됩니다.</p>
               </div>
             )}
 
