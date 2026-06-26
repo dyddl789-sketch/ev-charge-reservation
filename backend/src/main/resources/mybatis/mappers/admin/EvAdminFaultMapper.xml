@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.admin.EvAdminFaultDAO">
+
+    <sql id="FaultColumns">
+              f.fault_id as faultId
+            , f.complaint_id as complaintId
+            , f.station_id as stationId
+            , f.charger_id as chargerId
+            , f.assigned_employee_id as assignedEmployeeId
+            , li.inspection_id as latestInspectionId
+            , la.action_id as latestActionId
+            , ap.document_id as approvalDocumentId
+            , f.fault_type as faultType
+            , f.title
+            , f.description
+            , f.severity
+            , f.status
+            , f.source_type as sourceType
+            , s.station_name as stationName
+            , s.address as address
+            , c.charger_name as chargerName
+            , c.charger_type as chargerType
+            , c.connector_type as connectorType
+            , c.status as chargerStatus
+            , am.member_name as assignedEmployeeName
+            , e.employee_no as assignedEmployeeNo
+            , d.department_name as assignedDepartmentName
+            , li.inspection_result as latestInspectionResult
+            , li.description as latestInspectionDescription
+            , li.completed_at as latestInspectionCompletedAt
+            , la.status as latestActionStatus
+            , la.action_type as latestActionType
+            , la.action_result as latestActionResult
+            , ap.status as approvalStatus
+            , ap.title as approvalTitle
+            , la.completed_at as latestActionCompletedAt
+            , f.reported_at as reportedAt
+            , f.resolved_at as resolvedAt
+            , f.created_at as createdAt
+            , f.updated_at as updatedAt
+    </sql>
+
+    <sql id="FaultJoins">
+          from fault_report f
+          join charging_station s
+            on f.station_id = s.station_id
+          join charger c
+            on f.charger_id = c.charger_id
+          left join employee e
+            on f.assigned_employee_id = e.employee_id
+          left join app_member am
+            on e.member_id = am.member_id
+          left join department d
+            on e.department_id = d.department_id
+          left join lateral (
+              select i.*
+                from inspection i
+               where i.fault_id = f.fault_id
+               order by coalesce(i.completed_at, i.inspection_date, i.created_at) desc
+               limit 1
+          ) li on true
+          left join lateral (
+              select ma.*
+                from maintenance_action ma
+               where ma.fault_id = f.fault_id
+               order by coalesce(ma.completed_at, ma.started_at, ma.created_at) desc
+               limit 1
+          ) la on true
+          left join lateral (
+              select ad.*
+                from approval_document ad
+               where ad.fault_id = f.fault_id
+                 and ad.status not in ('반려', '취소')
+               order by ad.created_at desc, ad.document_id desc
+               limit 1
+          ) ap on true
+    </sql>
+
+    <sql id="FaultWhere">
+         where 1 = 1
+           and f.status != '취소'
+        <if test="status != null and status != ''">
+           and f.status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+           and (
+                  f.title ilike concat('%', #{keyword}, '%')
+               or f.description ilike concat('%', #{keyword}, '%')
+               or cast(f.fault_id as varchar) = #{keyword}
+               or s.station_name ilike concat('%', #{keyword}, '%')
+               or c.charger_name ilike concat('%', #{keyword}, '%')
+               or am.member_name ilike concat('%', #{keyword}, '%')
+           )
+        </if>
+        <if test="reportedFrom != null and reportedFrom != ''">
+           and f.reported_at &gt;= cast(#{reportedFrom} as date)
+        </if>
+        <if test="reportedTo != null and reportedTo != ''">
+           and f.reported_at &lt; cast(#{reportedTo} as date) + interval '1 day'
+        </if>
+        <if test="resolvedFrom != null and resolvedFrom != ''">
+           and f.resolved_at &gt;= cast(#{resolvedFrom} as date)
+        </if>
+        <if test="resolvedTo != null and resolvedTo != ''">
+           and f.resolved_at &lt; cast(#{resolvedTo} as date) + interval '1 day'
+        </if>
+        <if test="requesterRole == 'ENGINEER'">
+           and f.assigned_employee_id = #{requesterEmployeeId}
+        </if>
+    </sql>
+
+    <!-- 장애·점검 목록 조회 -->
+    <select id="findFaultList" parameterType="com.ev.dto.admin.fault.EvAdminFaultSearchDTO" resultType="com.ev.dto.admin.fault.EvAdminFaultDTO">
+        select
+            <include refid="FaultColumns" />
+        <include refid="FaultJoins" />
+        <include refid="FaultWhere" />
+         order by f.reported_at desc, f.fault_id desc
+         limit #{limit}
+         offset #{offset}
+    </select>
+
+    <!-- 장애·점검 목록 총 개수 -->
+    <select id="countFaultList" parameterType="com.ev.dto.admin.fault.EvAdminFaultSearchDTO" resultType="int">
+        select count(*)
+        <include refid="FaultJoins" />
+        <include refid="FaultWhere" />
+    </select>
+
+    <!-- 장애·점검 요약 카운트 -->
+    <select id="countFaultSummary" parameterType="com.ev.dto.admin.fault.EvAdminFaultSearchDTO" resultType="map">
+        select
+            count(*) filter (where f.status = '접수') as received,
+            count(*) filter (where f.status = '점검중') as inspecting,
+            count(*) filter (where f.status = '조치중') as action,
+            count(*) filter (where f.status = '결재대기') as approval,
+            count(*) filter (where f.status = '완료') as completed
+        <include refid="FaultJoins" />
+        <include refid="FaultWhere" />
+    </select>
+
+    <!-- 장애·점검 상세 조회 -->
+    <select id="findFaultDetail" resultType="com.ev.dto.admin.fault.EvAdminFaultDTO">
+        select
+            <include refid="FaultColumns" />
+        <include refid="FaultJoins" />
+         where f.fault_id = #{faultId}
+    </select>
+
+    <!-- 장애 이력 조회 -->
+    <select id="findFaultHistoryList" resultType="com.ev.dto.admin.fault.EvAdminFaultHistoryDTO">
+        select
+              h.history_id as historyId
+            , h.fault_id as faultId
+            , h.employee_id as employeeId
+            , m.member_name as employeeName
+            , h.before_status as beforeStatus
+            , h.after_status as afterStatus
+            , h.action_type as actionType
+            , h.memo
+            , h.created_at as createdAt
+          from fault_history h
+          left join employee e
+            on h.employee_id = e.employee_id
+          left join app_member m
+            on e.member_id = m.member_id
+         where h.fault_id = #{faultId}
+         order by h.created_at asc, h.history_id asc
+    </select>
+
+    <!-- 시설관리담당자 목록 -->
+    <select id="findEngineerList" resultType="com.ev.dto.admin.employee.EvAdminEmployeeDTO">
+        select
+              e.employee_id as employeeId
+            , e.member_id as memberId
+            , e.department_id as departmentId
+            , m.user_id as userId
+            , m.member_name as memberName
+            , m.email
+            , m.phone
+            , m.user_type as userType
+            , e.employee_no as employeeNo
+            , d.department_name as departmentName
+            , e.position_name as positionName
+            , e.duty_name as dutyName
+            , e.status as status
+          from employee e
+          join app_member m
+            on e.member_id = m.member_id
+          join department d
+            on e.department_id = d.department_id
+         where e.status = 'ACTIVE'
+           and m.status = 'ACTIVE'
+           and m.user_type = 'ENGINEER'
+         order by e.employee_id asc
+    </select>
+
+    <select id="findEmployeeIdByMemberId" resultType="long">
+        select employee_id
+          from employee
+         where member_id = #{memberId}
+         limit 1
+    </select>
+
+    <select id="findUserTypeByMemberId" resultType="string">
+        select user_type
+          from app_member
+         where member_id = #{memberId}
+         limit 1
+    </select>
+
+    <select id="findFaultStatus" resultType="string">
+        select status
+          from fault_report
+         where fault_id = #{faultId}
+    </select>
+
+    <select id="findLatestInspectionId" resultType="long">
+        select inspection_id
+          from inspection
+         where fault_id = #{faultId}
+         order by coalesce(completed_at, inspection_date, created_at) desc
+         limit 1
+    </select>
+
+    <select id="findLatestActionId" resultType="long">
+        select action_id
+          from maintenance_action
+         where fault_id = #{faultId}
+           and status = '진행중'
+         order by started_at desc, action_id desc
+         limit 1
+    </select>
+
+    <update id="updateFaultAssignee">
+        update fault_report
+           set assigned_employee_id = #{employeeId},
+               updated_at = current_timestamp
+         where fault_id = #{faultId}
+    </update>
+
+    <update id="updateFaultStatus">
+        update fault_report
+           set status = #{status},
+               updated_at = current_timestamp,
+               resolved_at = case when #{resolved} = true then current_timestamp else resolved_at end
+         where fault_id = #{faultId}
+    </update>
+
+    <update id="updateFaultStatusAndAssignee">
+        update fault_report
+           set status = #{status},
+               assigned_employee_id = coalesce(#{employeeId}, assigned_employee_id),
+               updated_at = current_timestamp,
+               resolved_at = case when #{resolved} = true then current_timestamp else resolved_at end
+         where fault_id = #{faultId}
+    </update>
+
+    <update id="updateChargerStatusByFaultId">
+        update charger c
+           set status = #{status},
+               updated_at = current_timestamp,
+               last_status_checked_at = current_timestamp
+          from fault_report f
+         where f.charger_id = c.charger_id
+           and f.fault_id = #{faultId}
+    </update>
+
+    <update id="updateLinkedComplaintStatus">
+        update complaint c
+           set status = #{status},
+               admin_memo = coalesce(#{adminMemo}, admin_memo),
+               updated_at = current_timestamp,
+               closed_at = case when #{closed} = true then current_timestamp else closed_at end
+          from fault_report f
+         where f.complaint_id = c.complaint_id
+           and f.fault_id = #{faultId}
+           and f.complaint_id is not null
+    </update>
+
+    <insert id="insertFaultHistory">
+        insert into fault_history (
+              fault_id
+            , employee_id
+            , before_status
+            , after_status
+            , action_type
+            , memo
+            , created_at
+        ) values (
+              #{faultId}
+            , #{employeeId}
+            , #{beforeStatus}
+            , #{afterStatus}
+            , #{actionType}
+            , #{memo}
+            , current_timestamp
+        )
+    </insert>
+
+    <insert id="insertInspection">
+        insert into inspection (
+              fault_id
+            , charger_id
+            , inspector_id
+            , inspection_type
+            , inspection_result
+            , description
+            , action_required
+            , inspection_date
+            , created_at
+            , updated_at
+        )
+        select
+              f.fault_id
+            , f.charger_id
+            , #{inspectorId}
+            , '장애점검'
+            , '진행중'
+            , '시설관리담당자가 충전기 상태를 점검하고 있습니다.'
+            , false
+            , current_timestamp
+            , current_timestamp
+            , current_timestamp
+          from fault_report f
+         where f.fault_id = #{faultId}
+    </insert>
+
+    <insert id="insertInspectionByFault">
+        insert into inspection (
+              fault_id
+            , charger_id
+            , inspector_id
+            , inspection_type
+            , inspection_result
+            , description
+            , action_required
+            , inspection_date
+            , completed_at
+            , created_at
+            , updated_at
+        )
+        select
+              f.fault_id
+            , f.charger_id
+            , #{inspectorId}
+            , '장애점검'
+            , #{inspectionResult}
+            , #{description}
+            , #{actionRequired}
+            , current_timestamp
+            , case when #{completed} = true then current_timestamp else null end
+            , current_timestamp
+            , current_timestamp
+          from fault_report f
+         where f.fault_id = #{faultId}
+    </insert>
+
+    <update id="updateInspectionResult">
+        update inspection
+           set inspection_result = #{inspectionResult},
+               description = #{description},
+               action_required = #{actionRequired},
+               completed_at = current_timestamp,
+               updated_at = current_timestamp
+         where inspection_id = #{inspectionId}
+    </update>
+
+    <insert id="insertMaintenanceAction">
+        insert into maintenance_action (
+              fault_id
+            , inspection_id
+            , charger_id
+            , employee_id
+            , action_type
+            , action_result
+            , status
+            , started_at
+            , created_at
+            , updated_at
+        )
+        select
+              f.fault_id
+            , #{inspectionId}
+            , f.charger_id
+            , #{employeeId}
+            , #{actionType}
+            , '조치 진행 중'
+            , '진행중'
+            , current_timestamp
+            , current_timestamp
+            , current_timestamp
+          from fault_report f
+         where f.fault_id = #{faultId}
+    </insert>
+
+    <update id="completeMaintenanceAction">
+        update maintenance_action
+           set status = '완료',
+               action_result = #{actionResult},
+               completed_at = current_timestamp,
+               updated_at = current_timestamp
+         where action_id = #{actionId}
+    </update>
+
+    <update id="completeLinkedApprovalDocumentByFaultId">
+        update approval_document
+           set status = '완료',
+               updated_at = current_timestamp,
+               completed_at = current_timestamp
+         where fault_id = #{faultId}
+           and status = '최종승인'
+    </update>
+
+    <select id="countOpenFaultByCharger" resultType="int">
+        select count(*)
+          from fault_report
+         where charger_id = #{chargerId}
+           and status in ('접수', '점검중', '조치중', '결재대기')
+    </select>
+
+    <insert id="insertSystemFaultFromCharger">
+        insert into fault_report (
+              station_id
+            , charger_id
+            , fault_type
+            , title
+            , description
+            , severity
+            , status
+            , source_type
+            , reported_at
+            , created_at
+            , updated_at
+        )
+        select
+              c.station_id
+            , c.charger_id
+            , #{faultType}
+            , #{title}
+            , #{description}
+            , #{severity}
+            , '접수'
+            , #{sourceType}
+            , current_timestamp
+            , current_timestamp
+            , current_timestamp
+          from charger c
+         where c.charger_id = #{chargerId}
+    </insert>
+
+</mapper>

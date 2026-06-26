@@ -18,7 +18,7 @@ export const getMessages = () => {
   return api.get("/ai-chat/messages");
 };
 
-// AI 채팅 Redis 캐시 초기화
+// AI 채팅 DB 이력 + Redis 캐시 초기화
 export const clearMessages = () => {
   console.log("AI 채팅 이력 초기화 요청");
   return api.delete("/ai-chat/messages");

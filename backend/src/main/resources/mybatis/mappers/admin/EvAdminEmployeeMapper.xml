@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.admin.EvAdminEmployeeDAO">
+
+    <select id="findEmployees" resultType="com.ev.dto.admin.employee.EvAdminEmployeeDTO">
+        select
+              e.employee_id as employeeId
+            , e.member_id as memberId
+            , e.department_id as departmentId
+            , m.user_id as userId
+            , m.member_name as memberName
+            , m.nickname as nickname
+            , m.phone as phone
+            , m.email as email
+            , m.user_type as userType
+            , m.login_type as loginType
+            , e.employee_no as employeeNo
+            , d.department_name as departmentName
+            , d.department_code as departmentCode
+            , e.position_name as positionName
+            , e.duty_name as dutyName
+            , e.status as status
+            , e.hired_at as hiredAt
+            , e.retired_at as retiredAt
+            , e.created_at as createdAt
+            , e.updated_at as updatedAt
+          from employee e
+          join app_member m
+            on e.member_id = m.member_id
+          join department d
+            on e.department_id = d.department_id
+         where 1 = 1
+        <if test="keyword != null and keyword != ''">
+           and (
+                  m.member_name ilike '%' || #{keyword} || '%'
+               or m.user_id ilike '%' || #{keyword} || '%'
+               or e.employee_no ilike '%' || #{keyword} || '%'
+               or m.email ilike '%' || #{keyword} || '%'
+           )
+        </if>
+        <if test="departmentId != null">
+           and e.department_id = #{departmentId}
+        </if>
+        <if test="userType != null and userType != ''">
+           and m.user_type = #{userType}
+        </if>
+        <if test="status != null and status != ''">
+           and e.status = #{status}
+        </if>
+         order by e.employee_id desc
+    </select>
+
+    <select id="findEmployeeById" resultType="com.ev.dto.admin.employee.EvAdminEmployeeDTO">
+        select
+              e.employee_id as employeeId
+            , e.member_id as memberId
+            , e.department_id as departmentId
+            , m.user_id as userId
+            , m.member_name as memberName
+            , m.nickname as nickname
+            , m.phone as phone
+            , m.email as email
+            , m.user_type as userType
+            , m.login_type as loginType
+            , e.employee_no as employeeNo
+            , d.department_name as departmentName
+            , d.department_code as departmentCode
+            , e.position_name as positionName
+            , e.duty_name as dutyName
+            , e.status as status
+            , e.hired_at as hiredAt
+            , e.retired_at as retiredAt
+            , e.created_at as createdAt
+            , e.updated_at as updatedAt
+          from employee e
+          join app_member m
+            on e.member_id = m.member_id
+          join department d
+            on e.department_id = d.department_id
+         where e.employee_id = #{employeeId}
+    </select>
+
+
+
+    <select id="findEmployeeByMemberId" resultType="com.ev.dto.admin.employee.EvAdminEmployeeDTO">
+        select
+              e.employee_id as employeeId
+            , e.member_id as memberId
+            , e.department_id as departmentId
+            , m.user_id as userId
+            , m.member_name as memberName
+            , m.nickname as nickname
+            , m.phone as phone
+            , m.email as email
+            , m.user_type as userType
+            , m.login_type as loginType
+            , e.employee_no as employeeNo
+            , d.department_name as departmentName
+            , d.department_code as departmentCode
+            , e.position_name as positionName
+            , e.duty_name as dutyName
+            , e.status as status
+            , e.hired_at as hiredAt
+            , e.retired_at as retiredAt
+            , e.created_at as createdAt
+            , e.updated_at as updatedAt
+          from employee e
+          join app_member m
+            on e.member_id = m.member_id
+          join department d
+            on e.department_id = d.department_id
+         where e.member_id = #{memberId}
+    </select>
+
+    <select id="findPasswordByMemberId" resultType="string">
+        select password
+          from app_member
+         where member_id = #{memberId}
+    </select>
+
+    <select id="findDepartments" resultType="com.ev.dto.admin.employee.EvAdminDepartmentDTO">
+        select
+              department_id as departmentId
+            , department_name as departmentName
+            , department_code as departmentCode
+            , description
+            , is_active as isActive
+          from department
+         where is_active = true
+           and department_code in ('OPS', 'FACILITY', 'SYSTEM')
+         order by case department_code
+                    when 'OPS' then 1
+                    when 'FACILITY' then 2
+                    when 'SYSTEM' then 3
+                    else 9
+                  end
+    </select>
+
+    <select id="findDepartmentById" resultType="com.ev.dto.admin.employee.EvAdminDepartmentDTO">
+        select
+              department_id as departmentId
+            , department_name as departmentName
+            , department_code as departmentCode
+            , description
+            , is_active as isActive
+          from department
+         where department_id = #{departmentId}
+           and is_active = true
+    </select>
+
+    <insert id="insertMember" useGeneratedKeys="true" keyProperty="memberId" keyColumn="member_id">
+        insert into app_member (
+              user_id
+            , password
+            , member_name
+            , nickname
+            , phone
+            , email
+            , user_type
+            , login_type
+            , status
+            , created_at
+            , updated_at
+        ) values (
+              #{userId}
+            , #{password}
+            , #{memberName}
+            , #{nickname}
+            , nullif(#{phone}, '')
+            , #{email}
+            , #{userType}
+            , 'LOCAL'
+            , 'ACTIVE'
+            , current_timestamp
+            , current_timestamp
+        )
+    </insert>
+
+    <insert id="insertEmployee" useGeneratedKeys="true" keyProperty="employeeId" keyColumn="employee_id">
+        insert into employee (
+              member_id
+            , department_id
+            , employee_no
+            , position_name
+            , duty_name
+            , status
+            , hired_at
+            , created_at
+            , updated_at
+        ) values (
+              #{memberId}
+            , #{departmentId}
+            , #{employeeNo}
+            , #{positionName}
+            , #{dutyName}
+            , coalesce(nullif(#{status}, ''), 'ACTIVE')
+            , #{hiredAt}
+            , current_timestamp
+            , current_timestamp
+        )
+    </insert>
+
+    <update id="updateMemberByEmployeeId">
+        update app_member m
+           set member_name = coalesce(nullif(#{memberName}, ''), m.member_name),
+               nickname = coalesce(nullif(#{nickname}, ''), coalesce(nullif(#{memberName}, ''), m.nickname)),
+               phone = nullif(#{phone}, ''),
+               email = coalesce(nullif(#{email}, ''), m.email),
+               user_type = coalesce(nullif(#{userType}, ''), m.user_type),
+               status = case
+                            when coalesce(nullif(#{status}, ''), 'ACTIVE') = 'ACTIVE' then 'ACTIVE'
+                            else 'INACTIVE'
+                        end,
+               updated_at = current_timestamp
+          from employee e
+         where e.member_id = m.member_id
+           and e.employee_id = #{employeeId}
+    </update>
+
+    <update id="updateEmployee">
+        update employee
+           set department_id = coalesce(#{departmentId}, department_id),
+               employee_no = coalesce(nullif(#{employeeNo}, ''), employee_no),
+               position_name = coalesce(nullif(#{positionName}, ''), position_name),
+               duty_name = #{dutyName},
+               status = coalesce(nullif(#{status}, ''), status),
+               hired_at = #{hiredAt},
+               retired_at = #{retiredAt},
+               updated_at = current_timestamp
+         where employee_id = #{employeeId}
+    </update>
+
+    <update id="updateStatus">
+        update employee
+           set status = #{status},
+               retired_at = case when #{status} = 'RETIRED' then current_date else retired_at end,
+               updated_at = current_timestamp
+         where employee_id = #{employeeId}
+    </update>
+
+    <update id="updateMemberStatusByEmployeeId">
+        update app_member m
+           set status = #{status},
+               updated_at = current_timestamp
+          from employee e
+         where e.member_id = m.member_id
+           and e.employee_id = #{employeeId}
+    </update>
+
+
+
+    <update id="updateMyProfile">
+        update app_member
+           set email = coalesce(nullif(#{email}, ''), email),
+               phone = nullif(#{phone}, ''),
+               updated_at = current_timestamp
+         where member_id = #{memberId}
+    </update>
+
+    <update id="updateMemberPassword">
+        update app_member
+           set password = #{password},
+               updated_at = current_timestamp
+         where member_id = #{memberId}
+    </update>
+
+    <select id="existsByUserId" resultType="int">
+        select count(*)
+          from app_member m
+          left join employee e
+            on m.member_id = e.member_id
+         where m.user_id = #{userId}
+        <if test="excludeEmployeeId != null">
+           and coalesce(e.employee_id, -1) != #{excludeEmployeeId}
+        </if>
+    </select>
+
+    <select id="existsByEmail" resultType="int">
+        select count(*)
+          from app_member m
+          left join employee e
+            on m.member_id = e.member_id
+         where m.email = #{email}
+        <if test="excludeEmployeeId != null">
+           and coalesce(e.employee_id, -1) != #{excludeEmployeeId}
+        </if>
+    </select>
+
+    <select id="existsByEmployeeNo" resultType="int">
+        select count(*)
+          from employee e
+         where e.employee_no = #{employeeNo}
+        <if test="excludeEmployeeId != null">
+           and e.employee_id != #{excludeEmployeeId}
+        </if>
+    </select>
+
+</mapper>

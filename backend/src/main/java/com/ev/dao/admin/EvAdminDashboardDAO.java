@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import com.ev.dto.admin.EvAdminNoticeDTO;
 import com.ev.dto.admin.EvAdminReservationRowDTO;
 import com.ev.dto.admin.EvAdminStationRowDTO;
+import com.ev.dto.admin.simulation.EvAdminSimulationChargerDTO;
 
 @Mapper
 public interface EvAdminDashboardDAO {
@@ -45,4 +46,7 @@ public interface EvAdminDashboardDAO {
     
     // 최근 운영 알림 조회
     List<EvAdminNoticeDTO> findRecentNotices();
+
+    // 최근 장애 발생 충전기 목록
+    List<EvAdminSimulationChargerDTO> findRecentBrokenChargers();
 }

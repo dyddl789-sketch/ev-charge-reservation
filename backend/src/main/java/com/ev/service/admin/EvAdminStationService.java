@@ -1,5 +1,8 @@
 package com.ev.service.admin;
 
+import java.util.List;
+
+import com.ev.dto.admin.EvAdminChargerFormDTO;
 import com.ev.dto.admin.EvAdminStationFormDTO;
 import com.ev.dto.admin.EvAdminStationPageDTO;
 import com.ev.dto.admin.EvAdminStationSearchDTO;
@@ -10,7 +13,15 @@ public interface EvAdminStationService {
 
     EvAdminStationFormDTO getStationForm(Long stationId);
 
-    void registerStation(EvAdminStationFormDTO stationDTO);
+    List<EvAdminChargerFormDTO> getStationChargers(Long stationId);
 
-    void updateStation(EvAdminStationFormDTO stationDTO);
+    EvAdminStationFormDTO registerStation(EvAdminStationFormDTO stationDTO);
+
+    EvAdminStationFormDTO updateStation(EvAdminStationFormDTO stationDTO);
+
+    void updateStationStatus(Long stationId, String stationStatus);
+
+    EvAdminChargerFormDTO registerCharger(Long stationId, EvAdminChargerFormDTO chargerDTO);
+
+    void updateChargerStatus(Long chargerId, String status);
 }

@@ -17,6 +17,7 @@ public class EvAdminMemberDetailDTO {
     private String nickname;
     private String phone;
     private String email;
+    private String profileImageUrl;
     private String userType;
     private String loginType;
     private String status;

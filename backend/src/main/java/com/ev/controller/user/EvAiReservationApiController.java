@@ -1,13 +1,12 @@
 package com.ev.controller.user;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,13 +18,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ev.dao.user.EvAiChatDAO;
+import com.ev.dto.chat.EvAiChatResponseDTO;
 import com.ev.dto.reservation.EvReservationDTO;
-import com.ev.dto.station.EvChargerDTO;
-import com.ev.dto.station.EvStationMapDTO;
 import com.ev.dto.vehicle.EvVehicleDTO;
 import com.ev.security.EvUserDetails;
+import com.ev.service.user.EvAiChatService;
 import com.ev.service.user.EvReservationService;
-import com.ev.service.user.EvStationService;
 import com.ev.service.user.EvVehicleService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,14 +38,22 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class EvAiReservationApiController {
 
+    private static final int DEFAULT_RADIUS_METER = 30000;
+    private static final int DEFAULT_LIMIT = 5;
     private static final Duration CANDIDATE_TTL = Duration.ofMinutes(10);
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
+    private final EvAiChatDAO evAiChatDAO;
+    private final EvAiChatService evAiChatService;
     private final EvVehicleService evVehicleService;
-    private final EvStationService stationService;
     private final EvReservationService reservationService;
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
 
+    /*
+     * AI 예약 후보 조회
+     * 대표 차량 + 기본 출발지 + 사용가능 충전기 + 예약 시간 중복 제외 기준으로 조회한다.
+     */
     @PostMapping("/prepare")
     public ResponseEntity<?> prepareAiReservation(@AuthenticationPrincipal EvUserDetails userDetails,
                                                   @RequestBody Map<String, Object> request) {
@@ -56,101 +63,115 @@ public class EvAiReservationApiController {
             return ResponseEntity.status(401).body(Map.of("message", "로그인이 필요합니다."));
         }
 
-        Long memberId = userDetails.getMemberId();
-        List<EvVehicleDTO> vehicleList = evVehicleService.getVehicleList(memberId);
+        try {
+            Long memberId = userDetails.getMemberId();
+            LocalDateTime startDateTime = resolveStartDateTime(request);
+            validateFutureStartTime(startDateTime);
 
-        if (vehicleList == null || vehicleList.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "AI 예약을 사용하려면 먼저 차량을 등록해주세요."
-            ));
-        }
+            Integer currentSoc = toInteger(request.getOrDefault("currentSoc", 30));
+            Integer targetSoc = toInteger(request.getOrDefault("targetSoc", 80));
+            validateSoc(currentSoc, targetSoc);
 
-        EvVehicleDTO vehicle = vehicleList.stream()
-                .filter(v -> Boolean.TRUE.equals(v.getIsDefault()))
-                .findFirst()
-                .orElse(vehicleList.get(0));
+            String sort = resolveSort(request);
+            int radiusMeter = toInteger(request.getOrDefault("radiusMeter", DEFAULT_RADIUS_METER));
+            int limit = toInteger(request.getOrDefault("limit", DEFAULT_LIMIT));
 
-        String keyword = text(request.get("keyword"));
-        String message = text(request.get("message"));
-        String sort = resolveSort(message + " " + keyword);
-
-        List<EvStationMapDTO> stationList = stationService.getStationMapList(keyword.isBlank() ? null : keyword);
-        List<Map<String, Object>> candidateList = new ArrayList<>();
-
-        for (EvStationMapDTO station : stationList) {
-            if (station.getStationId() == null) {
-                continue;
+            List<EvVehicleDTO> vehicleList = evVehicleService.getVehicleList(memberId);
+            if (vehicleList == null || vehicleList.isEmpty()) {
+                Map<String, Object> response = buildActionResponse(
+                        "AI 예약을 사용하려면 먼저 대표차량을 등록해 주세요.",
+                        "VEHICLE_REGISTER",
+                        "차량 등록하러 가기",
+                        "/vehicles/register"
+                );
+                savePrepareConversation(memberId, request, response);
+                return ResponseEntity.badRequest().body(response);
             }
 
-            List<EvChargerDTO> chargerList = stationService.getChargerList(station.getStationId());
+            EvVehicleDTO vehicle = vehicleList.stream()
+                    .filter(v -> Boolean.TRUE.equals(v.getIsDefault()))
+                    .findFirst()
+                    .orElse(null);
 
-            for (EvChargerDTO charger : chargerList) {
-                if (!"사용가능".equals(charger.getStatus())) {
-                    continue;
-                }
-
-                if (!connectorMatches(vehicle.getConnectorType(), charger.getConnectorType())) {
-                    continue;
-                }
-
-                Map<String, Object> candidate = new HashMap<>();
-                candidate.put("candidateNo", candidateList.size() + 1);
-                candidate.put("vehicleId", vehicle.getVehicleId());
-                candidate.put("vehicleNickname", vehicle.getVehicleNickname());
-                candidate.put("modelName", vehicle.getModelName());
-                candidate.put("batteryCapacityKwh", vehicle.getBatteryCapacityKwh());
-                candidate.put("vehicleConnectorType", vehicle.getConnectorType());
-                candidate.put("stationId", station.getStationId());
-                candidate.put("stationName", station.getStationName());
-                candidate.put("address", station.getAddress());
-                candidate.put("operatorName", station.getOperatorName());
-                candidate.put("latitude", station.getLatitude());
-                candidate.put("longitude", station.getLongitude());
-                candidate.put("distanceKm", station.getDistanceKm());
-                candidate.put("chargerId", charger.getChargerId());
-                candidate.put("chargerName", charger.getChargerName());
-                candidate.put("chargerType", charger.getChargerType());
-                candidate.put("connectorType", charger.getConnectorType());
-                candidate.put("chargingSpeedKw", toDouble(charger.getChargingSpeedKw()));
-                candidate.put("pricePerKwh", toDouble(charger.getPricePerKwh()));
-                candidate.put("status", charger.getStatus());
-
-                candidateList.add(candidate);
+            if (vehicle == null) {
+                Map<String, Object> response = buildActionResponse(
+                        "AI 예약을 사용하려면 대표차량이 필요합니다. 차량 등록 화면에서 기본 차량으로 설정해 주세요.",
+                        "VEHICLE_REGISTER",
+                        "차량 등록하러 가기",
+                        "/vehicles/register"
+                );
+                savePrepareConversation(memberId, request, response);
+                return ResponseEntity.badRequest().body(response);
             }
-        }
 
-        sortCandidates(candidateList, sort);
+            Map<String, Object> defaultLocation = evAiChatDAO.findDefaultLocationForAi(memberId);
+            if (defaultLocation == null || defaultLocation.isEmpty()) {
+                Map<String, Object> response = buildActionResponse(
+                        "AI가 주변 충전소를 추천하려면 기본 출발지를 먼저 설정해야 합니다. 충전소 찾기 화면에서 출발지를 등록하고 기본으로 설정해주세요.",
+                        "LOCATION_REGISTER",
+                        "충전소 찾기에서 출발지 설정",
+                        "/stations"
+                );
+                savePrepareConversation(memberId, request, response);
+                return ResponseEntity.badRequest().body(response);
+            }
 
-        for (int i = 0; i < candidateList.size(); i++) {
-            candidateList.get(i).put("candidateNo", i + 1);
-        }
+            List<Map<String, Object>> rawCandidateList = evAiChatDAO.findAiReservationCandidates(
+                    memberId,
+                    startDateTime,
+                    currentSoc,
+                    targetSoc,
+                    radiusMeter,
+                    Math.max(1, Math.min(limit, 10)),
+                    sort
+            );
 
-        if (candidateList.size() > 5) {
-            candidateList = new ArrayList<>(candidateList.subList(0, 5));
-        }
+            List<Map<String, Object>> candidateList = normalizeCandidateList(rawCandidateList, startDateTime, currentSoc, targetSoc);
 
-        if (candidateList.isEmpty()) {
-            return ResponseEntity.ok(Map.of(
+            if (candidateList.isEmpty()) {
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("success", false);
+                response.put("message", buildEmptyCandidateMessage(defaultLocation, vehicle, startDateTime));
+                response.put("intent", "AI_RESERVATION_PREPARE");
+                response.put("sort", sort);
+                response.put("location", defaultLocation);
+                response.put("vehicle", vehicle);
+                response.put("candidates", List.of());
+                savePrepareConversation(memberId, request, response);
+                return ResponseEntity.ok(response);
+            }
+
+            saveCandidates(memberId, candidateList);
+
+            String answer = buildCandidateAnswer(vehicle, defaultLocation, candidateList, sort, startDateTime);
+
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("success", true);
+            response.put("message", answer);
+            response.put("sort", sort);
+            response.put("location", defaultLocation);
+            response.put("vehicle", vehicle);
+            response.put("candidates", candidateList);
+            response.put("ttlSeconds", CANDIDATE_TTL.toSeconds());
+            response.put("intent", "AI_RESERVATION_PREPARE");
+
+            savePrepareConversation(memberId, request, response);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("@# ai reservation prepare fail", e);
+            return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "message", "현재 대표 차량과 맞는 예약 가능 충전기를 찾지 못했습니다. 차량 커넥터 타입 또는 충전소 데이터를 확인해주세요.",
-                    "candidates", List.of()
+                    "message", "AI 예약 후보 조회 중 오류가 발생했습니다. 기본 출발지, 대표 차량, 충전소 데이터를 확인해주세요."
             ));
         }
-
-        saveCandidates(memberId, candidateList);
-
-        String answer = buildCandidateAnswer(vehicle, candidateList, sort);
-
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", answer,
-                "sort", sort,
-                "vehicle", vehicle,
-                "candidates", candidateList
-        ));
     }
 
+    /*
+     * AI 예약 후보 확정
+     * Redis에 저장된 후보를 기준으로 실제 reservation 데이터를 생성한다.
+     */
     @PostMapping("/confirm")
     public ResponseEntity<?> confirmAiReservation(@AuthenticationPrincipal EvUserDetails userDetails,
                                                   @RequestBody Map<String, Object> request) {
@@ -181,15 +202,20 @@ public class EvAiReservationApiController {
         Map<String, Object> candidate = candidateList.get(candidateNo - 1);
 
         try {
-            Long chargerId = toLong(candidate.get("chargerId"));
-            Long vehicleId = toLong(candidate.get("vehicleId"));
-            Integer currentSoc = toInteger(request.getOrDefault("currentSoc", 30));
-            Integer targetSoc = toInteger(request.getOrDefault("targetSoc", 80));
+            Long chargerId = toLong(value(candidate, "chargerId", "chargerid", "charger_id"));
+            Long vehicleId = toLong(value(candidate, "vehicleId", "vehicleid", "vehicle_id"));
+            Integer currentSoc = toInteger(request.getOrDefault("currentSoc", value(candidate, "currentSoc", "current_soc")));
+            Integer targetSoc = toInteger(request.getOrDefault("targetSoc", value(candidate, "targetSoc", "target_soc")));
+            validateSoc(currentSoc, targetSoc);
 
-            LocalDateTime startDateTime = resolveStartDateTime(request);
-            LocalDateTime endDateTime = startDateTime.plusMinutes(
-                    calculateEstimatedMinutes(candidate, currentSoc, targetSoc)
-            );
+            LocalDateTime startDateTime = resolveConfirmStartDateTime(request, candidate);
+            validateFutureStartTime(startDateTime);
+
+            Integer estimatedMinutes = toInteger(value(candidate, "estimatedMinutes", "estimatedminutes", "estimated_minutes"));
+            if (estimatedMinutes == null || estimatedMinutes <= 0) {
+                estimatedMinutes = 30;
+            }
+            LocalDateTime endDateTime = startDateTime.plusMinutes(estimatedMinutes);
 
             boolean holdSuccess = reservationService.holdChargerForReservation(chargerId, memberId);
             if (!holdSuccess) {
@@ -215,8 +241,8 @@ public class EvAiReservationApiController {
 
             String message = "AI 예약이 완료되었습니다.\n"
                     + "예약번호 : " + reservationId + "\n"
-                    + "충전소 : " + reservation.getStationName() + "\n"
-                    + "충전기 : " + reservation.getChargerName() + "\n"
+                    + "충전소 : " + safe(reservation.getStationName()) + "\n"
+                    + "충전기 : " + safe(reservation.getChargerName()) + "\n"
                     + "예약시간 : " + reservation.getStartTimeText() + " ~ " + reservation.getEndTimeText() + "\n"
                     + "예상 비용 : " + Math.round(reservation.getEstimatedCost()) + "원";
 
@@ -234,10 +260,99 @@ public class EvAiReservationApiController {
         }
     }
 
+    private Map<String, Object> buildActionResponse(String message,
+                                                   String actionType,
+                                                   String buttonText,
+                                                   String actionUrl) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("success", false);
+        response.put("message", message);
+        response.put("intent", "AI_RESERVATION_PREPARE");
+        response.put("actionType", actionType);
+        response.put("buttonText", buttonText);
+        response.put("actionUrl", actionUrl);
+        return response;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void savePrepareConversation(Long memberId, Map<String, Object> request, Map<String, Object> response) {
+        log.info("@# EvAiReservationApiController.savePrepareConversation()");
+
+        try {
+            String userMessage = String.valueOf(request.getOrDefault("message", "AI 예약 후보 조회"));
+            String answer = String.valueOf(response.getOrDefault("message", "AI 예약 후보 조회 결과입니다."));
+
+            EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer, String.valueOf(response.getOrDefault("intent", "AI_RESERVATION_PREPARE")));
+            responseDTO.setLocation((Map<String, Object>) response.get("location"));
+            responseDTO.setCandidates((List<Map<String, Object>>) response.get("candidates"));
+            responseDTO.setActionType((String) response.get("actionType"));
+            responseDTO.setButtonText((String) response.get("buttonText"));
+            responseDTO.setActionUrl((String) response.get("actionUrl"));
+
+            evAiChatService.saveConversationMessage(memberId, userMessage, responseDTO);
+        } catch (Exception e) {
+            log.warn("@# ai reservation prepare conversation save fail => {}", e.getMessage());
+        }
+    }
+
+    private List<Map<String, Object>> normalizeCandidateList(List<Map<String, Object>> rawList,
+                                                             LocalDateTime startDateTime,
+                                                             Integer currentSoc,
+                                                             Integer targetSoc) {
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        if (rawList == null) {
+            return result;
+        }
+
+        for (int i = 0; i < rawList.size(); i++) {
+            Map<String, Object> raw = rawList.get(i);
+            Map<String, Object> item = new LinkedHashMap<>();
+
+            item.put("candidateNo", i + 1);
+            item.put("vehicleId", value(raw, "vehicleId", "vehicleid", "vehicle_id"));
+            item.put("vehicleNickname", value(raw, "vehicleNickname", "vehiclenickname", "vehicle_nickname"));
+            item.put("manufacturer", value(raw, "manufacturer"));
+            item.put("modelName", value(raw, "modelName", "modelname", "model_name"));
+            item.put("batteryCapacityKwh", number(value(raw, "batteryCapacityKwh", "batterycapacitykwh", "battery_capacity_kwh")));
+            item.put("vehicleConnectorType", value(raw, "vehicleConnectorType", "vehicleconnectortype", "vehicle_connector_type"));
+            item.put("locationName", value(raw, "locationName", "locationname", "location_name"));
+            item.put("locationAddress", value(raw, "locationAddress", "locationaddress", "location_address"));
+            item.put("stationId", value(raw, "stationId", "stationid", "station_id"));
+            item.put("stationName", value(raw, "stationName", "stationname", "station_name"));
+            item.put("address", value(raw, "address"));
+            item.put("operatorName", value(raw, "operatorName", "operatorname", "operator_name"));
+            item.put("latitude", number(value(raw, "latitude")));
+            item.put("longitude", number(value(raw, "longitude")));
+            item.put("distanceKm", number(value(raw, "distanceKm", "distancekm", "distance_km")));
+            item.put("chargerId", value(raw, "chargerId", "chargerid", "charger_id"));
+            item.put("chargerName", value(raw, "chargerName", "chargername", "charger_name"));
+            item.put("chargerType", value(raw, "chargerType", "chargertype", "charger_type"));
+            item.put("connectorType", value(raw, "connectorType", "connectortype", "connector_type"));
+            item.put("chargingSpeedKw", number(value(raw, "chargingSpeedKw", "chargingspeedkw", "charging_speed_kw")));
+            item.put("effectiveChargingSpeedKw", number(value(raw, "effectiveChargingSpeedKw", "effectivechargingspeedkw", "effective_charging_speed_kw")));
+            item.put("pricePerKwh", number(value(raw, "pricePerKwh", "priceperkwh", "price_per_kwh")));
+            item.put("status", value(raw, "status"));
+            item.put("requiredKwh", number(value(raw, "requiredKwh", "requiredkwh", "required_kwh")));
+            item.put("estimatedMinutes", toInteger(value(raw, "estimatedMinutes", "estimatedminutes", "estimated_minutes")));
+            item.put("estimatedCost", number(value(raw, "estimatedCost", "estimatedcost", "estimated_cost")));
+            item.put("reservationDate", startDateTime.toLocalDate().toString());
+            item.put("startTime", startDateTime.toLocalTime().withSecond(0).withNano(0).toString());
+            item.put("startDateTime", startDateTime.toString());
+            item.put("currentSoc", currentSoc);
+            item.put("targetSoc", targetSoc);
+
+            result.add(item);
+        }
+
+        return result;
+    }
+
     private void saveCandidates(Long memberId, List<Map<String, Object>> candidateList) {
         try {
             String json = objectMapper.writeValueAsString(candidateList);
             stringRedisTemplate.opsForValue().set(candidateKey(memberId), json, CANDIDATE_TTL);
+            log.info("@# ai reservation candidate saved => memberId: {}, count: {}", memberId, candidateList.size());
         } catch (Exception e) {
             log.warn("@# ai reservation candidate save fail => {}", e.getMessage());
         }
@@ -261,73 +376,96 @@ public class EvAiReservationApiController {
         return "ai:reservation:candidate:" + memberId;
     }
 
-    private String buildCandidateAnswer(EvVehicleDTO vehicle, List<Map<String, Object>> candidateList, String sort) {
+    private String buildCandidateAnswer(EvVehicleDTO vehicle,
+                                        Map<String, Object> location,
+                                        List<Map<String, Object>> candidateList,
+                                        String sort,
+                                        LocalDateTime startDateTime) {
         StringBuilder builder = new StringBuilder();
-        builder.append("대표 차량 ")
-                .append(vehicle.getManufacturer()).append(" ")
-                .append(vehicle.getModelName()).append(" 기준으로 예약 가능한 충전기를 찾았습니다.\n");
+        builder.append("AI_RESERVATION_PREPARE\n");
+        builder.append("DB에 저장된 기본 출발지와 대표 차량 기준으로 예약 가능한 충전기를 찾았습니다.\n");
+        builder.append("기본 출발지 : ").append(text(value(location, "locationName", "location_name")))
+                .append(" / ").append(text(value(location, "address"))).append("\n");
+        builder.append("대표 차량 : ").append(safe(vehicle.getManufacturer())).append(" ")
+                .append(safe(vehicle.getModelName())).append("\n");
+        builder.append("예약 시간 : ").append(startDateTime.format(DATE_TIME_FORMATTER)).append("\n");
 
         if ("COST".equals(sort)) {
-            builder.append("요금이 낮은 순서로 안내합니다.\n");
+            builder.append("정렬 기준 : 가까운 후보 중 요금이 저렴한 순\n");
         } else if ("SPEED".equals(sort)) {
-            builder.append("충전 속도가 빠른 순서로 안내합니다.\n");
+            builder.append("정렬 기준 : 가까운 후보 중 예상 충전 시간이 짧은 순\n");
         } else {
-            builder.append("현재 DB에 저장된 사용 가능 충전기 기준으로 안내합니다.\n");
+            builder.append("정렬 기준 : 사용 가능한 충전기 중 가까운 순\n");
         }
 
         for (Map<String, Object> candidate : candidateList) {
             builder.append("\n")
                     .append(candidate.get("candidateNo")).append("번. ")
                     .append(candidate.get("stationName")).append("\n")
+                    .append("거리 : ").append(candidate.get("distanceKm")).append("km\n")
                     .append("충전기 : ").append(candidate.get("chargerName")).append("\n")
-                    .append("타입 : ").append(candidate.get("chargerType")).append(" / ").append(candidate.get("connectorType")).append("\n")
-                    .append("출력 : ").append(candidate.get("chargingSpeedKw")).append("kW\n")
+                    .append("커넥터 : ").append(candidate.get("connectorType")).append("\n")
+                    .append("출력 : ").append(candidate.get("chargingSpeedKw")).append("kW")
+                    .append(" / 실제 적용 속도 : ").append(candidate.get("effectiveChargingSpeedKw")).append("kW\n")
                     .append("요금 : ").append(candidate.get("pricePerKwh")).append("원/kWh\n")
+                    .append("예상 시간 : ").append(candidate.get("estimatedMinutes")).append("분")
+                    .append(" / 예상 비용 : ").append(Math.round(number(candidate.get("estimatedCost")))).append("원\n")
                     .append("주소 : ").append(candidate.get("address")).append("\n");
         }
 
-        builder.append("\n원하는 후보의 예약 버튼을 누르면 실제 예약을 진행합니다.");
+        builder.append("\n후보 카드의 예약 버튼을 누르면 Redis에 저장된 후보 기준으로 실제 예약을 진행합니다.");
         return builder.toString();
     }
 
-    private void sortCandidates(List<Map<String, Object>> candidateList, String sort) {
-        if ("COST".equals(sort)) {
-            candidateList.sort(Comparator.comparingDouble(c -> number(c.get("pricePerKwh"))));
-            return;
-        }
-
-        if ("SPEED".equals(sort)) {
-            candidateList.sort(Comparator.comparingDouble((Map<String, Object> c) -> number(c.get("chargingSpeedKw"))).reversed());
-        }
+    private String buildEmptyCandidateMessage(Map<String, Object> location,
+                                              EvVehicleDTO vehicle,
+                                              LocalDateTime startDateTime) {
+        return "현재 조건에 맞는 예약 가능 충전기를 찾지 못했습니다.\n"
+                + "기본 출발지 : " + text(value(location, "locationName", "location_name")) + " / " + text(value(location, "address")) + "\n"
+                + "대표 차량 : " + safe(vehicle.getManufacturer()) + " " + safe(vehicle.getModelName()) + "\n"
+                + "예약 시간 : " + startDateTime.format(DATE_TIME_FORMATTER) + "\n"
+                + "확인할 점 : 충전기 상태가 사용가능인지, 차량 커넥터 타입과 충전기 타입이 맞는지, 같은 시간대 예약이 이미 있는지 확인해주세요.";
     }
 
-    private String resolveSort(String message) {
-        String lower = message == null ? "" : message.toLowerCase();
+    private String resolveSort(Map<String, Object> request) {
+        String sort = text(request.get("sort")).toUpperCase();
+        if ("DISTANCE".equals(sort) || "COST".equals(sort) || "SPEED".equals(sort)) {
+            return sort;
+        }
 
-        if (lower.contains("싼") || lower.contains("저렴") || lower.contains("요금") || lower.contains("비용")) {
+        String message = text(request.get("message")) + " " + text(request.get("keyword"));
+        String lower = message.toLowerCase();
+
+        if (lower.contains("싼") || lower.contains("저렴") || lower.contains("요금") || lower.contains("비용") || lower.contains("가격")) {
             return "COST";
         }
 
-        if (lower.contains("빠른") || lower.contains("급속") || lower.contains("초급속") || lower.contains("속도")) {
+        if (lower.contains("빠른") || lower.contains("급속") || lower.contains("초급속") || lower.contains("속도") || lower.contains("시간")) {
             return "SPEED";
         }
 
-        return "DEFAULT";
+        return "DISTANCE";
     }
 
-    private boolean connectorMatches(String vehicleConnector, String chargerConnector) {
-        if (vehicleConnector == null || chargerConnector == null) {
-            return true;
+    private LocalDateTime resolveConfirmStartDateTime(Map<String, Object> request, Map<String, Object> candidate) {
+        String requestStartDateTime = text(request.get("startDateTime"));
+        if (!requestStartDateTime.isBlank()) {
+            return LocalDateTime.parse(requestStartDateTime);
         }
 
-        String vehicleValue = normalizeConnector(vehicleConnector);
-        String chargerValue = normalizeConnector(chargerConnector);
+        String dateText = text(request.get("reservationDate"));
+        String timeText = text(request.get("startTime"));
 
-        return chargerValue.contains(vehicleValue) || vehicleValue.contains(chargerValue);
-    }
+        if (!dateText.isBlank() && !timeText.isBlank()) {
+            return LocalDateTime.of(LocalDate.parse(dateText), LocalTime.parse(timeText));
+        }
 
-    private String normalizeConnector(String value) {
-        return value.replace(" ", "").replace("_", "").toUpperCase();
+        String candidateStartDateTime = text(value(candidate, "startDateTime", "startdatetime", "start_date_time"));
+        if (!candidateStartDateTime.isBlank()) {
+            return LocalDateTime.parse(candidateStartDateTime);
+        }
+
+        return resolveStartDateTime(request);
     }
 
     private LocalDateTime resolveStartDateTime(Map<String, Object> request) {
@@ -340,25 +478,57 @@ public class EvAiReservationApiController {
         String timeText = text(request.get("startTime"));
 
         LocalDate date = dateText.isBlank() ? LocalDate.now() : LocalDate.parse(dateText);
-        LocalTime time = timeText.isBlank() ? LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0) : LocalTime.parse(timeText);
+        LocalTime time = timeText.isBlank()
+                ? LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
+                : LocalTime.parse(timeText);
 
         return LocalDateTime.of(date, time);
     }
 
-    private int calculateEstimatedMinutes(Map<String, Object> candidate, Integer currentSoc, Integer targetSoc) {
-        double battery = number(candidate.get("batteryCapacityKwh"));
-        double speed = number(candidate.get("chargingSpeedKw"));
-
-        if (battery <= 0 || speed <= 0 || currentSoc == null || targetSoc == null || targetSoc <= currentSoc) {
-            return 30;
+    private void validateFutureStartTime(LocalDateTime startDateTime) {
+        if (startDateTime == null) {
+            throw new IllegalArgumentException("예약 시간을 선택하세요.");
         }
 
-        double requiredKwh = battery * (targetSoc - currentSoc) / 100.0;
-        return Math.max(10, (int) Math.ceil((requiredKwh / speed) * 60));
+        if (startDateTime.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("현재 시간보다 이전 시간으로 AI 예약을 진행할 수 없습니다.");
+        }
     }
 
-    private double toDouble(BigDecimal value) {
-        return value == null ? 0.0 : value.doubleValue();
+    private void validateSoc(Integer currentSoc, Integer targetSoc) {
+        if (currentSoc == null || targetSoc == null) {
+            throw new IllegalArgumentException("현재 SOC와 목표 SOC를 입력해주세요.");
+        }
+
+        if (currentSoc < 0 || currentSoc > 100 || targetSoc < 0 || targetSoc > 100) {
+            throw new IllegalArgumentException("SOC는 0~100 사이로 입력해주세요.");
+        }
+
+        if (targetSoc <= currentSoc) {
+            throw new IllegalArgumentException("목표 SOC는 현재 SOC보다 커야 합니다.");
+        }
+    }
+
+    private Object value(Map<String, Object> map, String... keys) {
+        if (map == null || keys == null) {
+            return null;
+        }
+
+        for (String key : keys) {
+            if (map.containsKey(key)) {
+                return map.get(key);
+            }
+        }
+
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            for (String key : keys) {
+                if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(key)) {
+                    return entry.getValue();
+                }
+            }
+        }
+
+        return null;
     }
 
     private double number(Object value) {
@@ -402,10 +572,10 @@ public class EvAiReservationApiController {
     }
 
     private String text(Object value) {
-        if (value == null) {
-            return "";
-        }
+        return value == null ? "" : String.valueOf(value).trim();
+    }
 
-        return String.valueOf(value).trim();
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 }

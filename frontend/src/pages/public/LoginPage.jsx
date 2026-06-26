@@ -31,6 +31,9 @@ const LoginPage = () => {
 
       localStorage.setItem("ACCESS_TOKEN", response.data.accessToken);
       localStorage.setItem("REFRESH_TOKEN", response.data.refreshToken);
+      localStorage.setItem("USER_TYPE", response.data.userType || "");
+      localStorage.setItem("ROLE", response.data.role || "");
+      localStorage.setItem("MEMBER_NAME", response.data.memberName || "");
 
       // Header 로그인 상태 갱신용 이벤트
       window.dispatchEvent(new Event("auth-change"));

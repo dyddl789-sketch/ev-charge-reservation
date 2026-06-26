@@ -81,3 +81,104 @@
   font-size: 13px;
   font-weight: 800;
 }
+
+/* =========================
+   Reservation to Complaint Patch
+========================= */
+.station-complaint-btn,
+.charger-complaint-btn {
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.station-complaint-btn {
+  margin-top: 12px;
+  height: 36px;
+  padding: 0 12px;
+}
+
+.charger-option {
+  grid-template-columns: auto 1fr auto auto;
+}
+
+.charger-complaint-btn {
+  height: 34px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.charger-disabled .charger-complaint-btn {
+  opacity: 1;
+}
+
+@media (max-width: 900px) {
+  .charger-option {
+    grid-template-columns: auto 1fr;
+  }
+
+  .charger-status,
+  .charger-complaint-btn {
+    grid-column: 2 / 3;
+  }
+}
+
+/* 선택 시간대 기준 예약 가능 여부 자동 갱신 안내 */
+.reservation-availability-message {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* =========================
+   Reservation Status Guard Patch
+========================= */
+.reserve-main-btn.disabled,
+.station-reserve-disabled,
+.charger-reserve-disabled {
+  border: none;
+  border-radius: 12px;
+  background: #d1d5db;
+  color: #6b7280;
+  font-family: inherit;
+  font-weight: 900;
+  cursor: not-allowed;
+}
+
+.reserve-main-btn.disabled {
+  height: 44px;
+  padding: 0 18px;
+  margin-top: 14px;
+}
+
+.station-reserve-disabled {
+  height: 44px;
+  padding: 0 18px;
+}
+
+.charger-reserve-disabled {
+  height: 40px;
+  padding: 0 14px;
+  margin-top: auto;
+}
+
+.charger-status-desc {
+  min-height: 36px;
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.charger-card:has(.charger-reserve-disabled) {
+  background: #f9fafb;
+}

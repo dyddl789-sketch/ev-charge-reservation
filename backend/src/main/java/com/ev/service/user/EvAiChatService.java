@@ -13,5 +13,12 @@ public interface EvAiChatService {
     // 이전 채팅 메시지 조회
     List<EvAiChatMessageDTO> getChatHistory(Long memberId);
     
+    // Redis 대화 캐시와 AI 예약 후보만 초기화
     void clearChatCache(Long memberId);
+
+    // 사용자의 AI 대화 메시지 DB 이력과 Redis 캐시를 함께 초기화
+    void clearChatMessages(Long memberId);
+
+    // AI 예약 후보처럼 별도 컨트롤러에서 생성한 대화도 동일한 채팅방에 저장
+    void saveConversationMessage(Long memberId, String userMessage, EvAiChatResponseDTO responseDTO);
 }

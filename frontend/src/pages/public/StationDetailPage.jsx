@@ -3,6 +3,32 @@ import { Link, useParams } from "react-router-dom";
 import * as stationApi from "../../apis/stationApi";
 import "../../styles/station-reservation.css";
 
+const CHARGER_STATUS_POLLING_MS = 30000;
+
+const isChargerReservable = (station, charger) => {
+  return station?.stationStatus === "운영중" && charger?.status === "사용가능";
+};
+
+const getChargerStatusMessage = (station, charger) => {
+  if (station?.stationStatus !== "운영중") {
+    return "충전소가 운영중이 아니므로 예약할 수 없습니다.";
+  }
+
+  if (charger?.status === "점검중") {
+    return "현재 시설관리 담당자가 점검 중인 충전기입니다.";
+  }
+
+  if (charger?.status === "고장") {
+    return "현재 고장 상태로 예약할 수 없습니다.";
+  }
+
+  if (charger?.status !== "사용가능") {
+    return "현재 예약할 수 없는 충전기입니다.";
+  }
+
+  return "예약 가능한 충전기입니다.";
+};
+
 const StationDetailPage = () => {
   console.log("StationDetailPage 렌더링");
 
@@ -50,11 +76,23 @@ const StationDetailPage = () => {
     };
 
     getDetail();
+
+    const timer = window.setInterval(() => {
+      console.log("충전소 상세 상태 자동 재조회", stationId);
+      getDetail();
+    }, CHARGER_STATUS_POLLING_MS);
+
+    return () => {
+      console.log("충전소 상세 상태 자동 재조회 종료", stationId);
+      window.clearInterval(timer);
+    };
   }, [stationId]);
 
   if (!station) {
     return <section className="station-page"><div className="station-inner">충전소 정보를 불러오는 중입니다.</div></section>;
   }
+
+  const hasReservableCharger = chargerList.some((charger) => isChargerReservable(station, charger));
 
   return (
     <section className="station-page">
@@ -70,9 +108,20 @@ const StationDetailPage = () => {
             <h1>{station.stationName}</h1>
             <p>{station.address}</p>
             <p>운영기관: {station.operatorName || "-"}</p>
-            <Link to={`/reservation?stationId=${station.stationId}`} className="reserve-main-btn">
-              이 충전소 예약하기
-            </Link>
+            {hasReservableCharger ? (
+              <Link to={`/reservation?stationId=${station.stationId}`} className="reserve-main-btn">
+                이 충전소 예약하기
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="reserve-main-btn disabled"
+                disabled
+                title={station.stationStatus !== "운영중" ? "현재 운영중인 충전소가 아닙니다." : "현재 예약 가능한 충전기가 없습니다."}
+              >
+                예약불가
+              </button>
+            )}
           </div>
         </div>
 
@@ -86,7 +135,14 @@ const StationDetailPage = () => {
               <span className={`status-badge ${charger.status === "사용가능" ? "ok" : "stop"}`}>
                 {charger.status}
               </span>
-              <Link to={`/reservation?chargerId=${charger.chargerId}`}>이 충전기로 예약</Link>
+              <p className="charger-status-desc">{getChargerStatusMessage(station, charger)}</p>
+              {isChargerReservable(station, charger) ? (
+                <Link to={`/reservation?chargerId=${charger.chargerId}`}>이 충전기로 예약</Link>
+              ) : (
+                <button type="button" className="charger-reserve-disabled" disabled>
+                  예약불가
+                </button>
+              )}
             </div>
           ))}
         </div>

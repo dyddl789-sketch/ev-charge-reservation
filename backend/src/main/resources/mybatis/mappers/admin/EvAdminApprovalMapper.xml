@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.admin.EvAdminApprovalDAO">
+
+    <!-- 전자결재 문서 목록 조회 -->
+    <select id="findApprovalList" resultType="com.ev.dto.admin.approval.EvAdminApprovalDTO">
+        select
+              ad.document_id as documentId
+            , ad.writer_id as writerId
+            , ad.fault_id as faultId
+            , ad.inspection_id as inspectionId
+            , ad.document_type as documentType
+            , ad.title
+            , ad.content
+            , ad.estimated_cost as estimatedCost
+            , ad.status
+            , ad.created_at as createdAt
+            , ad.updated_at as updatedAt
+            , ad.completed_at as completedAt
+            , wm.member_name as writerName
+            , we.employee_no as writerEmployeeNo
+            , wm.user_type as writerUserType
+            , wd.department_name as writerDepartmentName
+            , we.position_name as writerPositionName
+            , f.title as faultTitle
+            , f.status as faultStatus
+            , f.severity as faultSeverity
+            , s.station_name as stationName
+            , c.charger_name as chargerName
+            , c.charger_type as chargerType
+            , c.connector_type as connectorType
+            , c.status as chargerStatus
+            , i.inspection_result as inspectionResult
+            , i.description as inspectionDescription
+            , pending.approver_id as currentApproverId
+            , pending_member.member_name as currentApproverName
+            , pending_member.user_type as currentApproverUserType
+          from approval_document ad
+          join employee we
+            on ad.writer_id = we.employee_id
+          join app_member wm
+            on we.member_id = wm.member_id
+          left join department wd
+            on we.department_id = wd.department_id
+          left join fault_report f
+            on ad.fault_id = f.fault_id
+          left join charging_station s
+            on f.station_id = s.station_id
+          left join charger c
+            on f.charger_id = c.charger_id
+          left join inspection i
+            on ad.inspection_id = i.inspection_id
+          left join lateral (
+              select al.*
+                from approval_line al
+               where al.document_id = ad.document_id
+                 and al.status = '대기'
+               order by al.approval_order asc
+               limit 1
+          ) pending on true
+          left join employee pending_employee
+            on pending.approver_id = pending_employee.employee_id
+          left join app_member pending_member
+            on pending_employee.member_id = pending_member.member_id
+         where 1 = 1
+        <if test="box != null and box != ''">
+            <choose>
+                <when test="box == 'inbox'">
+                    and pending.approver_id = #{currentEmployeeId}
+                </when>
+                <when test="box == 'submitted'">
+                    and ad.writer_id = #{currentEmployeeId}
+                </when>
+                <when test="box == 'progress'">
+                    and ad.status in ('상신', '1차승인')
+                </when>
+                <when test="box == 'closed'">
+                    and ad.status in ('최종승인', '완료', '반려', '취소')
+                </when>
+            </choose>
+        </if>
+        <if test="box == null or box == ''">
+            <if test="userType == 'ENGINEER'">
+                and ad.writer_id = #{currentEmployeeId}
+            </if>
+        </if>
+        <if test="status != null and status != ''">
+            and ad.status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (
+                   ad.title ilike concat('%', #{keyword}, '%')
+                or ad.document_type ilike concat('%', #{keyword}, '%')
+                or wm.member_name ilike concat('%', #{keyword}, '%')
+                or coalesce(s.station_name, '') ilike concat('%', #{keyword}, '%')
+                or coalesce(c.charger_name, '') ilike concat('%', #{keyword}, '%')
+            )
+        </if>
+         order by ad.created_at desc, ad.document_id desc
+    </select>
+
+    <!-- 전자결재 문서 상세 조회 -->
+    <select id="findApprovalDetail" resultType="com.ev.dto.admin.approval.EvAdminApprovalDTO">
+        select
+              ad.document_id as documentId
+            , ad.writer_id as writerId
+            , ad.fault_id as faultId
+            , ad.inspection_id as inspectionId
+            , ad.document_type as documentType
+            , ad.title
+            , ad.content
+            , ad.estimated_cost as estimatedCost
+            , ad.status
+            , ad.created_at as createdAt
+            , ad.updated_at as updatedAt
+            , ad.completed_at as completedAt
+            , wm.member_name as writerName
+            , we.employee_no as writerEmployeeNo
+            , wm.user_type as writerUserType
+            , wd.department_name as writerDepartmentName
+            , we.position_name as writerPositionName
+            , f.title as faultTitle
+            , f.status as faultStatus
+            , f.severity as faultSeverity
+            , s.station_name as stationName
+            , c.charger_name as chargerName
+            , c.charger_type as chargerType
+            , c.connector_type as connectorType
+            , c.status as chargerStatus
+            , i.inspection_result as inspectionResult
+            , i.description as inspectionDescription
+            , pending.approver_id as currentApproverId
+            , pending_member.member_name as currentApproverName
+            , pending_member.user_type as currentApproverUserType
+          from approval_document ad
+          join employee we
+            on ad.writer_id = we.employee_id
+          join app_member wm
+            on we.member_id = wm.member_id
+          left join department wd
+            on we.department_id = wd.department_id
+          left join fault_report f
+            on ad.fault_id = f.fault_id
+          left join charging_station s
+            on f.station_id = s.station_id
+          left join charger c
+            on f.charger_id = c.charger_id
+          left join inspection i
+            on ad.inspection_id = i.inspection_id
+          left join lateral (
+              select al.*
+                from approval_line al
+               where al.document_id = ad.document_id
+                 and al.status = '대기'
+               order by al.approval_order asc
+               limit 1
+          ) pending on true
+          left join employee pending_employee
+            on pending.approver_id = pending_employee.employee_id
+          left join app_member pending_member
+            on pending_employee.member_id = pending_member.member_id
+         where ad.document_id = #{documentId}
+    </select>
+
+    <!-- 전자결재 결재선 조회 -->
+    <select id="findApprovalLineList" resultType="com.ev.dto.admin.approval.EvAdminApprovalLineDTO">
+        select
+              al.line_id as lineId
+            , al.document_id as documentId
+            , al.approver_id as approverId
+            , al.approval_order as approvalOrder
+            , al.status
+            , al.comment
+            , al.signature_data as signatureData
+            , al.approved_at as approvedAt
+            , m.member_name as approverName
+            , m.user_type as approverUserType
+            , e.employee_no as employeeNo
+            , d.department_name as departmentName
+            , e.position_name as positionName
+          from approval_line al
+          join employee e
+            on al.approver_id = e.employee_id
+          join app_member m
+            on e.member_id = m.member_id
+          left join department d
+            on e.department_id = d.department_id
+         where al.document_id = #{documentId}
+         order by al.approval_order asc
+    </select>
+
+    <!-- 전자결재 이력 조회 -->
+    <select id="findApprovalHistoryList" resultType="com.ev.dto.admin.approval.EvAdminApprovalHistoryDTO">
+        select
+              ah.history_id as historyId
+            , ah.document_id as documentId
+            , ah.employee_id as employeeId
+            , m.member_name as employeeName
+            , ah.action_type as actionType
+            , ah.before_status as beforeStatus
+            , ah.after_status as afterStatus
+            , ah.comment
+            , ah.created_at as createdAt
+          from approval_history ah
+          join employee e
+            on ah.employee_id = e.employee_id
+          join app_member m
+            on e.member_id = m.member_id
+         where ah.document_id = #{documentId}
+         order by ah.created_at asc, ah.history_id asc
+    </select>
+
+    <select id="findEmployeeIdByMemberId" resultType="long">
+        select employee_id
+          from employee
+         where member_id = #{memberId}
+           and status = 'ACTIVE'
+         limit 1
+    </select>
+
+    <select id="findFirstActiveEmployeeIdByUserType" resultType="long">
+        select e.employee_id
+          from employee e
+          join app_member m
+            on e.member_id = m.member_id
+         where e.status = 'ACTIVE'
+           and m.status = 'ACTIVE'
+           and m.user_type = #{userType}
+         order by e.employee_id asc
+         limit 1
+    </select>
+
+    <select id="countOpenApprovalByFaultId" resultType="int">
+        select count(*)
+          from approval_document
+         where fault_id = #{faultId}
+           and status in ('상신', '1차승인', '최종승인', '완료')
+    </select>
+
+    <insert id="insertApprovalDocument" useGeneratedKeys="true" keyProperty="document.documentId" keyColumn="document_id">
+        insert into approval_document (
+              writer_id
+            , fault_id
+            , inspection_id
+            , document_type
+            , title
+            , content
+            , estimated_cost
+            , status
+            , created_at
+            , updated_at
+        ) values (
+              #{document.writerId}
+            , #{document.faultId}
+            , #{document.inspectionId}
+            , #{document.documentType}
+            , #{document.title}
+            , #{document.content}
+            , #{document.estimatedCost}
+            , #{document.status}
+            , current_timestamp
+            , current_timestamp
+        )
+    </insert>
+
+    <insert id="insertApprovalLine">
+        insert into approval_line (
+              document_id
+            , approver_id
+            , approval_order
+            , status
+        ) values (
+              #{documentId}
+            , #{approverId}
+            , #{approvalOrder}
+            , '대기'
+        )
+    </insert>
+
+    <insert id="insertApprovalHistory">
+        insert into approval_history (
+              document_id
+            , employee_id
+            , action_type
+            , before_status
+            , after_status
+            , comment
+            , created_at
+        ) values (
+              #{documentId}
+            , #{employeeId}
+            , #{actionType}
+            , #{beforeStatus}
+            , #{afterStatus}
+            , #{comment}
+            , current_timestamp
+        )
+    </insert>
+
+    <update id="updateApprovalLineDecision">
+        update approval_line
+           set status = #{status},
+               comment = #{comment},
+               signature_data = #{signatureData},
+               approved_at = current_timestamp
+         where line_id = #{lineId}
+    </update>
+
+    <update id="updateApprovalDocumentStatus">
+        update approval_document
+           set status = #{status},
+               updated_at = current_timestamp,
+               completed_at = case when #{completed} = true then current_timestamp else completed_at end
+         where document_id = #{documentId}
+    </update>
+
+    <update id="updateFaultStatusByDocumentId">
+        update fault_report f
+           set status = #{status},
+               updated_at = current_timestamp,
+               resolved_at = case when #{resolved} = true then current_timestamp else resolved_at end
+          from approval_document ad
+         where ad.fault_id = f.fault_id
+           and ad.document_id = #{documentId}
+    </update>
+
+    <update id="updateLinkedComplaintStatusByDocumentId">
+        update complaint c
+           set status = #{status},
+               admin_memo = coalesce(#{adminMemo}, admin_memo),
+               updated_at = current_timestamp,
+               closed_at = case when #{closed} = true then current_timestamp else closed_at end
+          from fault_report f
+          join approval_document ad
+            on ad.fault_id = f.fault_id
+         where f.complaint_id = c.complaint_id
+           and ad.document_id = #{documentId}
+           and f.complaint_id is not null
+    </update>
+
+    <insert id="insertMaintenanceActionByDocument">
+        insert into maintenance_action (
+              fault_id
+            , inspection_id
+            , approval_document_id
+            , charger_id
+            , employee_id
+            , action_type
+            , action_result
+            , status
+            , started_at
+            , created_at
+            , updated_at
+        )
+        select
+              f.fault_id
+            , ad.inspection_id
+            , ad.document_id
+            , f.charger_id
+            , #{employeeId}
+            , #{actionType}
+            , #{actionResult}
+            , '진행중'
+            , current_timestamp
+            , current_timestamp
+            , current_timestamp
+          from approval_document ad
+          join fault_report f
+            on ad.fault_id = f.fault_id
+         where ad.document_id = #{documentId}
+    </insert>
+
+    <select id="countProgressMaintenanceActionByDocument" resultType="int">
+        select count(*)
+          from maintenance_action
+         where approval_document_id = #{documentId}
+           and status = '진행중'
+    </select>
+
+    <insert id="insertFaultHistoryByDocument">
+        insert into fault_history (
+              fault_id
+            , employee_id
+            , before_status
+            , after_status
+            , action_type
+            , memo
+            , created_at
+        )
+        select
+              ad.fault_id
+            , #{employeeId}
+            , #{beforeStatus}
+            , #{afterStatus}
+            , #{actionType}
+            , #{memo}
+            , current_timestamp
+          from approval_document ad
+         where ad.document_id = #{documentId}
+           and ad.fault_id is not null
+    </insert>
+
+    <select id="findTotalEstimatedCost" resultType="java.math.BigDecimal">
+        select coalesce(sum(estimated_cost), 0)
+          from approval_document
+         where status = #{status}
+    </select>
+
+</mapper>

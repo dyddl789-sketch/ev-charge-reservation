@@ -5,6 +5,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.ev.dto.admin.reservation.EvAdminReservationDetailDTO;
 import com.ev.dto.admin.reservation.EvAdminReservationIssueDTO;
 import com.ev.dto.admin.reservation.EvAdminReservationListDTO;
 import com.ev.dto.admin.reservation.EvAdminReservationSearchDTO;
@@ -24,6 +25,9 @@ public interface EvAdminReservationDAO {
 
     // 예약 목록 조회
     List<EvAdminReservationListDTO> findReservationList(EvAdminReservationSearchDTO searchDTO);
+
+    // 예약 상세 조회
+    EvAdminReservationDetailDTO findReservationDetail(@Param("reservationId") Long reservationId);
 
     // 예약 취소 처리
     void cancelReservation(@Param("reservationId") Long reservationId);

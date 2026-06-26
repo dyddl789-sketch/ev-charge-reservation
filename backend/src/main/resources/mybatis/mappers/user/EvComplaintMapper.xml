@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.user.EvComplaintDAO">
+
+    <sql id="ComplaintColumns">
+        c.complaint_id as complaintId,
+        c.member_id as memberId,
+        m.member_name as memberName,
+        m.user_id as userId,
+        m.email,
+        m.phone,
+        c.title,
+        c.content,
+        c.complaint_type as complaintType,
+        c.priority,
+        c.status,
+        c.station_id as stationId,
+        c.charger_id as chargerId,
+        c.station_name as stationName,
+        c.charger_name as chargerName,
+        c.notify_email as notifyEmail,
+        c.notify_sms as notifySms,
+        c.notify_site as notifySite,
+        c.assigned_department_id as assignedDepartmentId,
+        d.department_name as assignedDepartmentName,
+        c.assigned_employee_id as assignedEmployeeId,
+        am.member_name as assignedEmployeeName,
+        c.ai_summary as aiSummary,
+        c.admin_memo as adminMemo,
+        c.admin_memo as answerContent,
+        lf.fault_id as linkedFaultId,
+        lf.status as linkedFaultStatus,
+        c.created_at as createdAt,
+        c.updated_at as updatedAt,
+        c.closed_at as closedAt
+    </sql>
+
+    <sql id="ComplaintJoins">
+        join app_member m
+            on c.member_id = m.member_id
+        left join department d
+            on c.assigned_department_id = d.department_id
+        left join employee e
+            on c.assigned_employee_id = e.employee_id
+        left join app_member am
+            on e.member_id = am.member_id
+        left join lateral (
+            select f.fault_id, f.status
+              from fault_report f
+             where f.complaint_id = c.complaint_id
+             order by f.fault_id desc
+             limit 1
+        ) lf on true
+    </sql>
+
+    <sql id="AdminComplaintWhere">
+        where 1 = 1
+        <if test="status != null and status != ''">
+            and c.status = #{status}
+        </if>
+        <if test="complaintType != null and complaintType != ''">
+            and c.complaint_type = #{complaintType}
+        </if>
+        <if test="priority != null and priority != ''">
+            and c.priority = #{priority}
+        </if>
+        <if test="stationId != null">
+            and c.station_id = #{stationId}
+        </if>
+        <if test="chargerId != null">
+            and c.charger_id = #{chargerId}
+        </if>
+        <if test="createdFrom != null and createdFrom != ''">
+            and c.created_at &gt;= cast(#{createdFrom} as date)
+        </if>
+        <if test="createdTo != null and createdTo != ''">
+            and c.created_at &lt; cast(#{createdTo} as date) + interval '1 day'
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (
+                c.title ilike concat('%', #{keyword}, '%')
+                or c.content ilike concat('%', #{keyword}, '%')
+                or c.station_name ilike concat('%', #{keyword}, '%')
+                or c.charger_name ilike concat('%', #{keyword}, '%')
+                or cast(c.complaint_id as varchar) = #{keyword}
+                or m.member_name ilike concat('%', #{keyword}, '%')
+                or m.user_id ilike concat('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <!-- 사용자 민원 등록 -->
+    <insert id="insertComplaint"
+            useGeneratedKeys="true"
+            keyProperty="complaintId"
+            keyColumn="complaint_id">
+        insert into complaint (
+            member_id,
+            title,
+            content,
+            complaint_type,
+            priority,
+            status,
+            station_id,
+            charger_id,
+            station_name,
+            charger_name,
+            notify_email,
+            notify_sms,
+            notify_site,
+            ai_summary,
+            created_at
+        )
+        values (
+            #{memberId},
+            #{title},
+            #{content},
+            #{complaintType},
+            #{priority},
+            '접수',
+            #{stationId},
+            #{chargerId},
+            #{stationName},
+            #{chargerName},
+            #{notifyEmail},
+            #{notifySms},
+            #{notifySite},
+            #{aiSummary},
+            current_timestamp
+        )
+    </insert>
+
+    <!-- 내 민원 목록 조회 -->
+    <select id="findMyComplaintList"
+            parameterType="long"
+            resultType="com.ev.dto.complaint.EvComplaintDTO">
+        select
+            <include refid="ComplaintColumns" />
+        from complaint c
+        <include refid="ComplaintJoins" />
+        where c.member_id = #{memberId}
+        order by c.created_at desc
+    </select>
+
+    <!-- 내 민원 상세 조회 -->
+    <select id="findMyComplaintDetail"
+            resultType="com.ev.dto.complaint.EvComplaintDTO">
+        select
+            <include refid="ComplaintColumns" />
+        from complaint c
+        <include refid="ComplaintJoins" />
+        where c.member_id = #{memberId}
+          and c.complaint_id = #{complaintId}
+    </select>
+
+    <!-- 관리자 민원 목록 조회 -->
+    <select id="findAdminComplaintList"
+            parameterType="com.ev.dto.complaint.EvComplaintSearchDTO"
+            resultType="com.ev.dto.complaint.EvComplaintDTO">
+        select
+            <include refid="ComplaintColumns" />
+        from complaint c
+        <include refid="ComplaintJoins" />
+        <include refid="AdminComplaintWhere" />
+        order by c.created_at desc, c.complaint_id desc
+        limit #{limit}
+        offset #{offset}
+    </select>
+
+    <!-- 관리자 민원 목록 총 개수 -->
+    <select id="countAdminComplaintList"
+            parameterType="com.ev.dto.complaint.EvComplaintSearchDTO"
+            resultType="int">
+        select count(*)
+        from complaint c
+        <include refid="ComplaintJoins" />
+        <include refid="AdminComplaintWhere" />
+    </select>
+
+    <!-- 관리자 민원 요약 카운트 -->
+    <select id="countAdminComplaintSummary"
+            parameterType="com.ev.dto.complaint.EvComplaintSearchDTO"
+            resultType="map">
+        select
+            count(*) as total,
+            count(*) filter (where c.status in ('접수', '확인중', '배정', '처리중')) as pending,
+            count(*) filter (
+                where c.complaint_type ilike '%고장%'
+                   or c.complaint_type ilike '%파손%'
+                   or c.content ilike '%고장%'
+                   or c.content ilike '%충전이 안%'
+                   or c.content ilike '%작동%'
+                   or c.ai_summary ilike '%고장%'
+                   or c.ai_summary ilike '%장애%'
+                   or lf.fault_id is not null
+            ) as facilityFault,
+            count(*) filter (where c.status = '완료') as completed
+        from complaint c
+        <include refid="ComplaintJoins" />
+        <include refid="AdminComplaintWhere" />
+    </select>
+
+    <!-- 관리자 민원 상세 조회 -->
+    <select id="findAdminComplaintDetail"
+            parameterType="long"
+            resultType="com.ev.dto.complaint.EvComplaintDTO">
+        select
+            <include refid="ComplaintColumns" />
+        from complaint c
+        <include refid="ComplaintJoins" />
+        where c.complaint_id = #{complaintId}
+    </select>
+
+    <!-- 민원 처리 이력 조회 -->
+    <select id="findComplaintHistoryList"
+            parameterType="long"
+            resultType="com.ev.dto.complaint.EvComplaintHistoryDTO">
+        select
+            h.history_id as historyId,
+            h.complaint_id as complaintId,
+            h.employee_id as employeeId,
+            m.member_name as employeeName,
+            h.before_status as beforeStatus,
+            h.after_status as afterStatus,
+            h.action_type as actionType,
+            h.memo,
+            h.created_at as createdAt
+        from complaint_history h
+        left join employee e
+            on h.employee_id = e.employee_id
+        left join app_member m
+            on e.member_id = m.member_id
+        where h.complaint_id = #{complaintId}
+        order by h.created_at asc
+    </select>
+
+    <!-- 민원 상태 변경 -->
+    <update id="updateComplaintStatus">
+        update complaint
+        set status = #{status},
+            admin_memo = coalesce(#{adminMemo}, admin_memo),
+            updated_at = current_timestamp,
+            closed_at =
+                case
+                    when #{closed} = true then current_timestamp
+                    else closed_at
+                end
+        where complaint_id = #{complaintId}
+    </update>
+
+    <!-- 민원 답변 저장 및 완료 처리 -->
+    <update id="updateComplaintAnswer">
+        update complaint
+           set status = '완료',
+               admin_memo = #{answerContent},
+               updated_at = current_timestamp,
+               closed_at = current_timestamp
+         where complaint_id = #{complaintId}
+    </update>
+
+    <!-- 민원 담당자 배정 -->
+    <update id="updateComplaintAssign">
+        update complaint
+        set assigned_department_id = #{assignedDepartmentId},
+            assigned_employee_id = #{assignedEmployeeId},
+            updated_at = current_timestamp
+        where complaint_id = #{complaintId}
+    </update>
+
+    <!-- 민원 기반 장애 접수 전 중복 확인 -->
+    <select id="countFaultByComplaintId" resultType="int">
+        select count(*)
+          from fault_report
+         where complaint_id = #{complaintId}
+           and status not in ('취소')
+    </select>
+
+    <!-- 민원 기반 장애 접수 -->
+    <insert id="insertFaultFromComplaint">
+        insert into fault_report (
+            complaint_id,
+            station_id,
+            charger_id,
+            fault_type,
+            title,
+            description,
+            severity,
+            status,
+            source_type,
+            reported_at,
+            created_at,
+            updated_at
+        )
+        select
+            c.complaint_id,
+            c.station_id,
+            c.charger_id,
+            #{faultType},
+            #{title},
+            #{description},
+            case when c.priority = 'HIGH' then 'HIGH' else 'NORMAL' end,
+            '접수',
+            '민원',
+            current_timestamp,
+            current_timestamp,
+            current_timestamp
+          from complaint c
+         where c.complaint_id = #{complaintId}
+           and c.station_id is not null
+           and c.charger_id is not null
+    </insert>
+
+    <!-- 민원에 연결된 충전기 상태 변경 -->
+    <update id="updateChargerStatusByComplaintId">
+        update charger ch
+           set status = #{status},
+               updated_at = current_timestamp,
+               last_status_checked_at = current_timestamp
+          from complaint c
+         where c.charger_id = ch.charger_id
+           and c.complaint_id = #{complaintId}
+    </update>
+
+    <!-- 장애 접수 후 연결 장애 번호 조회 -->
+    <select id="findFaultIdByComplaintId" resultType="long">
+        select fault_id
+          from fault_report
+         where complaint_id = #{complaintId}
+         order by fault_id desc
+         limit 1
+    </select>
+
+    <!-- 민원 처리 이력 저장 -->
+    <insert id="insertComplaintHistory">
+        insert into complaint_history (
+            complaint_id,
+            employee_id,
+            before_status,
+            after_status,
+            action_type,
+            memo,
+            created_at
+        )
+        values (
+            #{complaintId},
+            #{employeeId},
+            #{beforeStatus},
+            #{afterStatus},
+            #{actionType},
+            #{memo},
+            current_timestamp
+        )
+    </insert>
+
+    <!-- 관리자 회원의 employee_id 조회 -->
+    <select id="findEmployeeIdByMemberId"
+            parameterType="long"
+            resultType="long">
+        select employee_id
+        from employee
+        where member_id = #{memberId}
+        limit 1
+    </select>
+
+    <!-- 관리자 회원의 권한 조회 -->
+    <select id="findUserTypeByMemberId"
+            parameterType="long"
+            resultType="string">
+        select user_type
+        from app_member
+        where member_id = #{memberId}
+        limit 1
+    </select>
+
+</mapper>

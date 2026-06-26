@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 
 import com.ev.dto.admin.sales.EvAdminSalesDailyDTO;
 import com.ev.dto.admin.sales.EvAdminSalesHistoryDTO;
+import com.ev.dto.admin.sales.EvAdminSalesHourlyDTO;
 import com.ev.dto.admin.sales.EvAdminSalesStationRankDTO;
 import com.ev.dto.admin.sales.EvAdminSalesSummaryDTO;
 import com.ev.dto.admin.sales.EvAdminSalesTypeDTO;
@@ -14,33 +15,39 @@ import com.ev.dto.admin.sales.EvAdminSalesTypeDTO;
 @Mapper
 public interface EvAdminSalesDAO {
 
-    // 매출 통계 요약 조회
-    EvAdminSalesSummaryDTO findSalesSummary(
-            @Param("startDate") String startDate,
-            @Param("endDate") String endDate
-    );
+    EvAdminSalesSummaryDTO findSalesSummary(@Param("startDate") String startDate,
+                                            @Param("endDate") String endDate,
+                                            @Param("region") String region,
+                                            @Param("stationId") Long stationId,
+                                            @Param("chargerType") String chargerType);
 
-    // 일별 매출 현황 조회
-    List<EvAdminSalesDailyDTO> findDailySalesList(
-            @Param("startDate") String startDate,
-            @Param("endDate") String endDate
-    );
+    List<EvAdminSalesDailyDTO> findDailySalesList(@Param("startDate") String startDate,
+                                                  @Param("endDate") String endDate,
+                                                  @Param("region") String region,
+                                                  @Param("stationId") Long stationId,
+                                                  @Param("chargerType") String chargerType);
 
-    // 충전 타입별 매출 현황 조회
-    List<EvAdminSalesTypeDTO> findSalesTypeList(
-            @Param("startDate") String startDate,
-            @Param("endDate") String endDate
-    );
+    List<EvAdminSalesHourlyDTO> findHourlySalesList(@Param("startDate") String startDate,
+                                                    @Param("endDate") String endDate,
+                                                    @Param("region") String region,
+                                                    @Param("stationId") Long stationId,
+                                                    @Param("chargerType") String chargerType);
 
-    // 충전소별 매출 순위 조회
-    List<EvAdminSalesStationRankDTO> findStationSalesRankList(
-            @Param("startDate") String startDate,
-            @Param("endDate") String endDate
-    );
+    List<EvAdminSalesTypeDTO> findSalesTypeList(@Param("startDate") String startDate,
+                                                @Param("endDate") String endDate,
+                                                @Param("region") String region,
+                                                @Param("stationId") Long stationId,
+                                                @Param("chargerType") String chargerType);
 
-    // 최근 매출 내역 조회
-    List<EvAdminSalesHistoryDTO> findSalesHistoryList(
-            @Param("startDate") String startDate,
-            @Param("endDate") String endDate
-    );
+    List<EvAdminSalesStationRankDTO> findStationSalesRankList(@Param("startDate") String startDate,
+                                                              @Param("endDate") String endDate,
+                                                              @Param("region") String region,
+                                                              @Param("stationId") Long stationId,
+                                                              @Param("chargerType") String chargerType);
+
+    List<EvAdminSalesHistoryDTO> findSalesHistoryList(@Param("startDate") String startDate,
+                                                      @Param("endDate") String endDate,
+                                                      @Param("region") String region,
+                                                      @Param("stationId") Long stationId,
+                                                      @Param("chargerType") String chargerType);
 }

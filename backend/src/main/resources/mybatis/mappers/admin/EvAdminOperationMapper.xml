@@ -1,0 +1,762 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ev.dao.admin.EvAdminOperationDAO">
+
+    <!-- 부산 지역 사용가능 충전기 중 장애 시뮬레이션 대상 1개 랜덤 조회 -->
+    <select id="findRandomAvailableBusanCharger"
+            resultType="com.ev.dto.admin.simulation.EvAdminSimulationChargerDTO">
+        select
+              c.charger_id as chargerId
+            , c.station_id as stationId
+            , cs.station_name as stationName
+            , c.charger_name as chargerName
+            , c.charger_type as chargerType
+            , c.connector_type as connectorType
+            , c.charging_speed_kw as chargingSpeedKw
+            , c.status as status
+            , cs.address as address
+            , cs.latitude as latitude
+            , cs.longitude as longitude
+            , '부산' as regionName
+            , to_char(coalesce(c.updated_at, c.created_at), 'YYYY-MM-DD HH24:MI') as updatedAtText
+          from charger c
+          join charging_station cs
+            on c.station_id = cs.station_id
+         where c.status = '사용가능'
+           and coalesce(c.is_deleted, false) = false
+           and coalesce(cs.is_deleted, false) = false
+           and (
+                cs.address like '부산%'
+                or cs.address like '부산광역시%'
+                or cs.address ilike '%Busan%'
+           )
+         order by random()
+         limit 1
+    </select>
+
+    <!-- 충전기 상태 변경: 예약 데이터는 건드리지 않는다. -->
+    <update id="updateChargerStatus">
+        update charger
+           set status = #{status},
+               updated_at = current_timestamp,
+               last_status_checked_at = current_timestamp
+         where charger_id = #{chargerId}
+    </update>
+
+    <!-- 같은 충전기에 진행 중인 장애가 있는지 확인 -->
+    <select id="countOpenFaultByCharger" resultType="int">
+        select count(*)
+          from fault_report
+         where charger_id = #{chargerId}
+           and status in ('접수', '점검중', '조치중', '결재대기')
+    </select>
+
+    <!-- 시스템 감지/시뮬레이션 장애를 장애점검관리로 등록 -->
+    <insert id="insertSystemFaultFromCharger">
+        insert into fault_report (
+              station_id
+            , charger_id
+            , fault_type
+            , title
+            , description
+            , severity
+            , status
+            , source_type
+            , reported_at
+            , created_at
+            , updated_at
+        )
+        select
+              c.station_id
+            , c.charger_id
+            , #{faultType}
+            , #{title}
+            , #{description}
+            , #{severity}
+            , '접수'
+            , #{sourceType}
+            , current_timestamp
+            , current_timestamp
+            , current_timestamp
+          from charger c
+         where c.charger_id = #{chargerId}
+    </insert>
+
+    <!-- 발표/테스트 초기화: 고장 충전기만 사용가능으로 되돌린다. 이력은 남기지 않는다. -->
+    <update id="resetBrokenChargers">
+        update charger
+           set status = '사용가능',
+               updated_at = current_timestamp,
+               last_status_checked_at = current_timestamp
+         where status = '고장'
+    </update>
+
+    <select id="countBrokenChargers" resultType="int">
+        select count(*)
+          from charger
+         where status = '고장'
+    </select>
+
+    <!-- 공공 API 동기화 로그 저장 -->
+    <insert id="insertPublicApiSyncLog">
+        insert into public_api_sync_log (
+              api_name
+            , sync_type
+            , status
+            , request_count
+            , success_count
+            , fail_count
+            , error_message
+            , started_at
+            , finished_at
+        ) values (
+              #{apiName}
+            , #{syncType}
+            , #{status}
+            , #{requestCount}
+            , #{successCount}
+            , #{failCount}
+            , #{errorMessage}
+            , current_timestamp
+            , current_timestamp
+        )
+    </insert>
+
+    <!-- 대시보드 표시용 최근 고장 충전기 목록 -->
+    <select id="findRecentBrokenChargers"
+            resultType="com.ev.dto.admin.simulation.EvAdminSimulationChargerDTO">
+        select
+              c.charger_id as chargerId
+            , c.station_id as stationId
+            , cs.station_name as stationName
+            , c.charger_name as chargerName
+            , c.charger_type as chargerType
+            , c.connector_type as connectorType
+            , c.charging_speed_kw as chargingSpeedKw
+            , c.status as status
+            , cs.address as address
+            , cs.latitude as latitude
+            , cs.longitude as longitude
+            , case
+                  when cs.address like '부산%' then '부산'
+                  else split_part(cs.address, ' ', 1)
+              end as regionName
+            , to_char(coalesce(c.updated_at, c.created_at), 'YYYY-MM-DD HH24:MI') as updatedAtText
+          from charger c
+          join charging_station cs
+            on c.station_id = cs.station_id
+         where c.status = '고장'
+         order by coalesce(c.updated_at, c.created_at) desc
+         limit 5
+    </select>
+
+
+    <!-- 통계 시연용 회원 계정 생성: 반복 실행해도 중복 생성되지 않는다. -->
+    <insert id="insertStatisticsDemoMembers">
+        insert into app_member (
+              user_id
+            , password
+            , member_name
+            , nickname
+            , phone
+            , email
+            , user_type
+            , login_type
+            , status
+            , created_at
+            , updated_at
+        )
+        select
+              concat('stat_user_', lpad(gs::text, 3, '0'))
+            , null
+            , concat('통계회원', gs)
+            , concat('통계회원', gs)
+            , concat('010-', lpad((7700 + floor((gs - 1) / 100))::int::text, 4, '0'), '-', lpad(gs::text, 4, '0'))
+            , concat('stat_user_', lpad(gs::text, 3, '0'), '@evcharge.test')
+            , 'USER'
+            , 'LOCAL'
+            , 'ACTIVE'
+            , current_timestamp - (gs || ' days')::interval
+            , current_timestamp
+          from generate_series(1, 500) gs
+        on conflict (user_id) do nothing
+    </insert>
+
+    <!-- 통계 시연용 차량 생성: 통계 회원마다 대표 차량 1대를 보장한다. -->
+    <insert id="insertStatisticsDemoVehicles">
+        with model_upsert as (
+            insert into vehicle_model (
+                  manufacturer
+                , model_name
+                , battery_capacity_kwh
+                , connector_type
+                , max_charging_speed_kw
+                , created_at
+                , updated_at
+            ) values (
+                  '현대'
+                , '아이오닉5'
+                , 72.60
+                , 'DC콤보'
+                , 200.00
+                , current_timestamp
+                , current_timestamp
+            )
+            on conflict (manufacturer, model_name) do nothing
+            returning model_id
+        ), model_pick as (
+            select model_id
+              from model_upsert
+            union all
+            select model_id
+              from vehicle_model
+             where manufacturer = '현대'
+               and model_name = '아이오닉5'
+             limit 1
+        )
+        insert into vehicle (
+              member_id
+            , model_id
+            , vehicle_nickname
+            , plate_number
+            , is_default
+            , created_at
+            , updated_at
+        )
+        select
+              m.member_id
+            , (select model_id from model_pick limit 1)
+            , '통계 시연 차량'
+            , concat('STAT', lpad(m.member_id::text, 4, '0'))
+            , true
+            , current_timestamp
+            , current_timestamp
+          from app_member m
+         where m.user_id like 'stat_user_%'
+           and not exists (
+                select 1
+                  from vehicle v
+                 where v.member_id = m.member_id
+                   and coalesce(v.is_deleted, false) = false
+           )
+    </insert>
+
+    <!-- 통계 샘플 재생성 전 stat_user_% 회원의 충전 세션만 제거한다. -->
+    <delete id="deleteStatisticsSampleChargingSessions">
+        delete from charging_session cs
+        using app_member m
+        where cs.member_id = m.member_id
+          and m.user_id like 'stat_user_%'
+    </delete>
+
+    <!-- 통계 샘플 재생성 전 stat_user_% 회원의 예약만 제거한다. -->
+    <delete id="deleteStatisticsSampleReservations">
+        delete from reservation r
+        using app_member m
+        where r.member_id = m.member_id
+          and m.user_id like 'stat_user_%'
+    </delete>
+
+    <!-- 공공데이터 샘플 충전소/충전기와 stat_user_% 회원 기준으로 예약 완료 + 충전 완료 데이터를 생성한다. -->
+    <!--
+        기존 SQL은 generate_series row마다 회원/충전기를 order by random()으로 다시 뽑아서
+        대량 생성 시 매우 오래 걸렸다.
+        아래 SQL은 회원/차량, 충전기 후보를 한 번만 번호화(row_number)한 뒤
+        generate_series 번호를 modulo로 매칭한다.
+        그래서 대량 샘플도 DB 안에서 빠르게 set-based insert 된다.
+    -->
+    <insert id="insertStatisticsSampleSessions">
+        with member_vehicle as (
+            select
+                  row_number() over (order by m.member_id) as rn
+                , m.member_id
+                , v.vehicle_id
+              from app_member m
+              join vehicle v
+                on m.member_id = v.member_id
+               and coalesce(v.is_deleted, false) = false
+             where m.status = 'ACTIVE'
+               and m.user_id like 'stat_user_%'
+        ), member_total as (
+            select count(*)::int as cnt
+              from member_vehicle
+        ), charger_pool as (
+            select
+                  row_number() over (order by c.charger_id) as rn
+                , c.charger_id
+                , coalesce(c.price_per_kwh, 347.20) as price_per_kwh
+                , greatest(coalesce(c.charging_speed_kw, 50), 7) as charging_speed_kw
+              from charger c
+              join charging_station st
+                on c.station_id = st.station_id
+             where coalesce(c.is_deleted, false) = false
+               and coalesce(st.is_deleted, false) = false
+               and coalesce(st.source_type, '') = 'PUBLIC_API'
+               and c.status in ('사용가능', '사용중', '예약중')
+        ), charger_total as (
+            select count(*)::int as cnt
+              from charger_pool
+        ), base as (
+            select
+                  gs.n
+                , ((gs.n - 1) % #{days})::int as day_index
+                , case
+                      when ((gs.n * 37) % 100) &lt; 18 then 7 + ((gs.n * 5) % 3)
+                      when ((gs.n * 37) % 100) &lt; 30 then 12 + ((gs.n * 3) % 2)
+                      when ((gs.n * 37) % 100) &lt; 70 then 18 + ((gs.n * 7) % 4)
+                      when ((gs.n * 37) % 100) &lt; 90 then 10 + ((gs.n * 11) % 6)
+                      else ((gs.n * 13) % 24)
+                  end::int as raw_hour
+                , (((gs.n * 17) % 4) * 15)::int as start_minute
+                , (20 + ((gs.n * 17) % 45))::int as current_soc
+                , (70 + ((gs.n * 19) % 25))::int as target_soc
+                , round((25 + (((gs.n * 23) % 4500) / 100.0))::numeric, 2) as required_kwh
+              from generate_series((#{offset} + 1), (#{offset} + (#{count} * 2))) gs(n)
+        ), time_seed as (
+            select
+                  b.*
+                , (current_date - ((#{days} - 1) - b.day_index))::date as session_date
+                , case
+                      when (current_date - ((#{days} - 1) - b.day_index))::date = current_date
+                          then least(b.raw_hour, greatest(extract(hour from current_timestamp)::int - 2, 0))
+                      else b.raw_hour
+                  end::int as start_hour
+              from base b
+        ), seed as (
+            select
+                  ts.n
+                , mv.member_id
+                , mv.vehicle_id
+                , ch.charger_id
+                , ch.price_per_kwh
+                , ch.charging_speed_kw
+                , (
+                    ts.session_date::timestamp
+                    + (ts.start_hour * interval '1 hour')
+                    + (ts.start_minute * interval '1 minute')
+                  ) as start_time
+                , ts.current_soc
+                , greatest(ts.target_soc, ts.current_soc + 5) as target_soc
+                , ts.required_kwh
+              from time_seed ts
+              cross join member_total mt
+              cross join charger_total ct
+              join member_vehicle mv
+                on mv.rn = (((ts.n - 1) % nullif(mt.cnt, 0)) + 1)
+              join charger_pool ch
+                on ch.rn = ((((ts.n * 7) - 1) % nullif(ct.cnt, 0)) + 1)
+             where mt.cnt &gt; 0
+               and ct.cnt &gt; 0
+        ), calc as (
+            select
+                  n
+                , member_id
+                , vehicle_id
+                , charger_id
+                , price_per_kwh
+                , charging_speed_kw
+                , start_time
+                , current_soc
+                , target_soc
+                , required_kwh
+                , greatest(15, ceil(required_kwh / charging_speed_kw * 60))::int as estimated_minutes
+              from seed
+             where target_soc &gt; current_soc
+        ), limited_calc as (
+            select *
+              from calc
+             where start_time + (estimated_minutes || ' minutes')::interval &lt; current_timestamp
+             order by n asc
+             limit #{count}
+        ), inserted_reservation as (
+            insert into reservation (
+                  member_id
+                , vehicle_id
+                , charger_id
+                , reservation_date
+                , start_time
+                , end_time
+                , current_soc
+                , target_soc
+                , required_kwh
+                , estimated_minutes
+                , estimated_cost
+                , status
+                , auth_code
+                , verified_at
+                , created_at
+                , updated_at
+            )
+            select
+                  member_id
+                , vehicle_id
+                , charger_id
+                , start_time::date
+                , start_time
+                , start_time + (estimated_minutes || ' minutes')::interval
+                , current_soc
+                , target_soc
+                , required_kwh
+                , estimated_minutes
+                , round(required_kwh * price_per_kwh, 0)
+                , '완료'
+                , concat('ST', lpad(n::text, 12, '0'))
+                , start_time
+                , start_time - interval '15 minutes'
+                , current_timestamp
+            from limited_calc
+            returning
+                  reservation_id
+                , member_id
+                , vehicle_id
+                , charger_id
+                , start_time
+                , end_time
+                , current_soc
+                , target_soc
+                , required_kwh
+                , estimated_minutes
+                , estimated_cost
+        )
+        insert into charging_session (
+              reservation_id
+            , member_id
+            , vehicle_id
+            , charger_id
+            , actual_start_time
+            , actual_end_time
+            , start_soc
+            , end_soc
+            , actual_kwh
+            , actual_minutes
+            , actual_cost
+            , status
+            , created_at
+            , updated_at
+        )
+        select
+              reservation_id
+            , member_id
+            , vehicle_id
+            , charger_id
+            , start_time
+            , end_time
+            , current_soc
+            , target_soc
+            , required_kwh
+            , greatest(1, estimated_minutes)
+            , estimated_cost
+            , '완료'
+            , current_timestamp
+            , current_timestamp
+        from inserted_reservation
+    </insert>
+
+    <select id="countCompletedChargingSessions" resultType="int">
+        select count(*)
+          from charging_session
+         where status = '완료'
+    </select>
+
+    <!-- 발표 초기화: stat_user_% / demo_user_% 회원 알림 삭제 -->
+    <delete id="deleteDemoMemberNotifications">
+        delete from notification n
+         where n.receiver_member_id in (
+                select member_id
+                  from app_member
+                 where user_id like 'stat_user_%'
+                    or user_id like 'demo_user_%'
+         )
+    </delete>
+
+    <!-- 발표 초기화: 시연 회원 및 PUBLIC_API 인프라와 연결된 첨부파일 정리 -->
+    <delete id="deleteDemoAndPublicFileAttachments">
+        delete from file_attachment fa
+         where fa.uploader_member_id in (
+                select member_id
+                  from app_member
+                 where user_id like 'stat_user_%'
+                    or user_id like 'demo_user_%'
+         )
+            or (
+                fa.target_type = 'COMPLAINT'
+                and exists (
+                    select 1
+                      from complaint co
+                     where co.complaint_id = fa.target_id
+                       and (
+                            co.member_id in (
+                                select member_id
+                                  from app_member
+                                 where user_id like 'stat_user_%'
+                                    or user_id like 'demo_user_%'
+                            )
+                            or co.station_id in (
+                                select station_id
+                                  from charging_station
+                                 where coalesce(source_type, '') = 'PUBLIC_API'
+                            )
+                            or co.charger_id in (
+                                select c.charger_id
+                                  from charger c
+                                  join charging_station s
+                                    on c.station_id = s.station_id
+                                 where coalesce(s.source_type, '') = 'PUBLIC_API'
+                            )
+                       )
+                )
+            )
+            or (
+                fa.target_type = 'FAULT'
+                and exists (
+                    select 1
+                      from fault_report f
+                     where f.fault_id = fa.target_id
+                       and (
+                            f.station_id in (
+                                select station_id
+                                  from charging_station
+                                 where coalesce(source_type, '') = 'PUBLIC_API'
+                            )
+                            or f.charger_id in (
+                                select c.charger_id
+                                  from charger c
+                                  join charging_station s
+                                    on c.station_id = s.station_id
+                                 where coalesce(s.source_type, '') = 'PUBLIC_API'
+                            )
+                       )
+                )
+            )
+            or (
+                fa.target_type = 'INSPECTION'
+                and exists (
+                    select 1
+                      from inspection i
+                      join charger c
+                        on i.charger_id = c.charger_id
+                      join charging_station s
+                        on c.station_id = s.station_id
+                     where i.inspection_id = fa.target_id
+                       and coalesce(s.source_type, '') = 'PUBLIC_API'
+                )
+            )
+            or (
+                fa.target_type = 'APPROVAL'
+                and exists (
+                    select 1
+                      from approval_document ad
+                      left join fault_report f
+                        on ad.fault_id = f.fault_id
+                      left join inspection i
+                        on ad.inspection_id = i.inspection_id
+                      left join charger c1
+                        on f.charger_id = c1.charger_id
+                      left join charging_station s1
+                        on c1.station_id = s1.station_id
+                      left join charger c2
+                        on i.charger_id = c2.charger_id
+                      left join charging_station s2
+                        on c2.station_id = s2.station_id
+                     where ad.document_id = fa.target_id
+                       and (
+                            coalesce(s1.source_type, '') = 'PUBLIC_API'
+                            or coalesce(s2.source_type, '') = 'PUBLIC_API'
+                       )
+                )
+            )
+            or (
+                fa.target_type = 'MAINTENANCE'
+                and exists (
+                    select 1
+                      from maintenance_action ma
+                      join charger c
+                        on ma.charger_id = c.charger_id
+                      join charging_station s
+                        on c.station_id = s.station_id
+                     where ma.action_id = fa.target_id
+                       and coalesce(s.source_type, '') = 'PUBLIC_API'
+                )
+            )
+    </delete>
+
+    <!-- 발표 초기화: PUBLIC_API 충전기/장애와 연결된 유지보수 작업 삭제 -->
+    <delete id="deletePublicMaintenanceActions">
+        delete from maintenance_action ma
+         where ma.charger_id in (
+                select c.charger_id
+                  from charger c
+                  join charging_station s
+                    on c.station_id = s.station_id
+                 where coalesce(s.source_type, '') = 'PUBLIC_API'
+         )
+            or ma.fault_id in (
+                select f.fault_id
+                  from fault_report f
+                  left join charging_station s
+                    on f.station_id = s.station_id
+                  left join charger c
+                    on f.charger_id = c.charger_id
+                  left join charging_station cs
+                    on c.station_id = cs.station_id
+                 where coalesce(s.source_type, '') = 'PUBLIC_API'
+                    or coalesce(cs.source_type, '') = 'PUBLIC_API'
+         )
+            or ma.inspection_id in (
+                select i.inspection_id
+                  from inspection i
+                  join charger c
+                    on i.charger_id = c.charger_id
+                  join charging_station s
+                    on c.station_id = s.station_id
+                 where coalesce(s.source_type, '') = 'PUBLIC_API'
+         )
+            or ma.approval_document_id in (
+                select ad.document_id
+                  from approval_document ad
+                  left join fault_report f
+                    on ad.fault_id = f.fault_id
+                  left join inspection i
+                    on ad.inspection_id = i.inspection_id
+                  left join charger cf
+                    on f.charger_id = cf.charger_id
+                  left join charging_station sf
+                    on cf.station_id = sf.station_id
+                  left join charger ci
+                    on i.charger_id = ci.charger_id
+                  left join charging_station si
+                    on ci.station_id = si.station_id
+                 where coalesce(sf.source_type, '') = 'PUBLIC_API'
+                    or coalesce(si.source_type, '') = 'PUBLIC_API'
+         )
+    </delete>
+
+    <!-- 발표 초기화: PUBLIC_API 인프라와 연결된 결재 문서 삭제 -->
+    <delete id="deletePublicApprovalDocuments">
+        delete from approval_document ad
+         where ad.fault_id in (
+                select f.fault_id
+                  from fault_report f
+                  left join charging_station s
+                    on f.station_id = s.station_id
+                  left join charger c
+                    on f.charger_id = c.charger_id
+                  left join charging_station cs
+                    on c.station_id = cs.station_id
+                 where coalesce(s.source_type, '') = 'PUBLIC_API'
+                    or coalesce(cs.source_type, '') = 'PUBLIC_API'
+         )
+            or ad.inspection_id in (
+                select i.inspection_id
+                  from inspection i
+                  join charger c
+                    on i.charger_id = c.charger_id
+                  join charging_station s
+                    on c.station_id = s.station_id
+                 where coalesce(s.source_type, '') = 'PUBLIC_API'
+         )
+    </delete>
+
+    <!-- 발표 초기화: PUBLIC_API 충전기 점검 삭제 -->
+    <delete id="deletePublicInspections">
+        delete from inspection i
+         where i.charger_id in (
+                select c.charger_id
+                  from charger c
+                  join charging_station s
+                    on c.station_id = s.station_id
+                 where coalesce(s.source_type, '') = 'PUBLIC_API'
+         )
+            or i.fault_id in (
+                select f.fault_id
+                  from fault_report f
+                  left join charging_station s
+                    on f.station_id = s.station_id
+                  left join charger c
+                    on f.charger_id = c.charger_id
+                  left join charging_station cs
+                    on c.station_id = cs.station_id
+                 where coalesce(s.source_type, '') = 'PUBLIC_API'
+                    or coalesce(cs.source_type, '') = 'PUBLIC_API'
+         )
+    </delete>
+
+    <!-- 발표 초기화: PUBLIC_API 인프라 장애 삭제 -->
+    <delete id="deletePublicFaultReports">
+        delete from fault_report f
+         where f.station_id in (
+                select station_id
+                  from charging_station
+                 where coalesce(source_type, '') = 'PUBLIC_API'
+         )
+            or f.charger_id in (
+                select c.charger_id
+                  from charger c
+                  join charging_station s
+                    on c.station_id = s.station_id
+                 where coalesce(s.source_type, '') = 'PUBLIC_API'
+         )
+    </delete>
+
+    <!-- 발표 초기화: 실제 회원 민원은 유지하되 PUBLIC_API 충전소/충전기 FK만 분리 -->
+    <update id="detachPublicInfraFromComplaints">
+        update complaint co
+           set station_id = case
+                                when co.station_id in (
+                                    select station_id
+                                      from charging_station
+                                     where coalesce(source_type, '') = 'PUBLIC_API'
+                                ) then null
+                                else co.station_id
+                            end,
+               charger_id = case
+                                when co.charger_id in (
+                                    select c.charger_id
+                                      from charger c
+                                      join charging_station s
+                                        on c.station_id = s.station_id
+                                     where coalesce(s.source_type, '') = 'PUBLIC_API'
+                                ) then null
+                                else co.charger_id
+                            end,
+               updated_at = current_timestamp
+         where co.station_id in (
+                select station_id
+                  from charging_station
+                 where coalesce(source_type, '') = 'PUBLIC_API'
+         )
+            or co.charger_id in (
+                select c.charger_id
+                  from charger c
+                  join charging_station s
+                    on c.station_id = s.station_id
+                 where coalesce(s.source_type, '') = 'PUBLIC_API'
+         )
+    </update>
+
+    <!-- 발표 초기화: PUBLIC_API 충전소 삭제. 충전기/예약/충전세션/즐겨찾기 등 cascade 대상도 함께 정리된다. -->
+    <delete id="deletePublicApiStations">
+        delete from charging_station
+         where coalesce(source_type, '') = 'PUBLIC_API'
+    </delete>
+
+    <!-- 발표 초기화: 공공데이터 적재 로그 삭제 -->
+    <delete id="deletePublicApiSyncLogs">
+        delete from public_api_sync_log
+         where api_name like '%공공%'
+            or api_name like '%환경부%'
+            or sync_type in ('REGION_SAMPLE', 'PUBLIC_API_SAMPLE')
+    </delete>
+
+    <!-- 발표 초기화: 통계/데모 회원 삭제. 차량/예약/세션/AI 대화 등 cascade 대상도 함께 정리된다. -->
+    <delete id="deleteDemoMembers">
+        delete from app_member
+         where user_id like 'stat_user_%'
+            or user_id like 'demo_user_%'
+    </delete>
+
+
+</mapper>

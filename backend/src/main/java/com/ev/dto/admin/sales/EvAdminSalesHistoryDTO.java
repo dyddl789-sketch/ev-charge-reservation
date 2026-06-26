@@ -14,6 +14,7 @@ public class EvAdminSalesHistoryDTO {
     private String stationName;
     private String chargerName;
     private Double actualKwh;
+    private Long actualMinutes;
     private Long actualCost;
     private String status;
 }

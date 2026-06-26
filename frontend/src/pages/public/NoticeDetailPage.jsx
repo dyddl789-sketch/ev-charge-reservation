@@ -9,6 +9,36 @@ import "../../styles/notice.css";
 
 const ADMIN_TYPES = ["ADMIN", "MANAGER", "OPERATOR", "ENGINEER"];
 
+// React 개발 모드 StrictMode에서 상세 API가 짧은 시간 안에 2번 호출되어 조회수가 2씩 증가하는 문제를 방지한다.
+const NOTICE_DETAIL_CACHE_TTL = 1500;
+const noticeDetailRequestCache = new Map();
+
+const requestNoticeDetailOnce = (noticeId) => {
+  const cacheKey = String(noticeId);
+  const cached = noticeDetailRequestCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.createdAt < NOTICE_DETAIL_CACHE_TTL) {
+    console.log("공지사항 상세 중복 요청 방지 - 기존 요청 재사용", noticeId);
+    return cached.promise;
+  }
+
+  const promise = notices.read(noticeId).finally(() => {
+    window.setTimeout(() => {
+      const current = noticeDetailRequestCache.get(cacheKey);
+      if (current?.promise === promise) {
+        noticeDetailRequestCache.delete(cacheKey);
+      }
+    }, NOTICE_DETAIL_CACHE_TTL);
+  });
+
+  noticeDetailRequestCache.set(cacheKey, {
+    promise,
+    createdAt: Date.now(),
+  });
+
+  return promise;
+};
+
 const NoticeDetailPage = () => {
   console.log("NoticeDetailPage 렌더링");
 
@@ -52,7 +82,7 @@ const NoticeDetailPage = () => {
     console.log("공지사항 상세 조회 실행", noticeId);
 
     try {
-      const response = await notices.read(noticeId);
+      const response = await requestNoticeDetailOnce(noticeId);
       const data = response.data;
 
       console.log("공지사항 상세 응답", data);

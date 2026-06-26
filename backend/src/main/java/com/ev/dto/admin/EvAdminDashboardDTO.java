@@ -3,6 +3,8 @@ package com.ev.dto.admin;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.ev.dto.admin.simulation.EvAdminSimulationChargerDTO;
+
 import lombok.Data;
 
 /*
@@ -38,4 +40,7 @@ public class EvAdminDashboardDTO {
     private List<EvAdminReservationRowDTO> todayReservationList = new ArrayList<>();
     private List<EvAdminStationRowDTO> stationStatusList = new ArrayList<>();
     private List<EvAdminNoticeDTO> noticeList = new ArrayList<>();
+
+    // 대시보드 최근 장애 발생 충전기 목록
+    private List<EvAdminSimulationChargerDTO> faultChargerList = new ArrayList<>();
 }
