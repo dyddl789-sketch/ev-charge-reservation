@@ -61,7 +61,7 @@ const InfrastructurePage = () => {
   };
 
   const changeCharger = (index, name, value) => {
-    console.log("초기 충전기 입력 변경", index, name, value);
+    console.log("설치 충전기 입력 변경", index, name, value);
     setForm((prev) => ({
       ...prev,
       chargerList: prev.chargerList.map((charger, chargerIndex) => (
@@ -71,7 +71,7 @@ const InfrastructurePage = () => {
   };
 
   const addCharger = () => {
-    console.log("초기 충전기 추가");
+    console.log("설치 충전기 추가");
     setForm((prev) => ({
       ...prev,
       chargerList: [
@@ -89,7 +89,7 @@ const InfrastructurePage = () => {
   };
 
   const removeCharger = (index) => {
-    console.log("초기 충전기 제거", index);
+    console.log("설치 충전기 제거", index);
     setForm((prev) => ({
       ...prev,
       chargerList: prev.chargerList.filter((_, chargerIndex) => chargerIndex !== index),
@@ -107,8 +107,10 @@ const InfrastructurePage = () => {
           setForm((prev) => ({
             ...prev,
             address: data.roadAddress || data.jibunAddress || prev.address,
+            latitude: "",
+            longitude: "",
           }));
-          alert("주소가 입력되었습니다. 위도/경도는 카카오맵 또는 DBeaver 기준 좌표를 확인해서 입력해 주세요.");
+          alert("주소가 입력되었습니다. 위도/경도는 백엔드에서 주소 기반으로 자동 저장됩니다.");
         },
       }).open();
     } catch (error) {
@@ -131,8 +133,9 @@ const InfrastructurePage = () => {
       return;
     }
 
-    if (!form.latitude || !form.longitude) {
-      alert("위도와 경도를 입력하세요. 지도 표시와 거리 계산에 필요합니다.");
+    const validChargers = form.chargerList.filter((charger) => charger.chargerName?.trim());
+    if (validChargers.length === 0) {
+      alert("충전소 등록 시 최소 1대 이상의 충전기 정보를 입력하세요.");
       return;
     }
 
@@ -140,15 +143,13 @@ const InfrastructurePage = () => {
 
     const requestData = {
       ...form,
-      latitude: Number(form.latitude),
-      longitude: Number(form.longitude),
-      chargerList: form.chargerList
-        .filter((charger) => charger.chargerName?.trim())
-        .map((charger) => ({
-          ...charger,
-          chargingSpeedKw: Number(charger.chargingSpeedKw),
-          pricePerKwh: Number(charger.pricePerKwh),
-        })),
+      latitude: form.latitude ? Number(form.latitude) : null,
+      longitude: form.longitude ? Number(form.longitude) : null,
+      chargerList: validChargers.map((charger) => ({
+        ...charger,
+        chargingSpeedKw: Number(charger.chargingSpeedKw),
+        pricePerKwh: Number(charger.pricePerKwh),
+      })),
     };
 
     try {
@@ -158,65 +159,57 @@ const InfrastructurePage = () => {
       setForm(initialForm);
     } catch (error) {
       console.log("충전소 등록 실패", error);
-      alert("충전소 등록에 실패했습니다. 입력값과 백엔드 로그를 확인해 주세요.");
+      alert(error.response?.data?.message || "충전소 등록에 실패했습니다. 입력값과 백엔드 로그를 확인해 주세요.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <section className="admin-page">
+    <section className="admin-page station-register-page">
       <div className="admin-page-header">
         <div>
           <p>충전소관리</p>
           <h1>충전소 등록</h1>
-          <span>신규 충전소 위치와 운영정보, 초기 충전기 정보를 실제 DB에 등록합니다.</span>
+          <span>신규 충전소 위치와 운영정보, 설치 충전기 정보를 실제 DB에 등록합니다.</span>
         </div>
       </div>
 
       <div className="admin-grid admin-grid-2-1">
-        <article className="admin-panel">
+        <article className="admin-panel station-register-panel">
           <div className="admin-panel-title">
             <div>
-              <strong>신규 충전소 정보</strong>
-              <p>다음 주소검색으로 주소를 깔끔하게 입력하고, 위도/경도까지 저장하면 지도와 통계에 바로 반영됩니다.</p>
+              <strong>충전소 기본 정보</strong>
+              <p>주소검색으로 위치를 입력하면 위도와 경도는 내부에서 자동 저장됩니다.</p>
             </div>
           </div>
 
-          <form className="admin-form-grid refined-form" onSubmit={submitStation}>
+          <form className="admin-form-grid refined-form station-register-form" onSubmit={submitStation}>
             <label>
-              충전소명 <b>*</b>
+              <span>충전소명 <em>필수</em></span>
               <input type="text" name="stationName" value={form.stationName} placeholder="예: 부산시청 공공충전소" onChange={changeValue} />
             </label>
             <label>
-              운영기관
+              <span>운영기관</span>
               <input type="text" name="operatorName" value={form.operatorName} placeholder="예: 부산시" onChange={changeValue} />
             </label>
             <label className="full address-field">
-              주소 <b>*</b>
+              <span>주소 <em>필수</em></span>
               <div>
                 <input type="text" name="address" value={form.address} placeholder="다음 주소검색 또는 직접 입력" onChange={changeValue} />
                 <button type="button" onClick={openAddressSearch}>다음 주소검색</button>
               </div>
             </label>
             <label>
-              위도 <b>*</b>
-              <input type="number" step="0.000001" name="latitude" value={form.latitude} placeholder="예: 35.179554" onChange={changeValue} />
-            </label>
-            <label>
-              경도 <b>*</b>
-              <input type="number" step="0.000001" name="longitude" value={form.longitude} placeholder="예: 129.075642" onChange={changeValue} />
-            </label>
-            <label>
-              운영 시작
+              <span>운영 시작</span>
               <input type="time" name="openTime" value={form.openTime} onChange={changeValue} />
             </label>
             <label>
-              운영 종료
+              <span>운영 종료</span>
               <input type="time" name="closeTime" value={form.closeTime} onChange={changeValue} />
             </label>
             <label className="full">
-              초기 상태
+              <span>초기 상태</span>
               <select name="stationStatus" value={form.stationStatus} onChange={changeValue}>
                 <option>운영중</option>
                 <option>점검중</option>
@@ -224,20 +217,25 @@ const InfrastructurePage = () => {
               </select>
             </label>
 
-            <div className="full charger-seed-box">
+            <div className="full charger-seed-box modern-charger-box">
               <div className="admin-panel-title compact-title">
-                <div><strong>초기 충전기</strong><p>등록 시 충전소와 함께 충전기도 바로 저장됩니다.</p></div>
+                <div><strong>설치 충전기 정보</strong><p>충전소 등록 시 최소 1대 이상의 충전기 정보를 함께 저장합니다.</p></div>
                 <button type="button" onClick={addCharger}>충전기 추가</button>
               </div>
 
               {form.chargerList.map((charger, index) => (
-                <div className="charger-seed-row" key={`${charger.chargerName}-${index}`}>
-                  <input value={charger.chargerName} placeholder="충전기명" onChange={(e) => changeCharger(index, "chargerName", e.target.value)} />
-                  <select value={charger.chargerType} onChange={(e) => changeCharger(index, "chargerType", e.target.value)}><option>완속</option><option>급속</option><option>초급속</option></select>
-                  <select value={charger.connectorType} onChange={(e) => changeCharger(index, "connectorType", e.target.value)}><option>DC콤보</option><option>AC3상</option><option>NACS</option></select>
-                  <input type="number" value={charger.chargingSpeedKw} onChange={(e) => changeCharger(index, "chargingSpeedKw", e.target.value)} />
-                  <input type="number" value={charger.pricePerKwh} onChange={(e) => changeCharger(index, "pricePerKwh", e.target.value)} />
-                  <button type="button" className="gray" onClick={() => removeCharger(index)} disabled={form.chargerList.length <= 1}>삭제</button>
+                <div className="charger-seed-card" key={`${charger.chargerName}-${index}`}>
+                  <div className="charger-seed-head">
+                    <strong>충전기 {index + 1}</strong>
+                    <button type="button" className="gray" onClick={() => removeCharger(index)} disabled={form.chargerList.length <= 1}>삭제</button>
+                  </div>
+                  <div className="charger-seed-grid">
+                    <label><span>충전기명</span><input value={charger.chargerName} placeholder="예: 급속 01" onChange={(e) => changeCharger(index, "chargerName", e.target.value)} /></label>
+                    <label><span>충전기 유형</span><select value={charger.chargerType} onChange={(e) => changeCharger(index, "chargerType", e.target.value)}><option>완속</option><option>급속</option><option>초급속</option></select></label>
+                    <label><span>커넥터 타입</span><select value={charger.connectorType} onChange={(e) => changeCharger(index, "connectorType", e.target.value)}><option>DC콤보</option><option>AC3상</option><option>NACS</option></select></label>
+                    <label><span>출력(kW)</span><input type="number" value={charger.chargingSpeedKw} onChange={(e) => changeCharger(index, "chargingSpeedKw", e.target.value)} /></label>
+                    <label><span>요금(원/kWh)</span><input type="number" value={charger.pricePerKwh} onChange={(e) => changeCharger(index, "pricePerKwh", e.target.value)} /></label>
+                  </div>
                 </div>
               ))}
             </div>
@@ -255,7 +253,7 @@ const InfrastructurePage = () => {
           </div>
           <div className="admin-guide-list polished-guide">
             <p><b>충전소 운영관리</b> 등록 즉시 목록과 지역 검색에 표시됩니다.</p>
-            <p><b>사용자 지도</b> 위도/경도가 저장되면 지도 마커와 예약 화면에서 사용할 수 있습니다.</p>
+            <p><b>사용자 지도</b> 주소 기반 좌표가 저장되면 지도 마커와 예약 화면에서 사용할 수 있습니다.</p>
             <p><b>예약관리</b> 사용자가 해당 충전기를 예약하면 예약 현황에 반영됩니다.</p>
             <p><b>통계분석</b> 충전 완료 세션이 생기면 이용통계와 매출통계에 바로 반영됩니다.</p>
           </div>

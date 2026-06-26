@@ -14,7 +14,7 @@ const StatisticsPage = () => {
 
     setLoading(true);
     try {
-      const response = await adminApi.generateStatisticsSampleData({ days: 90, count: 500 });
+      const response = await adminApi.generateStatisticsSampleData({ days: 120, count: 15000 });
       console.log("통계 샘플 생성 응답", response.data);
       setResult(response.data);
       alert(response.data?.message || "통계 샘플 데이터가 생성되었습니다.");

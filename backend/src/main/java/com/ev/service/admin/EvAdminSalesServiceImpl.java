@@ -26,6 +26,7 @@ public class EvAdminSalesServiceImpl implements EvAdminSalesService {
 
         salesStatDTO.setSummary(evAdminSalesDAO.findSalesSummary(startDate, endDate, region, stationId, chargerType));
         salesStatDTO.setDailyList(evAdminSalesDAO.findDailySalesList(startDate, endDate, region, stationId, chargerType));
+        salesStatDTO.setHourlyList(evAdminSalesDAO.findHourlySalesList(startDate, endDate, region, stationId, chargerType));
         salesStatDTO.setTypeList(evAdminSalesDAO.findSalesTypeList(startDate, endDate, region, stationId, chargerType));
         salesStatDTO.setStationRankList(evAdminSalesDAO.findStationSalesRankList(startDate, endDate, region, stationId, chargerType));
         salesStatDTO.setHistoryList(evAdminSalesDAO.findSalesHistoryList(startDate, endDate, region, stationId, chargerType));

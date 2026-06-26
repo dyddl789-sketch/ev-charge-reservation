@@ -39,8 +39,8 @@ public class EvAdminOperationController {
     @PostMapping("/statistics/sample-data")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public EvAdminOperationResultDTO generateStatisticsSampleData(
-            @RequestParam(value = "days", defaultValue = "60") int days,
-            @RequestParam(value = "count", defaultValue = "300") int count) {
+            @RequestParam(value = "days", defaultValue = "120") int days,
+            @RequestParam(value = "count", defaultValue = "6000") int count) {
 
         log.info("@# EvAdminOperationController.generateStatisticsSampleData()");
         log.info("@# days => {}, count => {}", days, count);
@@ -56,7 +56,7 @@ public class EvAdminOperationController {
         return evAdminOperationService.triggerFaultSimulation();
     }
 
-    // 시연/테스트용 초기화: 고장 충전기를 사용가능으로 돌리고 이력은 남기지 않는다.
+    // 발표 시작용 초기화: PUBLIC_API 충전소/충전기와 demo/stat 시연 회원 데이터를 정리한다.
     @PostMapping("/simulation/reset")
     @PreAuthorize("hasRole('ADMIN')")
     public EvAdminOperationResultDTO resetSimulation() {

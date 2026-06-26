@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as adminApi from "../../apis/adminApi";
+import useAdminPolling from "../../hooks/useAdminPolling";
 
 const statusOptions = ["", "접수", "점검중", "조치중", "결재대기", "완료"];
 
@@ -284,6 +285,8 @@ const FaultPage = () => {
   const [approvalFault, setApprovalFault] = useState(null);
   const [resultForm, setResultForm] = useState({ inspectionResult: "정상", description: "" });
   const [actionResult, setActionResult] = useState("현장 조치 및 충전기 동작 확인을 완료했습니다.");
+  const isFirstFilterChangeRef = useRef(true);
+  const filterKey = useMemo(() => JSON.stringify(filters), [filters]);
 
   const kpi = useMemo(() => {
     const getCount = (key, fallbackStatus) => Number(serverSummary[key] || serverSummary[key?.toUpperCase?.()] || faults.filter((fault) => fault.status === fallbackStatus).length || 0);
@@ -367,6 +370,26 @@ const FaultPage = () => {
     loadFaults(1);
     loadEngineers();
   }, []);
+
+  useEffect(() => {
+    if (isFirstFilterChangeRef.current) {
+      isFirstFilterChangeRef.current = false;
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      console.log('장애 필터 변경 즉시 재조회', filters);
+      loadFaults(1, filters);
+    }, 400);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey]);
+
+  useAdminPolling(() => loadFaults(pageInfo.page, filters), {
+    label: '장애관리',
+    enabled: !assignFault && !inspectionModal && !actionModal && !approvalFault,
+  });
 
   useEffect(() => {
     if (!inspectionModal || inspectionModal.phase !== "progress") {

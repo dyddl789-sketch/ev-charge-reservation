@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import * as adminApi from "../../apis/adminApi";
 
 const today = new Date();
-const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
 const todayText = today.toISOString().slice(0, 10);
 
 const initialSearch = {
@@ -17,10 +16,10 @@ const initialSearch = {
 
 const getBadgeColor = (value) => {
   if (value === "ACTIVE") return "green";
-  if (value === "BLOCKED") return "danger";
   if (value === "INACTIVE") return "warning";
   if (value === "ADMIN" || value === "MANAGER") return "purple";
   if (value === "OPERATOR" || value === "ENGINEER") return "blue";
+  if (value === "BLOCKED") return "danger";
   return "blue";
 };
 
@@ -32,20 +31,32 @@ const formatDate = (value) => {
 
 const numberText = (value) => Number(value || 0).toLocaleString("ko-KR");
 
+const getStatusText = (value) => {
+  if (value === "ACTIVE") return "활성";
+  if (value === "INACTIVE") return "비활성";
+  if (value === "BLOCKED") return "정지";
+  return value || "-";
+};
+
+const getUserTypeText = (value) => {
+  if (value === "ADMIN") return "최고관리자";
+  if (value === "MANAGER") return "운영관리자";
+  if (value === "OPERATOR") return "운영담당자";
+  if (value === "ENGINEER") return "시설관리담당자";
+  return "일반회원";
+};
+
 const normalizeMember = (member) => ({
   memberId: member.memberId,
   userId: member.userId ?? "-",
   memberName: member.memberName ?? "-",
+  nickname: member.nickname ?? "-",
   email: member.email ?? "-",
   phone: member.phone ?? "-",
   userType: member.userType ?? "USER",
   loginType: member.loginType ?? "-",
   status: member.status ?? "ACTIVE",
   createdAtText: member.createdAtText ?? formatDate(member.createdAt),
-  vehicleCount: member.vehicleCount ?? 0,
-  reservationCount: member.reservationCount ?? 0,
-  completedSessionCount: member.completedSessionCount ?? 0,
-  totalPaymentAmount: member.totalPaymentAmount ?? 0,
 });
 
 const MemberPage = () => {
@@ -130,9 +141,9 @@ const MemberPage = () => {
     setPage(1);
   };
 
-  const goMemberDetail = (memberId) => {
-    console.log("회원 상세 페이지 이동", memberId);
-    navigate(`/admin/members/${memberId}`);
+  const goMemberDetail = (targetMemberId) => {
+    console.log("회원 상세 페이지 이동", targetMemberId);
+    navigate(`/admin/members/${targetMemberId}`);
   };
 
   return (
@@ -141,7 +152,7 @@ const MemberPage = () => {
         <div>
           <p>회원관리</p>
           <h1>회원 목록</h1>
-          <span>실제 회원 데이터와 차량·예약·충전 이용 현황을 20개 단위로 조회합니다.</span>
+          <span>회원 식별에 필요한 정보만 목록에 표시하고, 예약·충전·이용금액은 상세 화면에서 확인합니다.</span>
         </div>
         <button type="button" onClick={loadMembers} disabled={loading}>{loading ? "조회 중" : "새로고침"}</button>
       </div>
@@ -160,7 +171,6 @@ const MemberPage = () => {
             <option value="">전체 상태</option>
             <option value="ACTIVE">활성</option>
             <option value="INACTIVE">비활성</option>
-            <option value="BLOCKED">정지</option>
           </select>
         </label>
         <label>
@@ -188,13 +198,20 @@ const MemberPage = () => {
             <option value="all">전체</option>
             <option value="id">아이디</option>
             <option value="name">이름</option>
+            <option value="nickname">닉네임</option>
             <option value="email">이메일</option>
-            <option value="phone">연락처</option>
+            <option value="phone">휴대폰번호</option>
           </select>
         </label>
         <label className="wide">
           <span>검색어</span>
-          <input type="text" name="keyword" value={search.keyword} placeholder="아이디, 이름, 이메일, 연락처 검색" onChange={changeSearch} />
+          <input
+            type="text"
+            name="keyword"
+            value={search.keyword}
+            placeholder="아이디, 이름, 닉네임, 이메일, 휴대폰번호 검색"
+            onChange={changeSearch}
+          />
         </label>
         <div className="filter-actions">
           <button type="submit">검색</button>
@@ -211,19 +228,17 @@ const MemberPage = () => {
         </div>
 
         <div className="admin-table-wrap elegant-table-wrap">
-          <table className="admin-table elegant-table">
+          <table className="admin-table elegant-table admin-member-list-table compact-member-table">
             <thead>
               <tr>
                 <th>회원번호</th>
-                <th>회원</th>
-                <th>연락처</th>
+                <th>회원명</th>
+                <th>아이디</th>
+                <th>닉네임</th>
+                <th>이메일</th>
                 <th>권한</th>
                 <th>상태</th>
                 <th>가입일</th>
-                <th>차량</th>
-                <th>예약</th>
-                <th>완료충전</th>
-                <th>이용금액</th>
                 <th>관리</th>
               </tr>
             </thead>
@@ -231,29 +246,21 @@ const MemberPage = () => {
               {members.map((member) => (
                 <tr key={member.memberId} className="admin-clickable-row" onClick={() => goMemberDetail(member.memberId)}>
                   <td>{member.memberId}</td>
-                  <td>
-                    <b>{member.memberName}</b>
-                    <span>{member.userId}</span>
-                  </td>
-                  <td>
-                    <b>{member.email}</b>
-                    <span>{member.phone}</span>
-                  </td>
-                  <td><em className={`admin-badge ${getBadgeColor(member.userType)}`}>{member.userType}</em></td>
-                  <td><em className={`admin-badge ${getBadgeColor(member.status)}`}>{member.status}</em></td>
+                  <td className="admin-text-left"><b>{member.memberName}</b></td>
+                  <td className="admin-text-left"><span className="admin-member-id-text">{member.userId}</span></td>
+                  <td>{member.nickname && member.nickname !== "-" ? member.nickname : "-"}</td>
+                  <td className="admin-text-left">{member.email}</td>
+                  <td><em className={`admin-badge ${getBadgeColor(member.userType)}`}>{getUserTypeText(member.userType)}</em></td>
+                  <td><em className={`admin-badge ${getBadgeColor(member.status)}`}>{getStatusText(member.status)}</em></td>
                   <td>{member.createdAtText}</td>
-                  <td>{numberText(member.vehicleCount)}대</td>
-                  <td>{numberText(member.reservationCount)}건</td>
-                  <td>{numberText(member.completedSessionCount)}건</td>
-                  <td>{numberText(member.totalPaymentAmount)}원</td>
                   <td><button type="button" onClick={(e) => { e.stopPropagation(); goMemberDetail(member.memberId); }}>상세</button></td>
                 </tr>
               ))}
               {!loading && members.length === 0 && (
-                <tr><td colSpan="11">조회된 회원이 없습니다.</td></tr>
+                <tr><td colSpan="9">조회된 회원이 없습니다.</td></tr>
               )}
               {loading && (
-                <tr><td colSpan="11">회원 데이터를 불러오는 중입니다.</td></tr>
+                <tr><td colSpan="9">회원 데이터를 불러오는 중입니다.</td></tr>
               )}
             </tbody>
           </table>

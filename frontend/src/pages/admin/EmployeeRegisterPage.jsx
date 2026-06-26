@@ -168,39 +168,43 @@ const EmployeeRegisterPage = () => {
             </div>
           </div>
 
-          <form className="admin-form-grid" onSubmit={submitEmployee}>
+          <form className="admin-form-grid employee-register-form" onSubmit={submitEmployee}>
+            <div className="form-section-title full"><strong>계정 정보</strong><span>로그인에 필요한 기본 계정을 생성합니다.</span></div>
+
             <label>
-              아이디 <b>*</b>
+              <span>아이디 <em>필수</em></span>
               <input type="text" name="userId" value={form.userId} onChange={changeValue} placeholder="예: operator01" />
             </label>
 
             <label>
-              초기 비밀번호 <b>*</b>
+              <span>초기 비밀번호 <em>필수</em></span>
               <input type="password" name="password" value={form.password} onChange={changeValue} placeholder="초기 비밀번호" />
             </label>
 
             <label>
-              직원명 <b>*</b>
+              <span>직원명 <em>필수</em></span>
               <input type="text" name="memberName" value={form.memberName} onChange={changeValue} placeholder="예: 김운영" />
             </label>
 
             <label>
-              사번 <b>*</b>
+              <span>사번 <em>필수</em></span>
               <input type="text" name="employeeNo" value={form.employeeNo} onChange={changeValue} placeholder="예: EMP-2026-001" />
             </label>
 
             <label>
-              이메일
+              <span>이메일</span>
               <input type="email" name="email" value={form.email} onChange={changeValue} placeholder="비우면 아이디@ev-mis.go.kr 자동 사용" />
             </label>
 
             <label>
-              전화번호
+              <span>전화번호</span>
               <input type="text" name="phone" value={form.phone} onChange={changeValue} placeholder="예: 010-1234-5678" />
             </label>
 
+            <div className="form-section-title full"><strong>조직 / 권한 정보</strong><span>부서와 직책을 선택하면 권한이 자동으로 연결됩니다.</span></div>
+
             <label>
-              부서 <b>*</b>
+              <span>부서 <em>필수</em></span>
               <select name="departmentId" value={form.departmentId} onChange={changeValue}>
                 <option value="">부서 선택</option>
                 {departmentList.map((department) => (
@@ -210,7 +214,7 @@ const EmployeeRegisterPage = () => {
             </label>
 
             <label>
-              직책/업무역할 <b>*</b>
+              <span>직책/업무역할 <em>필수</em></span>
               <select name="positionName" value={form.positionName} onChange={changeValue} disabled={roleOptions.length === 0}>
                 {roleOptions.map((option) => (
                   <option key={option.userType} value={option.positionName}>{option.positionName}</option>
@@ -219,17 +223,17 @@ const EmployeeRegisterPage = () => {
             </label>
 
             <label>
-              담당업무
+              <span>담당업무</span>
               <input type="text" name="dutyName" value={form.dutyName} onChange={changeValue} placeholder="예: 민원 및 예약 운영" />
             </label>
 
             <label>
-              입사일
+              <span>입사일</span>
               <input type="date" name="hiredAt" value={form.hiredAt} onChange={changeValue} />
             </label>
 
             <label className="full">
-              시스템 권한
+              <span>시스템 권한</span>
               <input type="text" value={selectedRoleOption ? `${selectedRoleOption.userType} - ${selectedRoleOption.positionName}` : ''} readOnly />
             </label>
 

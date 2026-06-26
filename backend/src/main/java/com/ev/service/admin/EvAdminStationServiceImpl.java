@@ -6,11 +6,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ev.dao.admin.EvAdminStationDAO;
+import com.ev.dto.map.EvKakaoAddressDTO;
 import com.ev.dto.admin.EvAdminChargerFormDTO;
 import com.ev.dto.admin.EvAdminStationFormDTO;
 import com.ev.dto.admin.EvAdminStationListDTO;
 import com.ev.dto.admin.EvAdminStationPageDTO;
 import com.ev.dto.admin.EvAdminStationSearchDTO;
+import com.ev.service.user.EvKakaoAddressSearchService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 public class EvAdminStationServiceImpl implements EvAdminStationService {
 
     private final EvAdminStationDAO evAdminStationDAO;
+    private final EvKakaoAddressSearchService evKakaoAddressSearchService;
 
     @Override
     public EvAdminStationPageDTO getStationPage(EvAdminStationSearchDTO searchDTO) {
@@ -81,6 +84,7 @@ public class EvAdminStationServiceImpl implements EvAdminStationService {
         log.info("@# EvAdminStationServiceImpl.registerStation()");
         log.info("@# stationName => {}", stationDTO.getStationName());
 
+        fillCoordinateIfNeeded(stationDTO);
         validateStation(stationDTO);
 
         evAdminStationDAO.insertStation(stationDTO);
@@ -113,6 +117,7 @@ public class EvAdminStationServiceImpl implements EvAdminStationService {
             throw new IllegalArgumentException("충전소 번호가 필요합니다.");
         }
 
+        fillCoordinateIfNeeded(stationDTO);
         validateStation(stationDTO);
         evAdminStationDAO.updateStation(stationDTO);
 
@@ -197,6 +202,33 @@ public class EvAdminStationServiceImpl implements EvAdminStationService {
         }
     }
 
+    private void fillCoordinateIfNeeded(EvAdminStationFormDTO stationDTO) {
+        if (stationDTO.getLatitude() != null && stationDTO.getLongitude() != null) {
+            return;
+        }
+
+        if (stationDTO.getAddress() == null || stationDTO.getAddress().isBlank()) {
+            return;
+        }
+
+        log.info("@# 충전소 주소 기반 좌표 자동 조회 address => {}", stationDTO.getAddress());
+
+        EvKakaoAddressDTO coordinate = evKakaoAddressSearchService.searchCoordinate(
+                stationDTO.getAddress(),
+                stationDTO.getStationName()
+        );
+
+        if (coordinate == null || coordinate.getLatitude() == null || coordinate.getLongitude() == null) {
+            throw new IllegalArgumentException("주소로 위도/경도를 찾지 못했습니다. 주소를 다시 확인해 주세요.");
+        }
+
+        stationDTO.setLatitude(coordinate.getLatitude().doubleValue());
+        stationDTO.setLongitude(coordinate.getLongitude().doubleValue());
+
+        log.info("@# 충전소 좌표 자동 설정 latitude => {}, longitude => {}",
+                stationDTO.getLatitude(), stationDTO.getLongitude());
+    }
+
     private void validateStation(EvAdminStationFormDTO stationDTO) {
         if (stationDTO.getStationName() == null || stationDTO.getStationName().isBlank()) {
             throw new IllegalArgumentException("충전소명을 입력해 주세요.");
@@ -207,7 +239,7 @@ public class EvAdminStationServiceImpl implements EvAdminStationService {
         }
 
         if (stationDTO.getLatitude() == null || stationDTO.getLongitude() == null) {
-            throw new IllegalArgumentException("위도와 경도를 입력해 주세요.");
+            throw new IllegalArgumentException("주소 기반 좌표를 찾지 못했습니다. 주소를 다시 확인해 주세요.");
         }
 
         if (stationDTO.getOpenTime() == null || stationDTO.getOpenTime().isBlank()) {

@@ -10,4 +10,6 @@ public class EvAdminUsageHourlyDTO {
 
     private String usageHour;
     private Long usageCount;
+    private Double totalKwh;
+    private Long avgChargingMinutes;
 }

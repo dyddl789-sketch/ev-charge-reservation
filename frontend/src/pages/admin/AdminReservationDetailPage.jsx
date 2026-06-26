@@ -221,16 +221,10 @@ const AdminReservationDetailPage = () => {
         alert("노쇼 처리되었습니다.");
       }
 
-      if (type === "start") {
-        await adminApi.startReservation(reservation.reservationId);
-        setReservation({ ...reservation, status: "충전중" });
-        alert("충전 시작 처리되었습니다.");
-      }
     } catch (error) {
       console.log("예약 상태 처리 API 실패 - 화면 상태만 반영", error);
       if (type === "cancel") setReservation({ ...reservation, status: "취소" });
       if (type === "noshow") setReservation({ ...reservation, status: "노쇼" });
-      if (type === "start") setReservation({ ...reservation, status: "충전중" });
       alert("현재 백엔드 응답이 없어 화면에서만 상태를 반영했습니다.");
     }
   };
@@ -269,9 +263,13 @@ const AdminReservationDetailPage = () => {
         </div>
         <div className="admin-action-row">
           <button type="button" className="line" onClick={() => navigate("/admin/reservations")}>목록으로</button>
-          <button type="button" onClick={() => changeStatus("start")}>충전 시작</button>
-          <button type="button" className="warning" onClick={() => changeStatus("noshow")}>노쇼 처리</button>
-          <button type="button" className="danger" onClick={() => changeStatus("cancel")}>예약 취소</button>
+          {reservation.status === "예약완료" && (
+            <>
+              <button type="button" className="warning" onClick={() => changeStatus("noshow")}>노쇼 처리</button>
+              <button type="button" className="danger" onClick={() => changeStatus("cancel")}>예약 취소</button>
+            </>
+          )}
+          {!["예약완료"].includes(reservation.status) && <span className="admin-muted-action">처리 완료 상태</span>}
         </div>
       </div>
 

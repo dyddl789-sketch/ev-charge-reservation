@@ -7,7 +7,8 @@
 
     <sql id="salesFilter">
         cs.status = '완료'
-        and cs.actual_start_time::date between #{startDate}::date and #{endDate}::date
+        and cs.actual_start_time &gt;= #{startDate}::date
+        and cs.actual_start_time &lt; (#{endDate}::date + interval '1 day')
         <if test="region != null and region != ''">
             and st.address ilike concat('%', #{region}, '%')
         </if>
@@ -24,8 +25,8 @@
         select
               coalesce(round(sum(cs.actual_cost)), 0) as totalSalesAmount
             , coalesce(round(sum(case when cs.actual_start_time::date = current_date then cs.actual_cost end)), 0) as todaySalesAmount
-            , coalesce(round(avg(cs.actual_cost)), 0) as avgPaymentAmount
-            , coalesce(sum(cs.actual_kwh), 0) as totalKwh
+            , coalesce(round(avg(cs.actual_cost)), 0) as "avgPaymentAmount"
+            , coalesce(sum(cs.actual_kwh), 0) as "totalKwh"
             , (
                 coalesce(round(sum(case when cs.actual_start_time::date = current_date then cs.actual_cost end)), 0)
                 - coalesce(round(sum(case when cs.actual_start_time::date = current_date - interval '1 day' then cs.actual_cost end)), 0)
@@ -41,12 +42,30 @@
         select
               to_char(cs.actual_start_time::date, 'YYYY-MM-DD') as salesDate
             , coalesce(round(sum(cs.actual_cost)), 0) as salesAmount
+            , count(*) as "paymentCount"
+            , coalesce(round(avg(cs.actual_cost)), 0) as "avgPaymentAmount"
         from charging_session cs
         join charger c on cs.charger_id = c.charger_id
         join charging_station st on c.station_id = st.station_id
         where <include refid="salesFilter" />
         group by cs.actual_start_time::date
         order by cs.actual_start_time::date
+    </select>
+
+    <!-- 시간대별 매출 현황 -->
+    <select id="findHourlySalesList" resultType="com.ev.dto.admin.sales.EvAdminSalesHourlyDTO">
+        select
+              to_char(cs.actual_start_time, 'HH24') as salesHour
+            , coalesce(round(sum(cs.actual_cost)), 0) as salesAmount
+            , count(*) as "paymentCount"
+            , coalesce(round(avg(cs.actual_cost)), 0) as "avgPaymentAmount"
+            , coalesce(sum(cs.actual_kwh), 0) as "totalKwh"
+        from charging_session cs
+        join charger c on cs.charger_id = c.charger_id
+        join charging_station st on c.station_id = st.station_id
+        where <include refid="salesFilter" />
+        group by to_char(cs.actual_start_time, 'HH24')
+        order by salesHour
     </select>
 
     <!-- 충전 타입별 매출 -->
@@ -70,9 +89,9 @@
             , station_sales.station_id as stationId
             , station_sales.station_name as stationName
             , station_sales.sales_amount as salesAmount
-            , station_sales.payment_count as paymentCount
-            , station_sales.total_kwh as totalKwh
-            , station_sales.avg_payment_amount as avgPaymentAmount
+            , station_sales.payment_count as "paymentCount"
+            , station_sales.total_kwh as "totalKwh"
+            , station_sales.avg_payment_amount as "avgPaymentAmount"
             , coalesce(round(station_sales.sales_amount * 100.0 / nullif(sum(station_sales.sales_amount) over(), 0), 1), 0) as salesRate
         from (
             select
@@ -101,6 +120,7 @@
             , st.station_name as stationName
             , c.charger_name as chargerName
             , cs.actual_kwh as actualKwh
+            , cs.actual_minutes as actualMinutes
             , round(cs.actual_cost) as actualCost
             , cs.status as status
         from charging_session cs
@@ -109,7 +129,7 @@
         join charging_station st on c.station_id = st.station_id
         where <include refid="salesFilter" />
         order by cs.actual_start_time desc
-        limit 30
+        limit 200
     </select>
 
 </mapper>

@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 
 import com.ev.dto.admin.sales.EvAdminSalesDailyDTO;
 import com.ev.dto.admin.sales.EvAdminSalesHistoryDTO;
+import com.ev.dto.admin.sales.EvAdminSalesHourlyDTO;
 import com.ev.dto.admin.sales.EvAdminSalesStationRankDTO;
 import com.ev.dto.admin.sales.EvAdminSalesSummaryDTO;
 import com.ev.dto.admin.sales.EvAdminSalesTypeDTO;
@@ -25,6 +26,12 @@ public interface EvAdminSalesDAO {
                                                   @Param("region") String region,
                                                   @Param("stationId") Long stationId,
                                                   @Param("chargerType") String chargerType);
+
+    List<EvAdminSalesHourlyDTO> findHourlySalesList(@Param("startDate") String startDate,
+                                                    @Param("endDate") String endDate,
+                                                    @Param("region") String region,
+                                                    @Param("stationId") Long stationId,
+                                                    @Param("chargerType") String chargerType);
 
     List<EvAdminSalesTypeDTO> findSalesTypeList(@Param("startDate") String startDate,
                                                 @Param("endDate") String endDate,

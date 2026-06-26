@@ -7,7 +7,8 @@
 
     <sql id="usageFilter">
         cs.status = '완료'
-        and cs.actual_start_time::date between #{startDate}::date and #{endDate}::date
+        and cs.actual_start_time &gt;= #{startDate}::date
+        and cs.actual_start_time &lt; (#{endDate}::date + interval '1 day')
         <if test="region != null and region != ''">
             and st.address ilike concat('%', #{region}, '%')
         </if>
@@ -24,8 +25,8 @@
         select
               count(*) as totalUsageCount
             , count(*) filter (where cs.actual_start_time::date = current_date) as todayUsageCount
-            , coalesce(round(avg(cs.actual_minutes)), 0) as avgChargingMinutes
-            , coalesce(sum(cs.actual_kwh), 0) as totalKwh
+            , coalesce(round(avg(cs.actual_minutes)), 0) as "avgChargingMinutes"
+            , coalesce(sum(cs.actual_kwh), 0) as "totalKwh"
             , (
                 count(*) filter (where cs.actual_start_time::date = current_date)
                 - count(*) filter (where cs.actual_start_time::date = current_date - interval '1 day')
@@ -41,6 +42,8 @@
         select
               to_char(cs.actual_start_time::date, 'YYYY-MM-DD') as usageDate
             , count(*) as usageCount
+            , coalesce(sum(cs.actual_kwh), 0) as "totalKwh"
+            , coalesce(round(avg(cs.actual_minutes)), 0) as "avgChargingMinutes"
         from charging_session cs
         join charger c on cs.charger_id = c.charger_id
         join charging_station st on c.station_id = st.station_id
@@ -54,6 +57,8 @@
         select
               to_char(cs.actual_start_time, 'HH24') as usageHour
             , count(*) as usageCount
+            , coalesce(sum(cs.actual_kwh), 0) as "totalKwh"
+            , coalesce(round(avg(cs.actual_minutes)), 0) as "avgChargingMinutes"
         from charging_session cs
         join charger c on cs.charger_id = c.charger_id
         join charging_station st on c.station_id = st.station_id

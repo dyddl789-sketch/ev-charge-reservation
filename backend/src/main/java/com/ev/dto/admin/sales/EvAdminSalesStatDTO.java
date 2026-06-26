@@ -13,6 +13,7 @@ public class EvAdminSalesStatDTO {
     private EvAdminSalesSummaryDTO summary;
 
     private List<EvAdminSalesDailyDTO> dailyList;
+    private List<EvAdminSalesHourlyDTO> hourlyList;
     private List<EvAdminSalesTypeDTO> typeList;
     private List<EvAdminSalesStationRankDTO> stationRankList;
     private List<EvAdminSalesHistoryDTO> historyList;

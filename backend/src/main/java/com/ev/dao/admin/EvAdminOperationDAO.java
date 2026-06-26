@@ -45,8 +45,33 @@ public interface EvAdminOperationDAO {
 
     int insertStatisticsDemoVehicles();
 
+    int deleteStatisticsSampleChargingSessions();
+
+    int deleteStatisticsSampleReservations();
+
     int insertStatisticsSampleSessions(@Param("days") int days,
-                                       @Param("count") int count);
+                                       @Param("count") int count,
+                                       @Param("offset") int offset);
 
     int countCompletedChargingSessions();
+
+    int deleteDemoMemberNotifications();
+
+    int deleteDemoAndPublicFileAttachments();
+
+    int deletePublicMaintenanceActions();
+
+    int deletePublicApprovalDocuments();
+
+    int deletePublicInspections();
+
+    int deletePublicFaultReports();
+
+    int detachPublicInfraFromComplaints();
+
+    int deletePublicApiStations();
+
+    int deletePublicApiSyncLogs();
+
+    int deleteDemoMembers();
 }

@@ -19,8 +19,8 @@ export const generateStatisticsSampleData = (params = {}) => {
   console.log('통계 샘플 데이터 생성 요청', params);
   return api.post('/admin/statistics/sample-data', null, {
     params: {
-      days: params.days ?? 60,
-      count: params.count ?? 300,
+      days: params.days ?? 120,
+      count: params.count ?? 6000,
     },
   });
 };

@@ -42,6 +42,7 @@ import AdminStationPage from "../pages/admin/AdminStationPage";
 import AdminReservationPage from "../pages/admin/AdminReservationPage";
 import AdminReservationDetailPage from "../pages/admin/AdminReservationDetailPage";
 import AdminComplaintPage from "../pages/admin/ComplaintPage";
+import AdminComplaintDetailPage from "../pages/admin/ComplaintDetailPage";
 import FaultPage from "../pages/admin/FaultPage";
 import InspectionPage from "../pages/admin/InspectionPage";
 import ApprovalPage from "../pages/admin/ApprovalPage";
@@ -113,6 +114,7 @@ const AppRoutes = () => {
           <Route path="reservations/:reservationId" element={<AdminReservationDetailPage />} />
 
           <Route path="complaints" element={<AdminComplaintPage />} />
+          <Route path="complaints/:complaintId" element={<AdminComplaintDetailPage />} />
           <Route path="faults" element={<FaultPage />} />
           <Route path="inspections" element={<InspectionPage />} />
           <Route path="approvals" element={<ApprovalPage />} />

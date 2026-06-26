@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as adminApi from "../../apis/adminApi";
+import useAdminPolling from "../../hooks/useAdminPolling";
 
 const today = new Date().toISOString().slice(0, 10);
 const initialSearch = { status: "", searchType: "all", keyword: "", startDate: "", endDate: "", startTime: "", endTime: "" };
@@ -47,6 +48,7 @@ const AdminReservationPage = () => {
   const [search, setSearch] = useState(initialSearch);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const isFirstSearchChangeRef = useRef(true);
 
   const params = useMemo(() => ({
     status: search.status || undefined,
@@ -59,6 +61,7 @@ const AdminReservationPage = () => {
     page,
     size: 10,
   }), [search, page]);
+  const searchKey = useMemo(() => JSON.stringify(search), [search]);
 
   const loadReservations = async () => {
     console.log("예약관리 실제 조회", params);
@@ -82,6 +85,27 @@ const AdminReservationPage = () => {
   };
 
   useEffect(() => { loadReservations(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page]);
+
+  useEffect(() => {
+    if (isFirstSearchChangeRef.current) {
+      isFirstSearchChangeRef.current = false;
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      console.log('예약 검색 조건 변경 즉시 재조회', search);
+      if (page !== 1) {
+        setPage(1);
+        return;
+      }
+      loadReservations();
+    }, 400);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchKey]);
+
+  useAdminPolling(loadReservations, { label: '예약관리' });
 
   const changeSearch = (e) => {
     const { name, value } = e.target;

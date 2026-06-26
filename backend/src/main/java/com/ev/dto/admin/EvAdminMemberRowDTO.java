@@ -15,8 +15,10 @@ public class EvAdminMemberRowDTO {
 
     private String userId;
     private String memberName;
+    private String nickname;
     private String email;
     private String phone;
+    private String profileImageUrl;
 
     private String userType;
     private String loginType;

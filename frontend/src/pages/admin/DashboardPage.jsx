@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import * as adminApi from '../../apis/adminApi';
+import useAdminPolling from '../../hooks/useAdminPolling';
 import { getRole, hasAnyRole } from '../../utils/adminRoleUtils';
 
 const numberText = (value) => Number(value || 0).toLocaleString('ko-KR');
@@ -21,6 +22,7 @@ const DashboardPage = () => {
 
   const canSyncPublicData = hasAnyRole(currentRole, ['ADMIN', 'MANAGER']);
   const canTriggerFault = hasAnyRole(currentRole, ['ADMIN', 'MANAGER', 'ENGINEER']);
+  const canGenerateStatisticsSample = hasAnyRole(currentRole, ['ADMIN', 'MANAGER']);
   const canResetSimulation = hasAnyRole(currentRole, ['ADMIN']);
 
   const chargerStatusList = useMemo(() => {
@@ -58,11 +60,21 @@ const DashboardPage = () => {
     loadDashboard();
   }, []);
 
+  useAdminPolling(loadDashboard, {
+    label: 'MIS 대시보드',
+    enabled: !isOperating,
+  });
+
   const runOperation = async (type) => {
     console.log('대시보드 운영 버튼 클릭', type);
 
     if (type === 'sync' && !canSyncPublicData) {
       alert('공공데이터 적재 권한이 없습니다.');
+      return;
+    }
+
+    if (type === 'statistics' && !canGenerateStatisticsSample) {
+      alert('통계 샘플 생성 권한이 없습니다.');
       return;
     }
 
@@ -78,8 +90,9 @@ const DashboardPage = () => {
 
     const confirmMessage = {
       sync: '전국 시도별로 공공데이터 샘플을 적재하시겠습니까? 기존 충전기 운영 상태는 덮어쓰지 않습니다.',
+      statistics: '통계회원(stat_user_%) 기준 기존 샘플 예약/충전 세션을 정리하고 최근 4개월 기준 이용/매출 통계 샘플을 재생성하시겠습니까?',
       fault: '부산 지역 사용가능 충전기 중 1대를 고장 상태로 변경하시겠습니까?',
-      reset: '고장 상태 충전기를 모두 사용가능으로 초기화하시겠습니까? 예약 데이터는 변경하지 않습니다.',
+      reset: '발표용 초기화를 실행하시겠습니까? 직접 등록한 회원/충전소는 유지하고 PUBLIC_API 충전소·충전기, demo_user_%, stat_user_% 시연 회원과 통계 샘플 데이터를 정리합니다.',
     }[type];
 
     if (!window.confirm(confirmMessage)) {
@@ -93,9 +106,11 @@ const DashboardPage = () => {
       const response =
         type === 'sync'
           ? await adminApi.syncPublicChargerSample(10)
-          : type === 'fault'
-            ? await adminApi.triggerFaultSimulation()
-            : await adminApi.resetSimulation();
+          : type === 'statistics'
+            ? await adminApi.generateStatisticsSampleData({ days: 120, count: 6000 })
+            : type === 'fault'
+              ? await adminApi.triggerFaultSimulation()
+              : await adminApi.resetSimulation();
 
       console.log('운영 버튼 처리 응답', response.data);
       setOperationMessage(response.data?.message || '처리가 완료되었습니다.');
@@ -176,15 +191,21 @@ const DashboardPage = () => {
           <div className="admin-panel-title">
             <div>
               <strong>운영 시뮬레이션</strong>
-              <p>공공데이터 적재, 부산 장애 발생, 발표용 초기화를 빠르게 실행합니다.</p>
+              <p>공공데이터 적재, 통계 샘플 생성, 장애 발생, 발표용 초기화를 빠르게 실행합니다.</p>
             </div>
           </div>
 
           <div className="simulation-button-grid">
             <button type="button" className="simulation-btn blue" disabled={!canSyncPublicData || isOperating} onClick={() => runOperation('sync')}>
               <b>공공데이터 샘플 적재</b>
-              <span>전국 시도별 약 10개씩 저장</span>
+              <span>전국 시도별 충전소와 충전기 2~3대 저장</span>
               {!canSyncPublicData && <em>권한 없음</em>}
+            </button>
+
+            <button type="button" className="simulation-btn green" disabled={!canGenerateStatisticsSample || isOperating} onClick={() => runOperation('statistics')}>
+              <b>이용/매출 통계 샘플 생성</b>
+              <span>샘플 충전소와 통계회원 기준 완료 세션 생성</span>
+              {!canGenerateStatisticsSample && <em>권한 없음</em>}
             </button>
 
             <button type="button" className="simulation-btn red" disabled={!canTriggerFault || isOperating} onClick={() => runOperation('fault')}>
@@ -194,8 +215,8 @@ const DashboardPage = () => {
             </button>
 
             <button type="button" className="simulation-btn dark" disabled={!canResetSimulation || isOperating} onClick={() => runOperation('reset')}>
-              <b>시뮬레이션 초기화</b>
-              <span>고장 충전기만 사용가능으로 복구</span>
+              <b>발표용 초기화</b>
+              <span>공공데이터와 시연 회원 데이터 정리</span>
               {!canResetSimulation && <em>ADMIN 전용</em>}
             </button>
           </div>

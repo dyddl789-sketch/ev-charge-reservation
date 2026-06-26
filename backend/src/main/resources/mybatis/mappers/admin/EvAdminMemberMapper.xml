@@ -57,10 +57,14 @@
                     <when test="searchType == 'name'">
                         and member_name ilike concat('%', #{keyword}, '%')
                     </when>
+                    <when test="searchType == 'nickname'">
+                        and nickname ilike concat('%', #{keyword}, '%')
+                    </when>
                     <otherwise>
                         and (
                             user_id ilike concat('%', #{keyword}, '%')
                             or member_name ilike concat('%', #{keyword}, '%')
+                            or nickname ilike concat('%', #{keyword}, '%')
                             or email ilike concat('%', #{keyword}, '%')
                             or phone ilike concat('%', #{keyword}, '%')
                         )
@@ -87,6 +91,7 @@
               m.member_id as memberId
             , m.user_id as userId
             , m.member_name as memberName
+            , m.nickname as nickname
             , m.email as email
             , m.phone as phone
             , m.user_type as userType
@@ -143,6 +148,7 @@
             , m.nickname as nickname
             , m.phone as phone
             , m.email as email
+            , m.profile_image_url as profileImageUrl
             , m.user_type as userType
             , m.login_type as loginType
             , m.status as status
@@ -214,7 +220,6 @@
         join vehicle_model vm on v.model_id = vm.model_id
         where r.member_id = #{memberId}
         order by r.created_at desc
-        limit 30
     </select>
 
     <select id="findMemberChargingList"
@@ -238,7 +243,6 @@
         join vehicle_model vm on v.model_id = vm.model_id
         where cs.member_id = #{memberId}
         order by cs.actual_start_time desc
-        limit 30
     </select>
 
     <select id="findMemberPaymentList"
@@ -257,7 +261,6 @@
         where cs.member_id = #{memberId}
           and cs.status = '완료'
         order by cs.actual_end_time desc
-        limit 30
     </select>
 
 </mapper>
