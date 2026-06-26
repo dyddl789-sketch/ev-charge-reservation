@@ -217,11 +217,23 @@ public class EvAiReservationApiController {
             }
             LocalDateTime endDateTime = startDateTime.plusMinutes(estimatedMinutes);
 
-            boolean holdSuccess = reservationService.holdChargerForReservation(chargerId, memberId);
+            /*
+             * AI 예약 확정은 일반 예약 화면처럼 시간 구간 기준 Redis 선점을 먼저 잡아야 한다.
+             * 기존 충전기 단위 선점은 같은 충전기의 다른 빈 시간대까지 막을 수 있고,
+             * createReservation()이 요구하는 시간 구간 선점 key도 만들지 못해 예약이 실패했다.
+             */
+            boolean holdSuccess = reservationService.holdReservationTimeSlot(
+                    chargerId,
+                    memberId,
+                    startDateTime.toLocalDate().toString(),
+                    startDateTime.toLocalTime().withSecond(0).withNano(0).toString(),
+                    estimatedMinutes
+            );
+
             if (!holdSuccess) {
                 return ResponseEntity.status(409).body(Map.of(
                         "success", false,
-                        "message", "다른 사용자가 해당 충전기를 선택 중입니다. 다시 추천을 요청해주세요."
+                        "message", "선택한 시간대는 방금 다른 예약 또는 선점과 겹쳤습니다. 다시 추천을 요청해주세요."
                 ));
             }
 

@@ -594,8 +594,15 @@ const FaultPage = () => {
 
   const canAssign = (fault) => fault.status === "접수";
   const canCancel = (fault) => fault.status === "접수";
-  const canStartInspection = (fault) => Boolean(fault.assignedEmployeeId) && !["완료", "취소", "결재대기"].includes(fault.status);
-  const canCompleteAction = (fault) => fault.status === "조치중";
+  // 점검 시작은 최초 접수 상태에서 담당자 배정 후에만 가능하다.
+  // 결재 완료 후 조치중 상태에서 다시 점검 시작이 활성화되면 업무 흐름이 역행하므로 막는다.
+  const canStartInspection = (fault) => fault.status === "접수" && Boolean(fault.assignedEmployeeId);
+  const hasApprovedProgressAction = (fault) => (
+    Boolean(fault.approvalDocumentId)
+    && fault.approvalStatus === "최종승인"
+    && fault.latestActionStatus === "진행중"
+  );
+  const canCompleteAction = (fault) => fault.status === "조치중" || hasApprovedProgressAction(fault);
 
   const movePage = (nextPage) => {
     console.log("장애 페이지 이동", nextPage);
@@ -738,7 +745,7 @@ const FaultPage = () => {
                   disabled={fault.status !== "결재대기" || Boolean(fault.approvalDocumentId)}
                   onClick={() => setApprovalFault(fault)}
                 >
-                  {fault.approvalDocumentId ? `상신완료(${fault.approvalStatus})` : "전자결재 상신"}
+                  {fault.approvalDocumentId ? `상신완료(${fault.approvalStatus || "진행중"})` : "전자결재 상신"}
                 </button>
               </div>
             </article>

@@ -176,12 +176,10 @@ public class EvAdminFaultServiceImpl implements EvAdminFaultService {
         Long inspectorId = faultDTO.getAssignedEmployeeId();
         String beforeStatus = faultDTO.getStatus();
 
-        if ("완료".equals(beforeStatus) || "취소".equals(beforeStatus)) {
-            throw new IllegalArgumentException("이미 종료된 장애는 점검을 시작할 수 없습니다.");
-        }
-
-        if ("결재대기".equals(beforeStatus)) {
-            throw new IllegalArgumentException("결재대기 상태의 장애는 점검을 다시 시작할 수 없습니다.");
+        // 점검 시작은 최초 접수 상태에서만 허용한다.
+        // 최종 결재 후 조치중 상태에서 다시 점검 시작을 누르면 장애 흐름이 역행하므로 서버에서 차단한다.
+        if (!"접수".equals(beforeStatus)) {
+            throw new IllegalArgumentException("접수 상태의 장애만 점검을 시작할 수 있습니다. 현재 상태: " + beforeStatus);
         }
 
         if (inspectorId == null) {
@@ -299,11 +297,23 @@ public class EvAdminFaultServiceImpl implements EvAdminFaultService {
         Long adminEmployeeId = findAdminEmployeeId(adminMemberId);
         requireEngineerOwnerOrAdmin(adminMemberId, faultDTO, "조치 완료");
 
-        if (!"조치중".equals(faultDTO.getStatus())) {
-            throw new IllegalArgumentException("조치중 상태의 장애만 조치 완료 처리할 수 있습니다.");
-        }
-
         Long actionId = evAdminFaultDAO.findLatestActionId(faultId);
+
+        // 기존 데이터가 결재 완료 후 화면 갱신/버튼 오류로 결재대기나 점검중에 남아도
+        // 최종승인 문서와 진행중 조치가 있으면 조치중으로 보정해서 완료 처리 흐름을 복구한다.
+        if (!"조치중".equals(faultDTO.getStatus())) {
+            boolean hasApprovedProgressAction = actionId != null
+                    && faultDTO.getApprovalDocumentId() != null
+                    && "최종승인".equals(faultDTO.getApprovalStatus());
+
+            if (!hasApprovedProgressAction) {
+                throw new IllegalArgumentException("조치중 상태의 장애만 조치 완료 처리할 수 있습니다. 현재 상태: " + faultDTO.getStatus());
+            }
+
+            log.info("@# repair fault status before complete action. faultId => {}, beforeStatus => {}", faultId, faultDTO.getStatus());
+            evAdminFaultDAO.updateFaultStatus(faultId, "조치중", false);
+            faultDTO.setStatus("조치중");
+        }
 
         if (actionId == null) {
             throw new IllegalArgumentException("진행 중인 조치 작업이 없습니다.");

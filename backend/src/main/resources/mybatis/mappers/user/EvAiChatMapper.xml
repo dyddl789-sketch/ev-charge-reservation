@@ -436,8 +436,8 @@
             from reservation r
             where r.charger_id = ec.charger_id
               and r.status in ('예약완료', '인증완료', '충전중')
-              and #{startTime}::timestamp &lt; r.end_time
-              and (#{startTime}::timestamp + (ec.estimated_minutes * interval '1 minute')) &gt; r.start_time
+              and #{startTime}::timestamp &lt; r.end_time + interval '5 minutes'
+              and (#{startTime}::timestamp + (ec.estimated_minutes * interval '1 minute') + interval '5 minutes') &gt; r.start_time
         )
         order by
         <choose>
