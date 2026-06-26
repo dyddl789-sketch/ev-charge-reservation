@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import * as authApi from "../../apis/authApi";
+import { getRole, hasAnyRole } from "../../utils/adminRoleUtils";
 
 const Header = () => {
   console.log("Header 렌더링");
@@ -56,6 +57,9 @@ const Header = () => {
     navigate("/");
   };
 
+  const currentRole = getRole(loginMember);
+  const isMisUser = hasAnyRole(currentRole, ["ADMIN", "MANAGER", "OPERATOR", "ENGINEER"]);
+
   return (
     <header className="public-header">
       <div className="top-util">
@@ -71,7 +75,7 @@ const Header = () => {
                   로그아웃
                 </button>
 
-                {loginMember.userType !== "USER" && (
+                {isMisUser && (
                   <Link to="/admin/dashboard">운영기관 MIS</Link>
                 )}
               </>
@@ -79,7 +83,6 @@ const Header = () => {
               <>
                 <Link to="/login">로그인</Link>
                 <Link to="/join">회원가입</Link>
-                <Link to="/admin/dashboard">운영기관 MIS</Link>
               </>
             )}
           </div>

@@ -15,9 +15,12 @@ public class EvAdminReservationListDTO {
     private String reservationNo;
 
     private LocalDateTime startTime;
+    private LocalDateTime endTime;
     private String memberName;
+    private String userId;
     private String vehicleName;
     private String stationName;
+    private String stationAddress;
     private String chargerName;
 
     private Integer currentSoc;

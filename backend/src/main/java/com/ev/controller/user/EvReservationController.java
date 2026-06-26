@@ -66,8 +66,8 @@ public class EvReservationController {
             EvReservationChargerDTO charger =
                     evReservationService.getReservationCharger(chargerId);
 
-            if (!"사용가능".equals(charger.getChargerStatus())) {
-                rttr.addFlashAttribute("errorMsg", "현재 예약 가능한 충전기가 아닙니다.");
+            if (!"운영중".equals(charger.getStationStatus()) || !"사용가능".equals(charger.getChargerStatus())) {
+                rttr.addFlashAttribute("errorMsg", "현재 예약 가능한 충전소 또는 충전기가 아닙니다.");
                 return "redirect:/station/map";
             }
 
@@ -551,6 +551,11 @@ public class EvReservationController {
                 result.put("message", "다른 사용자가 선택 중인 충전기입니다.");
             }
 
+        } catch (IllegalArgumentException e) {
+            log.info("@# change reservation lock validation error => {}", e.getMessage());
+
+            result.put("success", false);
+            result.put("message", e.getMessage());
         } catch (Exception e) {
             log.info("@# change reservation lock error => {}", e.getMessage());
 
@@ -561,6 +566,112 @@ public class EvReservationController {
         return result;
     }
     
+
+
+    /*
+     * 예약 폼에서 선택한 시간 구간 임시 선점
+     *
+     * 요청 URL:
+     * POST /reservation/lock/time-slot
+     */
+    @PostMapping("/lock/time-slot")
+    @ResponseBody
+    public Map<String, Object> holdReservationTimeSlot(
+            @RequestParam("chargerId") Long chargerId,
+            @RequestParam("reservationDate") String reservationDate,
+            @RequestParam("startTime") String startTime,
+            @RequestParam("estimatedMinutes") int estimatedMinutes,
+            @AuthenticationPrincipal EvUserDetails userDetails) {
+
+        log.info("@# EvReservationController.holdReservationTimeSlot()");
+        log.info("@# chargerId => {}", chargerId);
+        log.info("@# reservationDate => {}", reservationDate);
+        log.info("@# startTime => {}", startTime);
+        log.info("@# estimatedMinutes => {}", estimatedMinutes);
+
+        Map<String, Object> result = new HashMap<>();
+
+        if (userDetails == null) {
+            result.put("success", false);
+            result.put("message", "로그인이 필요합니다.");
+            return result;
+        }
+
+        try {
+            boolean success = evReservationService.holdReservationTimeSlot(
+                    chargerId,
+                    userDetails.getMemberId(),
+                    reservationDate,
+                    startTime,
+                    estimatedMinutes
+            );
+
+            result.put("success", success);
+            result.put("chargerId", chargerId);
+            result.put("reservationDate", reservationDate);
+            result.put("startTime", startTime);
+            result.put("estimatedMinutes", estimatedMinutes);
+
+            if (success) {
+                result.put("message", "선택한 시간 구간을 임시 선점했습니다.");
+            } else {
+                result.put("message", "선택한 시간 구간은 다른 사용자가 예약 또는 선점 중입니다.");
+            }
+        } catch (IllegalArgumentException e) {
+            log.info("@# hold reservation time slot validation error => {}", e.getMessage());
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        } catch (Exception e) {
+            log.error("@# hold reservation time slot fail", e);
+            result.put("success", false);
+            result.put("message", "선택 시간 임시 선점 중 오류가 발생했습니다.");
+        }
+
+        return result;
+    }
+
+    /*
+     * 예약 폼에서 선택한 시간 구간 임시 선점 해제
+     *
+     * 요청 URL:
+     * POST /reservation/lock/time-slot/release
+     */
+    @PostMapping("/lock/time-slot/release")
+    @ResponseBody
+    public Map<String, Object> releaseReservationTimeSlot(
+            @RequestParam("chargerId") Long chargerId,
+            @RequestParam("reservationDate") String reservationDate,
+            @RequestParam("startTime") String startTime,
+            @RequestParam("estimatedMinutes") int estimatedMinutes,
+            @AuthenticationPrincipal EvUserDetails userDetails) {
+
+        log.info("@# EvReservationController.releaseReservationTimeSlot()");
+        log.info("@# chargerId => {}", chargerId);
+        log.info("@# reservationDate => {}", reservationDate);
+        log.info("@# startTime => {}", startTime);
+        log.info("@# estimatedMinutes => {}", estimatedMinutes);
+
+        Map<String, Object> result = new HashMap<>();
+
+        if (userDetails == null) {
+            result.put("success", false);
+            result.put("message", "로그인이 필요합니다.");
+            return result;
+        }
+
+        evReservationService.releaseReservationTimeSlotHold(
+                chargerId,
+                userDetails.getMemberId(),
+                reservationDate,
+                startTime,
+                estimatedMinutes
+        );
+
+        result.put("success", true);
+        result.put("message", "선택 시간 구간 임시 선점을 해제했습니다.");
+        return result;
+    }
+
     /*
      * 충전소 기준 예약 폼 진입
      *
@@ -605,7 +716,7 @@ public class EvReservationController {
          * - 다음 사용가능 충전기를 계속 시도
          */
         for (EvReservationChargerDTO charger : chargerList) {
-            if (!"사용가능".equals(charger.getChargerStatus())) {
+            if (!"운영중".equals(charger.getStationStatus()) || !"사용가능".equals(charger.getChargerStatus())) {
                 continue;
             }
 

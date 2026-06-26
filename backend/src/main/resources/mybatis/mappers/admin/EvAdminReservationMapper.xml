@@ -5,11 +5,60 @@
 
 <mapper namespace="com.ev.dao.admin.EvAdminReservationDAO">
 
+    <sql id="reservationSearchWhere">
+        <where>
+            <if test="status != null and status != ''">
+                and r.status = #{status}
+            </if>
+
+            <if test="startDate != null">
+                and r.start_time::date <![CDATA[>=]]> #{startDate}
+            </if>
+
+            <if test="endDate != null">
+                and r.start_time::date <![CDATA[<=]]> #{endDate}
+            </if>
+
+            <if test="startTime != null and startTime != ''">
+                and to_char(r.start_time, 'HH24:MI') <![CDATA[>=]]> #{startTime}
+            </if>
+
+            <if test="endTime != null and endTime != ''">
+                and to_char(r.start_time, 'HH24:MI') <![CDATA[<=]]> #{endTime}
+            </if>
+
+            <if test="keyword != null and keyword != ''">
+                <choose>
+                    <when test="searchType == 'memberName'">
+                        and m.member_name ilike concat('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'userId'">
+                        and m.user_id ilike concat('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'stationName'">
+                        and cs.station_name ilike concat('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'vehicleName'">
+                        and (vm.manufacturer ilike concat('%', #{keyword}, '%') or vm.model_name ilike concat('%', #{keyword}, '%'))
+                    </when>
+                    <otherwise>
+                        and (
+                            m.member_name ilike concat('%', #{keyword}, '%')
+                            or m.user_id ilike concat('%', #{keyword}, '%')
+                            or cs.station_name ilike concat('%', #{keyword}, '%')
+                            or vm.model_name ilike concat('%', #{keyword}, '%')
+                            or c.charger_name ilike concat('%', #{keyword}, '%')
+                        )
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
     <!-- 예약 현황 요약 조회 -->
     <select id="findReservationSummary"
             parameterType="com.ev.dto.admin.reservation.EvAdminReservationSearchDTO"
             resultType="com.ev.dto.admin.reservation.EvAdminReservationSummaryDTO">
-
         select
               count(*) as totalCount
             , count(*) filter (where r.status = '예약완료') as reservedCount
@@ -19,213 +68,107 @@
             , count(*) filter (where r.status = '취소') as canceledCount
             , count(*) filter (where r.status = '노쇼') as noShowCount
         from reservation r
-        join app_member m
-            on r.member_id = m.member_id
-        join vehicle v
-            on r.vehicle_id = v.vehicle_id
-        join vehicle_model vm
-            on v.model_id = vm.model_id
-        join charger c
-            on r.charger_id = c.charger_id
-        join charging_station cs
-            on c.station_id = cs.station_id
-        <where>
-            <if test="status != null and status != ''">
-                and r.status = #{status}
-            </if>
-
-            <if test="startDate != null">
-                and r.reservation_date <![CDATA[>=]]> #{startDate}
-            </if>
-
-            <if test="endDate != null">
-                and r.reservation_date <![CDATA[<=]]> #{endDate}
-            </if>
-
-            <if test="keyword != null and keyword != ''">
-                <choose>
-                    <when test="searchType == 'memberName'">
-                        and m.member_name ilike concat('%', #{keyword}, '%')
-                    </when>
-                    <when test="searchType == 'stationName'">
-                        and cs.station_name ilike concat('%', #{keyword}, '%')
-                    </when>
-                    <when test="searchType == 'vehicleName'">
-                        and vm.model_name ilike concat('%', #{keyword}, '%')
-                    </when>
-                    <otherwise>
-                        and (
-                            m.member_name ilike concat('%', #{keyword}, '%')
-                            or cs.station_name ilike concat('%', #{keyword}, '%')
-                            or vm.model_name ilike concat('%', #{keyword}, '%')
-                            or c.charger_name ilike concat('%', #{keyword}, '%')
-                        )
-                    </otherwise>
-                </choose>
-            </if>
-        </where>
-
+        join app_member m on r.member_id = m.member_id
+        join vehicle v on r.vehicle_id = v.vehicle_id
+        join vehicle_model vm on v.model_id = vm.model_id
+        join charger c on r.charger_id = c.charger_id
+        join charging_station cs on c.station_id = cs.station_id
+        <include refid="reservationSearchWhere" />
     </select>
-
 
     <!-- 오늘 예약 이슈 조회 -->
     <select id="findTodayReservationIssue"
             resultType="com.ev.dto.admin.reservation.EvAdminReservationIssueDTO">
-
         select
-              count(*) filter (
-                    where r.status = '예약완료'
-                      and r.reservation_date = current_date
-                ) as waitingAuthCount
-
-            , count(*) filter (
-                    where r.status = '취소'
-                      and r.reservation_date = current_date
-                ) as cancelRequestCount
-
-            , count(*) filter (
-                    where r.status = '예약완료'
-                      and r.start_time <![CDATA[<]]> current_timestamp
-                      and r.reservation_date = current_date
-                ) as expectedNoShowCount
-
-            , count(*) filter (
-                    where r.status = '인증완료'
-                      and r.start_time <![CDATA[<]]> current_timestamp
-                      and r.reservation_date = current_date
-                ) as delayedStartCount
+              count(*) filter (where r.status = '예약완료' and r.reservation_date = current_date) as waitingAuthCount
+            , count(*) filter (where r.status = '취소' and r.reservation_date = current_date) as cancelRequestCount
+            , count(*) filter (where r.status = '예약완료' and r.start_time <![CDATA[<]]> current_timestamp and r.reservation_date = current_date) as expectedNoShowCount
+            , count(*) filter (where r.status = '인증완료' and r.start_time <![CDATA[<]]> current_timestamp and r.reservation_date = current_date) as delayedStartCount
         from reservation r
-
     </select>
-
 
     <!-- 예약 목록 수 조회 -->
     <select id="countReservationList"
             parameterType="com.ev.dto.admin.reservation.EvAdminReservationSearchDTO"
             resultType="long">
-
         select count(*)
         from reservation r
-        join app_member m
-            on r.member_id = m.member_id
-        join vehicle v
-            on r.vehicle_id = v.vehicle_id
-        join vehicle_model vm
-            on v.model_id = vm.model_id
-        join charger c
-            on r.charger_id = c.charger_id
-        join charging_station cs
-            on c.station_id = cs.station_id
-        <where>
-            <if test="status != null and status != ''">
-                and r.status = #{status}
-            </if>
-
-            <if test="startDate != null">
-                and r.reservation_date <![CDATA[>=]]> #{startDate}
-            </if>
-
-            <if test="endDate != null">
-                and r.reservation_date <![CDATA[<=]]> #{endDate}
-            </if>
-
-            <if test="keyword != null and keyword != ''">
-                <choose>
-                    <when test="searchType == 'memberName'">
-                        and m.member_name ilike concat('%', #{keyword}, '%')
-                    </when>
-                    <when test="searchType == 'stationName'">
-                        and cs.station_name ilike concat('%', #{keyword}, '%')
-                    </when>
-                    <when test="searchType == 'vehicleName'">
-                        and vm.model_name ilike concat('%', #{keyword}, '%')
-                    </when>
-                    <otherwise>
-                        and (
-                            m.member_name ilike concat('%', #{keyword}, '%')
-                            or cs.station_name ilike concat('%', #{keyword}, '%')
-                            or vm.model_name ilike concat('%', #{keyword}, '%')
-                            or c.charger_name ilike concat('%', #{keyword}, '%')
-                        )
-                    </otherwise>
-                </choose>
-            </if>
-        </where>
-
+        join app_member m on r.member_id = m.member_id
+        join vehicle v on r.vehicle_id = v.vehicle_id
+        join vehicle_model vm on v.model_id = vm.model_id
+        join charger c on r.charger_id = c.charger_id
+        join charging_station cs on c.station_id = cs.station_id
+        <include refid="reservationSearchWhere" />
     </select>
-
 
     <!-- 예약 목록 조회 -->
     <select id="findReservationList"
             parameterType="com.ev.dto.admin.reservation.EvAdminReservationSearchDTO"
             resultType="com.ev.dto.admin.reservation.EvAdminReservationListDTO">
-
         select
               r.reservation_id as reservationId
             , concat('RSV-', lpad(r.reservation_id::text, 6, '0')) as reservationNo
             , r.start_time as startTime
+            , r.end_time as endTime
             , m.member_name as memberName
+            , m.user_id as userId
             , concat(vm.manufacturer, ' ', vm.model_name) as vehicleName
             , cs.station_name as stationName
+            , cs.address as stationAddress
             , c.charger_name as chargerName
             , r.current_soc as currentSoc
             , r.target_soc as targetSoc
             , r.estimated_minutes as estimatedMinutes
-            , r.estimated_cost as estimatedCost
+            , round(r.estimated_cost) as estimatedCost
             , r.auth_code as authCode
             , r.status as status
         from reservation r
-        join app_member m
-            on r.member_id = m.member_id
-        join vehicle v
-            on r.vehicle_id = v.vehicle_id
-        join vehicle_model vm
-            on v.model_id = vm.model_id
-        join charger c
-            on r.charger_id = c.charger_id
-        join charging_station cs
-            on c.station_id = cs.station_id
-        <where>
-            <if test="status != null and status != ''">
-                and r.status = #{status}
-            </if>
-
-            <if test="startDate != null">
-                and r.reservation_date <![CDATA[>=]]> #{startDate}
-            </if>
-
-            <if test="endDate != null">
-                and r.reservation_date <![CDATA[<=]]> #{endDate}
-            </if>
-
-            <if test="keyword != null and keyword != ''">
-                <choose>
-                    <when test="searchType == 'memberName'">
-                        and m.member_name ilike concat('%', #{keyword}, '%')
-                    </when>
-                    <when test="searchType == 'stationName'">
-                        and cs.station_name ilike concat('%', #{keyword}, '%')
-                    </when>
-                    <when test="searchType == 'vehicleName'">
-                        and vm.model_name ilike concat('%', #{keyword}, '%')
-                    </when>
-                    <otherwise>
-                        and (
-                            m.member_name ilike concat('%', #{keyword}, '%')
-                            or cs.station_name ilike concat('%', #{keyword}, '%')
-                            or vm.model_name ilike concat('%', #{keyword}, '%')
-                            or c.charger_name ilike concat('%', #{keyword}, '%')
-                        )
-                    </otherwise>
-                </choose>
-            </if>
-        </where>
+        join app_member m on r.member_id = m.member_id
+        join vehicle v on r.vehicle_id = v.vehicle_id
+        join vehicle_model vm on v.model_id = vm.model_id
+        join charger c on r.charger_id = c.charger_id
+        join charging_station cs on c.station_id = cs.station_id
+        <include refid="reservationSearchWhere" />
         order by r.start_time desc
         limit #{size}
         offset #{offset}
-
     </select>
 
+    <!-- 예약 상세 조회 -->
+    <select id="findReservationDetail"
+            resultType="com.ev.dto.admin.reservation.EvAdminReservationDetailDTO">
+        select
+              r.reservation_id as reservationId
+            , concat('RSV-', lpad(r.reservation_id::text, 6, '0')) as reservationNo
+            , m.member_id as memberId
+            , m.member_name as memberName
+            , m.phone as phone
+            , m.email as email
+            , concat(vm.manufacturer, ' ', vm.model_name) as vehicleName
+            , v.plate_number as plateNumber
+            , cs.station_name as stationName
+            , cs.address as stationAddress
+            , c.charger_name as chargerName
+            , c.charger_type as chargerType
+            , c.connector_type as connectorType
+            , r.start_time as startTime
+            , r.end_time as endTime
+            , r.current_soc as currentSoc
+            , r.target_soc as targetSoc
+            , r.estimated_minutes as estimatedMinutes
+            , round(r.estimated_cost) as estimatedCost
+            , coalesce(r.auth_code, '-') as authCode
+            , r.status as status
+            , r.created_at as createdAt
+            , r.updated_at as updatedAt
+        from reservation r
+        join app_member m on r.member_id = m.member_id
+        join vehicle v on r.vehicle_id = v.vehicle_id
+        join vehicle_model vm on v.model_id = vm.model_id
+        join charger c on r.charger_id = c.charger_id
+        join charging_station cs on c.station_id = cs.station_id
+        where r.reservation_id = #{reservationId}
+    </select>
 
     <!-- 예약 취소 처리 -->
     <update id="cancelReservation" parameterType="long">
@@ -237,7 +180,6 @@
           and status in ('예약완료', '인증완료')
     </update>
 
-
     <!-- 노쇼 처리 -->
     <update id="noShowReservation" parameterType="long">
         update reservation
@@ -247,7 +189,6 @@
         where reservation_id = #{reservationId}
           and status in ('예약완료', '인증완료')
     </update>
-
 
     <!-- 충전 시작 처리 -->
     <update id="startCharging" parameterType="long">

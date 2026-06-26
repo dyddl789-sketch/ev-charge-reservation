@@ -211,4 +211,33 @@
 	
 	</select>
 
+
+    <!-- 대시보드 최근 장애 발생 충전기 목록 -->
+    <select id="findRecentBrokenChargers"
+            resultType="com.ev.dto.admin.simulation.EvAdminSimulationChargerDTO">
+        select
+              c.charger_id as chargerId
+            , c.station_id as stationId
+            , cs.station_name as stationName
+            , c.charger_name as chargerName
+            , c.charger_type as chargerType
+            , c.connector_type as connectorType
+            , c.charging_speed_kw as chargingSpeedKw
+            , c.status as status
+            , cs.address as address
+            , cs.latitude as latitude
+            , cs.longitude as longitude
+            , case
+                  when cs.address like '부산%' then '부산'
+                  else split_part(cs.address, ' ', 1)
+              end as regionName
+            , to_char(coalesce(c.updated_at, c.created_at), 'YYYY-MM-DD HH24:MI') as updatedAtText
+          from charger c
+          join charging_station cs
+            on c.station_id = cs.station_id
+         where c.status = '고장'
+         order by coalesce(c.updated_at, c.created_at) desc
+         limit 5
+    </select>
+
 </mapper>

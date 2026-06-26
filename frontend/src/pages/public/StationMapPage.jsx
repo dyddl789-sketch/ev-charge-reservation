@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import * as stations from "../../apis/stationApi";
 import * as routeApi from "../../apis/routeApi";
 import "../../styles/station-map.css";
@@ -16,6 +16,8 @@ const CONNECTOR_TYPE_OPTIONS = [
 
 const MAP_FOCUS_LEVEL = 5;
 const NEARBY_STATION_LIMIT = 10;
+const AI_CHAT_MAP_CONTEXT_KEY = "ev_ai_chat_map_origin_context_v1";
+const AI_CHAT_LOCATION_REFRESH_KEY = "ev_ai_chat_location_refresh_v1";
 
 const loadKakaoMapScript = () => {
   const kakaoJavascriptKey = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
@@ -146,6 +148,29 @@ const normalizeStation = (station) => {
   };
 };
 
+
+const isStationReservable = (station) => {
+  const stationOpen = station?.stationStatus === "운영중";
+  const availableCount = Number(station?.availableChargerCount || 0);
+  return stationOpen && availableCount > 0;
+};
+
+const getStationReserveMessage = (station) => {
+  if (!station) {
+    return "충전소를 선택해 주세요.";
+  }
+
+  if (station.stationStatus !== "운영중") {
+    return "현재 운영중인 충전소가 아니므로 예약할 수 없습니다.";
+  }
+
+  if (Number(station.availableChargerCount || 0) <= 0) {
+    return "현재 예약 가능한 충전기가 없습니다. 다른 충전소를 선택해 주세요.";
+  }
+
+  return "예약 가능한 충전소입니다.";
+};
+
 const normalizeLocation = (location) => ({
   ...location,
   latitude: toNumber(location.latitude),
@@ -181,10 +206,64 @@ const sortLocationList = (locations, selectedLocationId = null) => {
   });
 };
 
+const readAiMapContext = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawValue = window.sessionStorage.getItem(AI_CHAT_MAP_CONTEXT_KEY);
+    return rawValue ? JSON.parse(rawValue) : null;
+  } catch (error) {
+    console.log("AI 지도 이동 컨텍스트 읽기 실패", error);
+    return null;
+  }
+};
+
+const requestAiLocationRefresh = (location, trigger) => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const context = readAiMapContext();
+
+  if (!context) {
+    return null;
+  }
+
+  const refreshRequest = {
+    requestId: `${Date.now()}-${trigger}`,
+    trigger,
+    createdAt: Date.now(),
+    location: {
+      locationId: location.locationId,
+      locationName: location.locationName,
+      address: location.address,
+      latitude: location.latitude,
+      longitude: location.longitude,
+    },
+    context,
+  };
+
+  try {
+    window.sessionStorage.setItem(
+      AI_CHAT_LOCATION_REFRESH_KEY,
+      JSON.stringify(refreshRequest)
+    );
+
+    console.log("AI 출발지 변경 재검색 요청 저장", location, trigger, context);
+    return refreshRequest;
+  } catch (error) {
+    console.log("AI 출발지 변경 재검색 요청 저장 실패", error);
+    return null;
+  }
+};
+
 const StationMapPage = () => {
   console.log("StationMapPage 렌더링");
 
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const mapElementRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -192,6 +271,7 @@ const StationMapPage = () => {
   const infoWindowRef = useRef(null);
   const originMarkerRef = useRef(null);
   const routeLineRef = useRef(null);
+  const ignoreInitialMapFocusRef = useRef(false);
 
   const [keyword, setKeyword] = useState("");
   const [connectorType, setConnectorType] = useState("");
@@ -211,6 +291,7 @@ const StationMapPage = () => {
     address: "",
     isDefault: true,
   });
+  const [aiRefreshBanner, setAiRefreshBanner] = useState(null);
 
   const mockLocations = [
     {
@@ -222,6 +303,32 @@ const StationMapPage = () => {
       longitude: null,
     },
   ];
+
+  const getQueryMapFocus = () => {
+    if (ignoreInitialMapFocusRef.current) {
+      return null;
+    }
+
+    const focusType = searchParams.get("focusType") || "";
+    const stationId = searchParams.get("stationId");
+    const latitude = toNumber(searchParams.get("lat"));
+    const longitude = toNumber(searchParams.get("lng"));
+    const name = searchParams.get("name") || "";
+    const address = searchParams.get("address") || "";
+
+    if (!focusType && !stationId && latitude === null && longitude === null) {
+      return null;
+    }
+
+    return {
+      focusType: focusType || (stationId ? "station" : "origin"),
+      stationId,
+      latitude,
+      longitude,
+      name,
+      address,
+    };
+  };
 
   const validStationList = useMemo(
     () =>
@@ -255,7 +362,26 @@ const StationMapPage = () => {
   }, [validStationList, currentOrigin]);
 
   const initStationMapPage = async () => {
+    const queryFocus = getQueryMapFocus();
     const savedLocations = await getSavedLocations();
+
+    // AI 답변의 “지도에서 내 위치 보기”로 넘어온 경우에는 DB 기본 출발지 좌표를 지도 중심으로 사용한다.
+    if (queryFocus?.focusType === "origin" && queryFocus.latitude !== null && queryFocus.longitude !== null) {
+      const queryOrigin = {
+        locationId: "ai-default-location",
+        locationName: queryFocus.name || "AI 기본 출발지",
+        address: queryFocus.address || "AI 답변에서 이동한 위치",
+        latitude: queryFocus.latitude,
+        longitude: queryFocus.longitude,
+        isDefault: true,
+        isAiFocus: true,
+      };
+
+      setCurrentOrigin(queryOrigin);
+      await getStationMapData("", queryOrigin, connectorType, queryFocus);
+      return;
+    }
+
     const defaultLocation = savedLocations.find(
       (location) => location.isDefault && location.latitude && location.longitude
     );
@@ -264,7 +390,7 @@ const StationMapPage = () => {
     // 저장한 출발지가 없을 때만 브라우저 현재 위치를 기본값으로 사용한다.
     if (defaultLocation) {
       setCurrentOrigin(defaultLocation);
-      await getStationMapData("", defaultLocation);
+      await getStationMapData("", defaultLocation, connectorType, queryFocus);
       return;
     }
 
@@ -272,14 +398,14 @@ const StationMapPage = () => {
 
     if (browserOrigin) {
       setCurrentOrigin(browserOrigin);
-      await getStationMapData("", browserOrigin);
+      await getStationMapData("", browserOrigin, connectorType, queryFocus);
       return;
     }
 
-    await getStationMapData();
+    await getStationMapData("", currentOrigin, connectorType, queryFocus);
   };
 
-  const getStationMapData = async (searchKeyword = "", origin = currentOrigin, selectedConnectorType = connectorType) => {
+  const getStationMapData = async (searchKeyword = "", origin = currentOrigin, selectedConnectorType = connectorType, focusOptions = null) => {
     console.log("지도 충전소 데이터 조회 실행", searchKeyword, origin, selectedConnectorType);
 
     setIsLoading(true);
@@ -308,10 +434,18 @@ const StationMapPage = () => {
 
       console.log("지도 충전소 데이터 응답", normalizedData);
 
-      const nextSelectedStation = normalizedData[0] || null;
+      const focusStationId = focusOptions?.stationId || searchParams.get("stationId");
+      const focusStation = focusStationId
+        ? normalizedData.find((item) => String(item.stationId) === String(focusStationId))
+        : null;
+      const nextSelectedStation = focusStation || normalizedData[0] || null;
 
       setStationList(normalizedData);
       setSelectedStation((prev) => {
+        if (focusStation) {
+          return focusStation;
+        }
+
         if (!prev) {
           return nextSelectedStation;
         }
@@ -350,6 +484,44 @@ const StationMapPage = () => {
       setLocationList(mockLocations);
       return [];
     }
+  };
+
+  const clearInitialMapFocus = () => {
+    ignoreInitialMapFocusRef.current = true;
+
+    if (searchParams.toString()) {
+      setSearchParams({}, { replace: true });
+    }
+  };
+
+  const openAiRefreshBanner = (location, refreshRequest) => {
+    if (!refreshRequest) {
+      setAiRefreshBanner(null);
+      return;
+    }
+
+    console.log("AI 재추천 안내 배너 표시", location, refreshRequest);
+
+    setAiRefreshBanner({
+      requestId: refreshRequest.requestId,
+      locationName: location.locationName || "변경한 출발지",
+      address: location.address || "",
+    });
+  };
+
+  const moveAiRefreshToChat = () => {
+    console.log("AI에서 다시 추천 보기 클릭", aiRefreshBanner);
+    navigate("/ai-chat");
+  };
+
+  const closeAiRefreshBanner = () => {
+    console.log("지도 계속 보기 클릭");
+
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(AI_CHAT_LOCATION_REFRESH_KEY);
+    }
+
+    setAiRefreshBanner(null);
   };
 
   const clearRouteLine = () => {
@@ -550,6 +722,35 @@ const StationMapPage = () => {
 
       await drawOriginMarker();
 
+      const queryFocus = getQueryMapFocus();
+      if (queryFocus?.focusType === "station") {
+        const focusStation = queryFocus.stationId
+          ? validStationList.find((station) => String(station.stationId) === String(queryFocus.stationId))
+          : null;
+        const focusLat = focusStation?.latitude ?? queryFocus.latitude;
+        const focusLng = focusStation?.longitude ?? queryFocus.longitude;
+
+        if (focusStation) {
+          setSelectedStation(focusStation);
+        }
+
+        if (focusLat !== null && focusLng !== null) {
+          map.setLevel(MAP_FOCUS_LEVEL);
+          map.setCenter(new kakao.maps.LatLng(focusLat, focusLng));
+          setMapMessage(queryFocus.name ? `${queryFocus.name} 위치를 지도에서 표시했습니다.` : "선택한 충전소 위치를 지도에서 표시했습니다.");
+          setUseKakaoMap(true);
+          return;
+        }
+      }
+
+      if (queryFocus?.focusType === "origin" && queryFocus.latitude !== null && queryFocus.longitude !== null) {
+        map.setCenter(new kakao.maps.LatLng(queryFocus.latitude, queryFocus.longitude));
+        map.setLevel(MAP_FOCUS_LEVEL);
+        setUseKakaoMap(true);
+        setMapMessage(queryFocus.name ? `${queryFocus.name} 기준 위치를 지도에서 표시했습니다.` : "AI 기본 출발지 위치를 지도에서 표시했습니다.");
+        return;
+      }
+
       if (currentOrigin?.latitude && currentOrigin?.longitude) {
         map.setCenter(center);
         map.setLevel(MAP_FOCUS_LEVEL);
@@ -623,6 +824,7 @@ const StationMapPage = () => {
 
   const searchStation = () => {
     console.log("충전소 검색 실행", keyword);
+    clearInitialMapFocus();
     clearRouteLine();
     getStationMapData(keyword.trim(), currentOrigin, connectorType);
   };
@@ -632,6 +834,7 @@ const StationMapPage = () => {
     console.log("커넥터 타입 변경", nextConnectorType);
 
     setConnectorType(nextConnectorType);
+    clearInitialMapFocus();
     clearRouteLine();
     getStationMapData(keyword.trim(), currentOrigin, nextConnectorType);
   };
@@ -655,6 +858,11 @@ const StationMapPage = () => {
 
     if (!selectedStation) {
       alert("충전소를 선택해 주세요.");
+      return;
+    }
+
+    if (!isStationReservable(selectedStation)) {
+      alert(getStationReserveMessage(selectedStation));
       return;
     }
 
@@ -798,11 +1006,15 @@ const StationMapPage = () => {
           savedLocation.locationId
         );
 
+        const nextOrigin = { ...savedLocation, isDefault: true };
         setLocationList(sortedLocations);
-        setCurrentOrigin({ ...savedLocation, isDefault: true });
+        setCurrentOrigin(nextOrigin);
+        clearInitialMapFocus();
+        const refreshRequest = requestAiLocationRefresh(nextOrigin, "CREATE_DEFAULT_LOCATION");
+        openAiRefreshBanner(nextOrigin, refreshRequest);
         clearRouteLine();
-        getStationMapData(keyword.trim(), savedLocation, connectorType);
-        moveMapTo(savedLocation.latitude, savedLocation.longitude, MAP_FOCUS_LEVEL);
+        getStationMapData(keyword.trim(), nextOrigin, connectorType);
+        moveMapTo(nextOrigin.latitude, nextOrigin.longitude, MAP_FOCUS_LEVEL);
       }
     } catch (error) {
       console.log("출발지 등록 실패", error);
@@ -847,6 +1059,9 @@ const StationMapPage = () => {
 
       setLocationList(sortLocationList(updatedLocations, selectedDefault.locationId));
       setCurrentOrigin(selectedDefault);
+      clearInitialMapFocus();
+      const refreshRequest = requestAiLocationRefresh(selectedDefault, "CHANGE_DEFAULT_LOCATION");
+      openAiRefreshBanner(selectedDefault, refreshRequest);
       clearRouteLine();
       getStationMapData(keyword.trim(), selectedDefault, connectorType);
       moveMapTo(selectedDefault.latitude, selectedDefault.longitude, MAP_FOCUS_LEVEL);
@@ -881,6 +1096,8 @@ const StationMapPage = () => {
       );
 
       setCurrentOrigin(defaultLocation || null);
+      clearInitialMapFocus();
+      setAiRefreshBanner(null);
       clearRouteLine();
       getStationMapData(keyword.trim(), defaultLocation || null, connectorType);
     } catch (error) {
@@ -902,6 +1119,7 @@ const StationMapPage = () => {
     // 버튼은 현재 선택된 출발지로 이동한다.
     // 저장된 출발지가 없을 때만 브라우저 현재 위치를 새 출발지로 사용한다.
     if (currentOrigin?.latitude && currentOrigin?.longitude) {
+      clearInitialMapFocus();
       clearRouteLine();
       getStationMapData(keyword.trim(), currentOrigin, connectorType);
       moveMapTo(currentOrigin.latitude, currentOrigin.longitude, MAP_FOCUS_LEVEL);
@@ -914,6 +1132,7 @@ const StationMapPage = () => {
 
     if (origin) {
       setCurrentOrigin(origin);
+      clearInitialMapFocus();
       clearRouteLine();
       getStationMapData(keyword.trim(), origin, connectorType);
       moveMapTo(origin.latitude, origin.longitude, MAP_FOCUS_LEVEL);
@@ -1061,16 +1280,18 @@ const StationMapPage = () => {
                   type="button"
                   key={station.stationId}
                   className={
-                    selectedStation?.stationId === station.stationId
-                      ? "map-station-card active"
-                      : "map-station-card"
+                    `${
+                      selectedStation?.stationId === station.stationId
+                        ? "map-station-card active"
+                        : "map-station-card"
+                    } ${!isStationReservable(station) ? "unreservable" : ""}`
                   }
                   onClick={() => selectStation(station)}
                 >
                   <strong>{station.stationName}</strong>
                   <p>{station.address}</p>
                   <div>
-                    <span>{station.stationStatus}</span>
+                    <span className={station.stationStatus === "운영중" ? "" : "stop"}>{station.stationStatus}</span>
                     <em>
                       사용가능 {station.availableChargerCount} / 전체 {station.chargerCount}
                     </em>
@@ -1138,6 +1359,23 @@ const StationMapPage = () => {
             className={useKakaoMap ? "kakao-map" : "kakao-map hidden"}
           />
 
+          {aiRefreshBanner && (
+            <div className="ai-map-refresh-banner">
+              <div>
+                <strong>출발지가 “{aiRefreshBanner.locationName}”로 변경되었습니다.</strong>
+                <p>AI가 새 출발지 기준으로 예약 가능한 충전소 후보를 다시 추천할 수 있습니다.</p>
+              </div>
+              <div className="ai-map-refresh-actions">
+                <button type="button" onClick={moveAiRefreshToChat}>
+                  AI에서 다시 추천 보기
+                </button>
+                <button type="button" className="secondary" onClick={closeAiRefreshBanner}>
+                  지도 계속 보기
+                </button>
+              </div>
+            </div>
+          )}
+
           {!useKakaoMap && (
             <div className="mock-map">
               {validStationList.map((station, index) => (
@@ -1171,7 +1409,7 @@ const StationMapPage = () => {
               <p>{selectedStation.address}</p>
               <strong>운영기관: {selectedStation.operatorName || "-"}</strong>
               <span>
-                충전소 상태 <em>{selectedStation.stationStatus}</em>
+                충전소 상태 <em className={selectedStation.stationStatus === "운영중" ? "" : "stop"}>{selectedStation.stationStatus}</em>
               </span>
               {selectedStation.distanceKm !== null && selectedStation.distanceKm !== undefined && (
                 <b>출발지 기준 {selectedStation.distanceKm}km</b>
@@ -1187,10 +1425,22 @@ const StationMapPage = () => {
               <button type="button" className="route-btn" onClick={openRoute} disabled={isRouteLoading}>
                 {isRouteLoading ? "길찾기 중" : "길찾기"}
               </button>
-              <button type="button" className="reserve-btn" onClick={moveReservation}>
-                예약하기
+              <button
+                type="button"
+                className="reserve-btn"
+                onClick={moveReservation}
+                disabled={!isStationReservable(selectedStation)}
+                title={getStationReserveMessage(selectedStation)}
+              >
+                {isStationReservable(selectedStation) ? "예약하기" : "예약불가"}
               </button>
             </div>
+
+            {!isStationReservable(selectedStation) && (
+              <p className="map-reserve-help">
+                {getStationReserveMessage(selectedStation)}
+              </p>
+            )}
 
             <div className="charger-info-box">
               <h3>충전기 정보</h3>
@@ -1204,7 +1454,9 @@ const StationMapPage = () => {
                   </p>
                 </div>
 
-                <span>{selectedStation.stationStatus}</span>
+                <span className={selectedStation.stationStatus === "운영중" ? "" : "stop"}>
+                  {selectedStation.stationStatus}
+                </span>
               </div>
 
               <button type="button" onClick={moveDetail}>

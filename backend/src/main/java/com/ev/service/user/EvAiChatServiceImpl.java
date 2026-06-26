@@ -1,21 +1,22 @@
 package com.ev.service.user;
 
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.time.Duration;
-import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 
 import com.ev.dao.user.EvAiChatDAO;
 import com.ev.dto.chat.EvAiChargeInfoDTO;
@@ -35,171 +36,358 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings("unchecked")
 public class EvAiChatServiceImpl implements EvAiChatService {
 
-    private final EvAiChatDAO evAiChatDAO;
     private static final int CHAT_CACHE_LIMIT = 20;
     private static final Duration CHAT_CACHE_TTL = Duration.ofHours(24);
+    private static final double CHARGING_EFFICIENCY = 1.15;
 
+    private final EvAiChatDAO evAiChatDAO;
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
 
-    // Gemini API Key
-    @Value("${gemini.api.key}")
+    @Value("${gemini.api.key:}")
     private String apiKey;
 
-    // Gemini API URL
-    @Value("${gemini.api.url}")
+    @Value("${gemini.api.url:}")
     private String apiUrl;
-    
-    // 충전 시간 계산 보정 계수
-    private static final double CHARGING_EFFICIENCY = 1.15;
 
-
- // AI 메시지 전송 및 DB 저장
+    // AI 메시지 전송 및 DB 저장
     @Override
     @Transactional
     public EvAiChatResponseDTO sendMessage(Long memberId, String message) {
-
         log.info("@# EvAiChatServiceImpl.sendMessage()");
         log.info("@# memberId => {}", memberId);
         log.info("@# message => {}", message);
 
-        // 채팅방 조회 또는 생성
         EvAiChatRoomDTO roomDTO = getOrCreateRoom(memberId);
-
         Long roomId = roomDTO.getRoomId();
 
-        log.info("@# roomId => {}", roomId);
-
-        // 사용자 메시지 저장
         saveMessage(roomId, "USER", message);
+        List<EvAiChatMessageDTO> recentMessages = getRecentMessages(roomId);
 
-        // 최근 대화 조회
-        List<EvAiChatMessageDTO> recentMessages =
-                getRecentMessages(roomId);
+        String answer;
 
-        // 사용자 메시지 의도 분석
+        // 내 위치 질문은 Gemini가 임의 지역을 말하지 않도록 DB 기본 출발지만 사용한다.
+        if (isDefaultLocationQuestion(message)) {
+            Map<String, Object> location = evAiChatDAO.findDefaultLocationForAi(memberId);
+            answer = buildDefaultLocationAnswer(location);
+
+            EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer, "DEFAULT_LOCATION");
+            responseDTO.setLocation(location);
+            saveMessage(roomId, "AI", answer, responseDTO);
+            return responseDTO;
+        }
+
+        // 내 차량 질문은 Gemini가 임의 답변하지 않도록 DB 대표차량만 사용한다.
+        if (isDefaultVehicleQuestion(message)) {
+            Map<String, Object> vehicle = evAiChatDAO.findDefaultVehicleForAi(memberId);
+            answer = buildDefaultVehicleAnswer(vehicle);
+
+            EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer, "DEFAULT_VEHICLE");
+            if (vehicle == null || vehicle.isEmpty()) {
+                responseDTO.setActionType("VEHICLE_REGISTER");
+                responseDTO.setButtonText("차량 등록하러 가기");
+                responseDTO.setActionUrl("/vehicles/register");
+            }
+            saveMessage(roomId, "AI", answer, responseDTO);
+            return responseDTO;
+        }
+
+        // 내 예약 조회 질문은 예약 후보 추천이 아니라 실제 예약 내역을 조회한다.
+        if (isMyReservationQuestion(message)) {
+            List<Map<String, Object>> reservationList = evAiChatDAO.findMyReservationsForAi(memberId, 10);
+            answer = buildMyReservationAnswer(reservationList);
+
+            EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer, "MY_RESERVATION_LIST");
+            responseDTO.setReservations(reservationList);
+            if (reservationList == null || reservationList.isEmpty()) {
+                responseDTO.setActionType("MY_RESERVATION_HISTORY");
+                responseDTO.setButtonText("내 예약 내역 보기");
+                responseDTO.setActionUrl("/my-reservations");
+            }
+            saveMessage(roomId, "AI", answer, responseDTO);
+            return responseDTO;
+        }
+
+        // 예약 취소/변경/조회 방법 질문은 충전소 후보 추천으로 보내지 않고 RAG 안내로 처리한다.
+        if (isReservationGuideQuestion(message)) {
+            String ragContext = buildRagContext(memberId, message);
+            answer = callGeminiWithContext(recentMessages, message, ragContext);
+            EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer, "RESERVATION_GUIDE");
+            saveMessage(roomId, "AI", answer, responseDTO);
+            return responseDTO;
+        }
+
         EvAiChatIntentDTO intentDTO = analyzeIntent(message);
-        
-        // 이전 대화 SOC 보정
         fillSocFromRecentMessages(intentDTO, recentMessages);
+        log.info("@# intent => {}, priority => {}", intentDTO.getIntent(), intentDTO.getPriority());
 
-        log.info("@# intent => {}", intentDTO.getIntent());
-
-        // AI 대표 기능용 충전소 추천 목록
-        List<EvAiStationRecommendDTO> stationList = List.of();
-        // AI 대표기능용 충전시간/충전비용 정보
-        EvAiChargeInfoDTO chargeInfo = null;
-        
-        String intent = intentDTO.getIntent();
-
-        if (intent == null) {
-            intent = "GENERAL";
-        }
-        
-        String answer = null;
-        
-        // intent 기반 기능 분기
-        switch (intent) {
-
+        switch (intentDTO.getIntent()) {
             case "STATION_RECOMMEND" -> {
-                log.info("@# recommend station search start");
-
-                stationList = evAiChatDAO.findRecommendStations(memberId);
-
-                log.info("@# recommend station count => {}", stationList.size());
+                List<EvAiStationRecommendDTO> stationList = evAiChatDAO.findRecommendStations(memberId);
+                answer = buildStationRecommendAnswer(memberId, stationList, intentDTO);
             }
-            case "CHARGE_TIME" -> {
-
-                log.info("@# charge time calculation start");
-
-                if (intentDTO.getCurrentSoc() == null
-                        || intentDTO.getTargetSoc() == null) {
-
-                	answer = """
-                	        현재 배터리 잔량과 목표 충전량을 %로 알려주세요.
-
-                	        예)
-                	        30%에서 80%까지 충전시간 알려줘
-                	        """;
-
-                    saveMessage(roomId, "AI", answer);
-
-                    return new EvAiChatResponseDTO(answer);
-                }
-
-                chargeInfo =
-                        calculateChargeInfo(
-                                memberId,
-                                intentDTO.getCurrentSoc(),
-                                intentDTO.getTargetSoc()
-                        );
+            case "CHARGE_TIME", "CHARGE_COST" -> {
+                answer = buildChargeAnswer(memberId, intentDTO);
             }
-            case "CHARGE_COST" -> {
-
-                log.info("@# charge cost calculation start");
-
-                if (intentDTO.getCurrentSoc() == null
-                        || intentDTO.getTargetSoc() == null) {
-
-                	answer = """
-                	        현재 배터리 잔량과 목표 충전량을 %로 알려주세요.
-
-                	        예)
-                	        30%에서 80%까지 충전하면 얼마야?
-                	        """;
-
-                    saveMessage(roomId, "AI", answer);
-
-                    return new EvAiChatResponseDTO(answer);
-                }
-
-                chargeInfo =
-                        calculateChargeInfo(
-                                memberId,
-                                intentDTO.getCurrentSoc(),
-                                intentDTO.getTargetSoc()
-                        );
-            }
-
             default -> {
-                log.info("@# general ai chat");
+                String ragContext = buildRagContext(memberId, message);
+                answer = callGeminiWithContext(recentMessages, message, ragContext);
             }
         }
 
-        // Gemini 호출
-        answer =
-                callGemini(
-                        recentMessages,
-                        message,
-                        stationList,
-                        chargeInfo,
-                        intentDTO
-                );
-
-        // AI 답변 저장
-        saveMessage(roomId, "AI", answer);
-
-        // AI 답변 반환
-        return new EvAiChatResponseDTO(answer);
+        EvAiChatResponseDTO responseDTO = new EvAiChatResponseDTO(answer);
+        applyVehicleRegisterActionIfNeeded(answer, responseDTO);
+        saveMessage(roomId, "AI", answer, responseDTO);
+        return responseDTO;
     }
 
- // 충전 시간 및 비용 계산
-    private EvAiChargeInfoDTO calculateChargeInfo(
-            Long memberId,
-            Integer currentSoc,
-            Integer targetSoc) {
-    	
-    	if (currentSoc == null || targetSoc == null) {
-    	    log.warn("@# currentSoc or targetSoc is null");
-    	    return null;
-    	}
-    	
-    	
-        log.info("@# calculateChargeInfo()");
+    // 이전 채팅 메시지 조회
+    @Override
+    public List<EvAiChatMessageDTO> getChatHistory(Long memberId) {
+        log.info("@# EvAiChatServiceImpl.getChatHistory()");
+        log.info("@# memberId => {}", memberId);
 
-        EvAiChargeInfoDTO chargeInfo =
-                evAiChatDAO.findChargeCalculationInfo(memberId);
+        EvAiChatRoomDTO roomDTO = evAiChatDAO.findRoomByMemberId(memberId);
+        if (roomDTO == null) {
+            log.info("@# chat room empty");
+            return List.of();
+        }
 
+        return getRecentMessages(roomDTO.getRoomId());
+    }
+
+    @Override
+    public void clearChatCache(Long memberId) {
+        log.info("@# EvAiChatServiceImpl.clearChatCache()");
+        log.info("@# memberId => {}", memberId);
+
+        EvAiChatRoomDTO room = evAiChatDAO.findRoomByMemberId(memberId);
+        if (room == null) {
+            stringRedisTemplate.delete("ai:reservation:candidate:" + memberId);
+            log.info("@# AI room empty. reservation candidate cache only deleted => memberId: {}", memberId);
+            return;
+        }
+
+        deleteAiRedisCache(memberId, room.getRoomId());
+    }
+
+    @Override
+    @Transactional
+    public void clearChatMessages(Long memberId) {
+        log.info("@# EvAiChatServiceImpl.clearChatMessages()");
+        log.info("@# memberId => {}", memberId);
+
+        EvAiChatRoomDTO room = evAiChatDAO.findRoomByMemberId(memberId);
+        if (room == null) {
+            stringRedisTemplate.delete("ai:reservation:candidate:" + memberId);
+            log.info("@# AI room empty. reservation candidate cache only deleted => memberId: {}", memberId);
+            return;
+        }
+
+        int deletedCount = evAiChatDAO.deleteMessagesByRoomId(room.getRoomId());
+        deleteAiRedisCache(memberId, room.getRoomId());
+
+        log.info("@# AI chat messages deleted => memberId: {}, roomId: {}, count: {}",
+                memberId, room.getRoomId(), deletedCount);
+    }
+
+    private void deleteAiRedisCache(Long memberId, Long roomId) {
+        log.info("@# EvAiChatServiceImpl.deleteAiRedisCache()");
+
+        String recentCacheKey = getChatCacheKey(roomId);
+        String legacyCacheKey = "ai:chat:room:" + roomId;
+        String reservationCandidateKey = "ai:reservation:candidate:" + memberId;
+
+        stringRedisTemplate.delete(recentCacheKey);
+        stringRedisTemplate.delete(legacyCacheKey);
+        stringRedisTemplate.delete(reservationCandidateKey);
+
+        log.info("@# AI Redis Cache Deleted => {}, {}, {}", recentCacheKey, legacyCacheKey, reservationCandidateKey);
+    }
+
+    private EvAiChatIntentDTO analyzeIntent(String message) {
+        log.info("@# EvAiChatServiceImpl.analyzeIntent()");
+
+        EvAiChatIntentDTO intentDTO = new EvAiChatIntentDTO();
+        String value = message == null ? "" : message.replace(" ", "").toLowerCase();
+
+        if (value.contains("충전소") || value.contains("근처") || value.contains("주변") || value.contains("추천") || value.contains("찾아")) {
+            intentDTO.setIntent("STATION_RECOMMEND");
+        } else if (value.contains("시간") || value.contains("얼마나걸") || value.contains("몇분")) {
+            intentDTO.setIntent("CHARGE_TIME");
+        } else if (value.contains("비용") || value.contains("요금") || value.contains("얼마") || value.contains("가격")) {
+            intentDTO.setIntent("CHARGE_COST");
+        } else {
+            intentDTO.setIntent("GENERAL");
+        }
+
+        if (value.contains("저렴") || value.contains("싼") || value.contains("가격") || value.contains("요금") || value.contains("비용")) {
+            intentDTO.setPriority("COST");
+        } else if (value.contains("빠른") || value.contains("급속") || value.contains("초급속") || value.contains("속도")) {
+            intentDTO.setPriority("SPEED");
+        } else if (value.contains("가까") || value.contains("근처") || value.contains("주변")) {
+            intentDTO.setPriority("DISTANCE");
+        } else {
+            intentDTO.setPriority("NONE");
+        }
+
+        Integer[] socValues = extractSocValues(message);
+        if (socValues != null) {
+            intentDTO.setCurrentSoc(socValues[0]);
+            intentDTO.setTargetSoc(socValues[1]);
+        }
+
+        return intentDTO;
+    }
+
+    private String buildDefaultLocationAnswer(Map<String, Object> location) {
+        log.info("@# EvAiChatServiceImpl.buildDefaultLocationAnswer()");
+
+        if (location == null || location.isEmpty()) {
+            return "현재 DB에 기본 출발지가 설정되어 있지 않습니다.\n충전소 찾기 화면에서 출발지를 등록하고 기본 출발지로 설정하면, AI가 그 위치 기준으로 주변 충전소를 추천할 수 있습니다.";
+        }
+
+        return "현재 AI가 사용하는 내 위치는 DB에 저장된 기본 출발지입니다.\n"
+                + "위치명 : " + text(value(location, "locationName", "location_name")) + "\n"
+                + "주소 : " + text(value(location, "address")) + "\n\n"
+                + "이 위치를 기준으로 가까운 충전소, 저렴한 충전소, 빠른 충전기를 추천합니다.\n"
+                + "아래 지도 버튼을 누르면 충전소 찾기 화면에서 이 위치를 바로 확인할 수 있습니다.";
+    }
+
+    private String buildDefaultVehicleAnswer(Map<String, Object> vehicle) {
+        log.info("@# EvAiChatServiceImpl.buildDefaultVehicleAnswer()");
+
+        if (vehicle == null || vehicle.isEmpty()) {
+            return buildDefaultVehicleRequiredAnswer();
+        }
+
+        String nickname = text(value(vehicle, "vehicleNickname", "vehicle_nickname"));
+        String vehicleName = text(value(vehicle, "manufacturer")) + " " + text(value(vehicle, "modelName", "model_name"));
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("현재 대표차량은 ");
+        if (!nickname.isBlank()) {
+            builder.append("“").append(nickname).append("”으로 등록된 ");
+        }
+        builder.append(vehicleName.trim()).append("입니다.\n");
+        builder.append("배터리 용량은 ").append(text(value(vehicle, "batteryCapacityKwh", "battery_capacity_kwh"))).append("kWh, ");
+        builder.append("커넥터 타입은 ").append(text(value(vehicle, "connectorType", "connector_type"))).append(", ");
+        builder.append("최대 충전 속도는 ").append(text(value(vehicle, "maxChargingSpeedKw", "max_charging_speed_kw"))).append("kW입니다.\n");
+        builder.append("AI 충전소 추천과 충전 시간/비용 계산은 이 대표차량 기준으로 진행합니다.");
+
+        return builder.toString();
+    }
+
+    private String buildDefaultVehicleRequiredAnswer() {
+        return "아직 대표차량이 등록되어 있지 않습니다.\n"
+                + "충전 시간과 비용 계산, 커넥터 타입에 맞는 충전소 추천을 위해 차량을 먼저 등록해 주세요.\n"
+                + "아래 버튼을 누르면 차량 등록 화면으로 이동할 수 있습니다.";
+    }
+
+    private String buildStationRecommendAnswer(Long memberId,
+                                               List<EvAiStationRecommendDTO> stationList,
+                                               EvAiChatIntentDTO intentDTO) {
+        log.info("@# EvAiChatServiceImpl.buildStationRecommendAnswer()");
+
+        Map<String, Object> vehicle = evAiChatDAO.findDefaultVehicleForAi(memberId);
+        if (vehicle == null || vehicle.isEmpty()) {
+            return buildDefaultVehicleRequiredAnswer();
+        }
+
+        Map<String, Object> location = evAiChatDAO.findDefaultLocationForAi(memberId);
+
+        if (location == null || location.isEmpty()) {
+            return "충전소를 추천하려면 기본 출발지가 필요합니다.\n충전소 찾기 화면에서 출발지를 등록하고 기본 출발지로 설정해주세요.";
+        }
+
+        if (stationList == null || stationList.isEmpty()) {
+            return "기본 출발지 기준으로 대표 차량과 맞는 사용 가능 충전기를 찾지 못했습니다.\n차량 커넥터 타입, 기본 출발지, 충전소 데이터를 확인해주세요.";
+        }
+
+        List<EvAiStationRecommendDTO> sortedList = new ArrayList<>(stationList);
+        if ("COST".equals(intentDTO.getPriority())) {
+            sortedList.sort((a, b) -> Double.compare(nullToZero(a.getPricePerKwh()), nullToZero(b.getPricePerKwh())));
+        } else if ("SPEED".equals(intentDTO.getPriority())) {
+            sortedList.sort((a, b) -> Double.compare(nullToZero(b.getChargingSpeedKw()), nullToZero(a.getChargingSpeedKw())));
+        } else {
+            sortedList.sort((a, b) -> Double.compare(nullToZero(a.getDistanceKm()), nullToZero(b.getDistanceKm())));
+        }
+
+        EvAiStationRecommendDTO first = sortedList.get(0);
+        StringBuilder builder = new StringBuilder();
+        builder.append("DB에 저장된 기본 출발지 기준으로 안내드릴게요.\n");
+        builder.append("기본 출발지 : ").append(text(value(location, "locationName", "location_name")))
+                .append(" / ").append(text(value(location, "address"))).append("\n");
+        builder.append("대표 차량 : ").append(first.getManufacturer()).append(" ").append(first.getModelName())
+                .append("(").append(first.getVehicleNickname()).append(")\n");
+        builder.append("차량 커넥터 : ").append(first.getVehicleConnectorType()).append("\n");
+
+        if ("COST".equals(intentDTO.getPriority())) {
+            builder.append("정렬 기준 : 요금이 저렴한 순\n");
+        } else if ("SPEED".equals(intentDTO.getPriority())) {
+            builder.append("정렬 기준 : 충전 속도가 빠른 순\n");
+        } else {
+            builder.append("정렬 기준 : 가까운 순\n");
+        }
+
+        int count = Math.min(3, sortedList.size());
+        for (int i = 0; i < count; i++) {
+            EvAiStationRecommendDTO station = sortedList.get(i);
+            builder.append("\n").append(i + 1).append(". ").append(station.getStationName());
+            if (i == 0) {
+                builder.append(" (가장 추천)");
+            }
+            builder.append("\n거리 : ").append(station.getDistanceKm()).append("km")
+                    .append("\n충전기 : ").append(station.getChargerName())
+                    .append("\n커넥터 : ").append(station.getConnectorType())
+                    .append("\n출력 : ").append(station.getChargingSpeedKw()).append("kW")
+                    .append("\n요금 : ").append(station.getPricePerKwh()).append("원/kWh")
+                    .append("\n주소 : ").append(station.getAddress()).append("\n");
+        }
+
+        builder.append("\n예약까지 진행하려면 왼쪽 AI 예약 조건을 확인한 뒤 '오늘 예약 가능한 충전소 찾아줘'처럼 요청해주세요.");
+        return builder.toString();
+    }
+
+    private String buildChargeAnswer(Long memberId, EvAiChatIntentDTO intentDTO) {
+        log.info("@# EvAiChatServiceImpl.buildChargeAnswer()");
+
+        Map<String, Object> vehicle = evAiChatDAO.findDefaultVehicleForAi(memberId);
+        if (vehicle == null || vehicle.isEmpty()) {
+            return buildDefaultVehicleRequiredAnswer();
+        }
+
+        if (intentDTO.getCurrentSoc() == null || intentDTO.getTargetSoc() == null) {
+            return "현재 배터리 잔량과 목표 충전량을 %로 알려주세요.\n예) 30%에서 80%까지 충전하면 얼마나 걸려?";
+        }
+
+        EvAiChargeInfoDTO chargeInfo = calculateChargeInfo(memberId, intentDTO.getCurrentSoc(), intentDTO.getTargetSoc());
+        if (chargeInfo == null) {
+            return "충전 시간/비용 계산에 필요한 정보를 찾지 못했습니다.\n대표 차량, 기본 출발지, 사용 가능한 충전기 정보를 확인해주세요.";
+        }
+
+        return "고객님의 " + chargeInfo.getManufacturer() + " " + chargeInfo.getModelName() + "(" + chargeInfo.getVehicleNickname() + ") 기준으로 안내드립니다.\n"
+                + "차량 커넥터 타입 : " + chargeInfo.getVehicleConnectorType() + "\n"
+                + "충전기 커넥터 타입 : " + chargeInfo.getChargerConnectorType() + "\n"
+                + "충전소 : " + chargeInfo.getStationName() + "\n"
+                + "충전기 : " + chargeInfo.getChargerName() + "\n"
+                + "충전기 유형 : " + chargeInfo.getChargerType() + "\n"
+                + "충전 속도 : " + chargeInfo.getChargingSpeedKw() + "kW\n"
+                + chargeInfo.getCurrentSoc() + "% → " + chargeInfo.getTargetSoc() + "%\n"
+                + "필요 충전량 : " + round(chargeInfo.getRequiredKwh()) + "kWh\n"
+                + "예상 충전 시간 : " + chargeInfo.getEstimatedMinutes() + "분\n"
+                + "예상 충전 비용 : " + chargeInfo.getEstimatedCost() + "원\n"
+                + "위 계산은 예상값이며 실제 충전 환경에 따라 달라질 수 있습니다.";
+    }
+
+    private EvAiChargeInfoDTO calculateChargeInfo(Long memberId, Integer currentSoc, Integer targetSoc) {
+        log.info("@# EvAiChatServiceImpl.calculateChargeInfo()");
+
+        if (currentSoc == null || targetSoc == null || targetSoc <= currentSoc) {
+            return null;
+        }
+
+        EvAiChargeInfoDTO chargeInfo = evAiChatDAO.findChargeCalculationInfo(memberId);
         if (chargeInfo == null) {
             return null;
         }
@@ -207,711 +395,265 @@ public class EvAiChatServiceImpl implements EvAiChatService {
         chargeInfo.setCurrentSoc(currentSoc);
         chargeInfo.setTargetSoc(targetSoc);
 
-        // 필요 충전량 계산
-        double requiredKwh =
-                chargeInfo.getBatteryCapacityKwh()
-                * (targetSoc - currentSoc)
-                / 100.0;
-
+        double requiredKwh = chargeInfo.getBatteryCapacityKwh() * (targetSoc - currentSoc) / 100.0;
+        requiredKwh = Math.round(requiredKwh * 100.0) / 100.0;
         chargeInfo.setRequiredKwh(requiredKwh);
 
-        // 예상 충전 시간 계산
-        int estimatedMinutes =
-                (int) Math.round(
-                        (requiredKwh
-                        / chargeInfo.getChargingSpeedKw())
-                        * 60
-                        * CHARGING_EFFICIENCY
-                );
-
+        int estimatedMinutes = (int) Math.ceil((requiredKwh / chargeInfo.getChargingSpeedKw()) * 60 * CHARGING_EFFICIENCY);
         chargeInfo.setEstimatedMinutes(estimatedMinutes);
 
-        // 예상 충전 비용 계산
-        int estimatedCost =
-                (int) Math.round(
-                        requiredKwh
-                        * chargeInfo.getPricePerKwh()
-                );
-
+        int estimatedCost = (int) Math.round(requiredKwh * chargeInfo.getPricePerKwh());
         chargeInfo.setEstimatedCost(estimatedCost);
 
         return chargeInfo;
-    }   
-    
-    
- // 사용자 메시지 의도 분석
-    private EvAiChatIntentDTO analyzeIntent(String message) {
-
-        log.info("@# analyzeIntent()");
-
-        EvAiChatIntentDTO intentDTO = new EvAiChatIntentDTO();
-
-        // 빈 메시지는 일반 질문으로 처리
-        if (message == null || message.trim().isEmpty()) {
-            intentDTO.setIntent("GENERAL");
-            intentDTO.setPriority("NONE");
-            return intentDTO;
-        }
-
-        // 의도 분석 프롬프트 생성
-        String prompt = """
-                너는 EV Charge 전기차 충전 예약 시스템의 의도 분석기다.
-
-                사용자의 문장을 분석해서 반드시 JSON 형식으로만 답변해라.
-                설명 문장, markdown, 코드블럭은 절대 사용하지 마라.
-
-                가능한 intent:
-                - STATION_RECOMMEND: 충전소 추천, 근처 충전소 찾기, 내 차량에 맞는 충전소 요청
-                - CHARGE_TIME: 충전 시간 계산, 몇 분 걸리는지, 충전 완료 예상 시간
-                - CHARGE_COST: 충전 비용 계산, 충전 요금, 얼마 나오는지
-                - GENERAL: 일반 질문
-
-                JSON 형식:
-                {
-                  "intent": "STATION_RECOMMEND",
-                  "currentSoc": null,
-                  "targetSoc": null,
-                  "priority": "DISTANCE"
-                }
-
-                필드 설명:
-                - intent: STATION_RECOMMEND, CHARGE_TIME, CHARGE_COST, GENERAL 중 하나
-                - currentSoc: 현재 배터리 잔량 숫자, 없으면 null
-                - targetSoc: 목표 배터리 잔량 숫자, 없으면 null
-                - priority: DISTANCE, SPEED, COST, NONE 중 하나
-
-                예시:
-                사용자 문장: 근처 충전소 추천해줘
-                결과: {"intent":"STATION_RECOMMEND","currentSoc":null,"targetSoc":null,"priority":"DISTANCE"}
-
-                사용자 문장: 배터리 30%에서 80%까지 얼마나 걸려?
-                결과: {"intent":"CHARGE_TIME","currentSoc":30,"targetSoc":80,"priority":"NONE"}
-
-                사용자 문장: 20%에서 90%까지 충전하면 얼마야?
-                결과: {"intent":"CHARGE_COST","currentSoc":20,"targetSoc":90,"priority":"COST"}
-
-                사용자 문장:
-                """ + message;
-
-        try {
-            // Gemini 의도 분석 호출
-            String result = callGeminiApi(prompt);
-
-            log.info("@# intent raw result => {}", result);
-
-            // JSON 코드블럭 제거
-            result = result
-                    .replace("```json", "")
-                    .replace("```", "")
-                    .trim();
-
-            ObjectMapper objectMapper = new ObjectMapper();
-
-            // JSON 문자열을 DTO로 변환
-            intentDTO = objectMapper.readValue(
-                    result,
-                    EvAiChatIntentDTO.class
-            );
-
-            // 기본값 보정
-            if (intentDTO.getIntent() == null) {
-                intentDTO.setIntent("GENERAL");
-            }
-
-            if (intentDTO.getPriority() == null) {
-                intentDTO.setPriority("NONE");
-            }
-
-        } catch (Exception e) {
-            log.error("@# analyzeIntent error", e);
-
-            intentDTO.setIntent("GENERAL");
-            intentDTO.setPriority("NONE");
-        }
-
-        return intentDTO;
-    } 
-
- // 이전 대화에서 SOC 정보를 찾아 현재 intent에 보정
- // %가 붙은 숫자만 SOC 값으로 인정
- private void fillSocFromRecentMessages(
-         EvAiChatIntentDTO intentDTO,
-         List<EvAiChatMessageDTO> recentMessages) {
-
-     if (intentDTO.getCurrentSoc() != null
-             && intentDTO.getTargetSoc() != null) {
-         return;
-     }
-
-     if (recentMessages == null || recentMessages.isEmpty()) {
-         return;
-     }
-
-     for (int i = recentMessages.size() - 1; i >= 0; i--) {
-
-         EvAiChatMessageDTO messageDTO = recentMessages.get(i);
-
-         if (!"USER".equals(messageDTO.getSenderType())) {
-             continue;
-         }
-
-         Integer[] socValues =
-                 extractSocValues(messageDTO.getMessage());
-
-         if (socValues == null) {
-             continue;
-         }
-
-         intentDTO.setCurrentSoc(socValues[0]);
-         intentDTO.setTargetSoc(socValues[1]);
-
-         log.info("@# previous soc applied => {} -> {}",
-                 socValues[0],
-                 socValues[1]);
-
-         return;
-     }
- }
- 
-	//메시지에서 30%, 80% 같은 SOC 값 추출
-	private Integer[] extractSocValues(String message) {
-	
-	  if (message == null || message.trim().isEmpty()) {
-	      return null;
-	  }
-	
-	  Pattern pattern = Pattern.compile("(\\d{1,3})\\s*%");
-	  Matcher matcher = pattern.matcher(message);
-	
-	  List<Integer> socList = new ArrayList<>();
-	
-	  while (matcher.find()) {
-	      int soc = Integer.parseInt(matcher.group(1));
-	
-	      if (soc >= 0 && soc <= 100) {
-	          socList.add(soc);
-	      }
-	  }
-	
-	  if (socList.size() < 2) {
-	      return null;
-	  }
-	
-	  int currentSoc = socList.get(0);
-	  int targetSoc = socList.get(1);
-	
-	  if (targetSoc <= currentSoc) {
-	      return null;
-	  }
-	
-	  return new Integer[] { currentSoc, targetSoc };
-	}
-    
- // 이전 채팅 메시지 조회
-    @Override
-    public List<EvAiChatMessageDTO> getChatHistory(Long memberId) {
-
-        log.info("@# EvAiChatServiceImpl.getChatHistory()");
-        log.info("@# memberId => {}", memberId);
-
-        // 회원의 채팅방 조회
-        EvAiChatRoomDTO roomDTO =
-                evAiChatDAO.findRoomByMemberId(memberId);
-
-        // 채팅방이 없으면 빈 목록 반환
-        if (roomDTO == null) {
-
-            log.info("@# chat room empty");
-
-            return List.of();
-        }
-
-        Long roomId = roomDTO.getRoomId();
-
-        log.info("@# roomId => {}", roomId);
-
-        // 채팅방 메시지 목록 조회
-        List<EvAiChatMessageDTO> messageList =
-                getRecentMessages(roomId);
-
-        log.info("@# message count => {}", messageList.size());
-
-        return messageList;
     }
 
-    // 채팅방 조회 또는 생성
-    private EvAiChatRoomDTO getOrCreateRoom(Long memberId) {
+    private String buildMyReservationAnswer(List<Map<String, Object>> reservationList) {
+        log.info("@# EvAiChatServiceImpl.buildMyReservationAnswer()");
 
+        if (reservationList == null || reservationList.isEmpty()) {
+            return "현재 진행중인 예약이 없습니다.\n완료되었거나 취소된 예약을 포함한 전체 내역은 아래 버튼에서 확인할 수 있습니다.";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("현재 진행중인 예약 ").append(reservationList.size()).append("건을 조회했습니다.\n");
+        builder.append("예약 카드를 확인하고 상세 화면에서 인증코드, 충전 시작, 취소 처리를 진행할 수 있습니다.\n");
+
+        int count = Math.min(3, reservationList.size());
+        for (int i = 0; i < count; i++) {
+            Map<String, Object> reservation = reservationList.get(i);
+            builder.append("\n").append(i + 1).append(". ")
+                    .append(text(value(reservation, "stationName", "station_name"))).append("\n")
+                    .append("예약시간 : ").append(text(value(reservation, "startTime", "start_time"))).append(" ~ ")
+                    .append(text(value(reservation, "endTime", "end_time"))).append("\n")
+                    .append("충전기 : ").append(text(value(reservation, "chargerName", "charger_name"))).append("\n")
+                    .append("상태 : ").append(text(value(reservation, "status"))).append("\n");
+        }
+
+        return builder.toString();
+    }
+
+    private String buildRagContext(Long memberId, String message) {
+        log.info("@# EvAiChatServiceImpl.buildRagContext()");
+
+        String keyword = extractRagKeyword(message);
+        StringBuilder builder = new StringBuilder();
+
+        try {
+            List<Map<String, Object>> faqList = evAiChatDAO.findAiRagFaqs(keyword, 5);
+            if (faqList != null && !faqList.isEmpty()) {
+                builder.append("FAQ 데이터\n");
+                for (Map<String, Object> faq : faqList) {
+                    builder.append("질문: ").append(text(value(faq, "question"))).append("\n")
+                            .append("답변: ").append(text(value(faq, "answer"))).append("\n\n");
+                }
+            }
+        } catch (Exception e) {
+            log.warn("@# faq rag search fail => {}", e.getMessage());
+        }
+
+        try {
+            List<Map<String, Object>> noticeList = evAiChatDAO.findAiRagNotices(keyword, 3);
+            if (noticeList != null && !noticeList.isEmpty()) {
+                builder.append("공지사항 데이터\n");
+                for (Map<String, Object> notice : noticeList) {
+                    builder.append("제목: ").append(text(value(notice, "title"))).append("\n")
+                            .append("내용: ").append(limitText(text(value(notice, "content")), 180)).append("\n\n");
+                }
+            }
+        } catch (Exception e) {
+            log.warn("@# notice rag search fail => {}", e.getMessage());
+        }
+
+        try {
+            List<Map<String, Object>> complaintList = evAiChatDAO.findAiRagComplaints(memberId, keyword, 3);
+            if (complaintList != null && !complaintList.isEmpty()) {
+                builder.append("내 민원 데이터\n");
+                for (Map<String, Object> complaint : complaintList) {
+                    builder.append("민원: ").append(text(value(complaint, "title"))).append("\n")
+                            .append("유형: ").append(text(value(complaint, "complaintType", "complaint_type"))).append("\n")
+                            .append("상태: ").append(text(value(complaint, "status"))).append("\n")
+                            .append("관리자 메모: ").append(text(value(complaint, "adminMemo", "admin_memo"))).append("\n\n");
+                }
+            }
+        } catch (Exception e) {
+            log.warn("@# complaint rag search fail => {}", e.getMessage());
+        }
+
+        return builder.toString();
+    }
+
+    private void applyVehicleRegisterActionIfNeeded(String answer, EvAiChatResponseDTO responseDTO) {
+        if (answer == null || responseDTO == null) {
+            return;
+        }
+
+        if (answer.contains("대표차량이 등록되어 있지 않습니다") || answer.contains("대표차량이 필요합니다")) {
+            responseDTO.setActionType("VEHICLE_REGISTER");
+            responseDTO.setButtonText("차량 등록하러 가기");
+            responseDTO.setActionUrl("/vehicles/register");
+        }
+    }
+
+    private String callGeminiWithContext(List<EvAiChatMessageDTO> recentMessages, String message, String ragContext) {
+        log.info("@# EvAiChatServiceImpl.callGeminiWithContext()");
+
+        StringBuilder promptBuilder = new StringBuilder();
+        promptBuilder.append("너는 공공 전기차 충전 인프라 운영 MIS 플랫폼의 AI 충전 비서다.\n");
+        promptBuilder.append("답변은 짧고 친절하게 작성하고, 모르는 데이터는 지어내지 마라.\n");
+        promptBuilder.append("기본 출발지, 차량, 충전소, FAQ, 공지사항, 민원 데이터가 있으면 반드시 그 데이터를 기준으로 답변해라.\n\n");
+
+        promptBuilder.append("이전 대화\n");
+        for (EvAiChatMessageDTO dto : recentMessages) {
+            promptBuilder.append(dto.getSenderType()).append(" : ").append(dto.getMessage()).append("\n");
+        }
+
+        if (ragContext != null && !ragContext.isBlank()) {
+            promptBuilder.append("\nRAG 조회 데이터\n").append(ragContext).append("\n");
+        }
+
+        promptBuilder.append("현재 질문\n").append(message);
+
+        String geminiAnswer = callGeminiApi(promptBuilder.toString());
+        if (geminiAnswer == null || geminiAnswer.isBlank()) {
+            if (ragContext != null && !ragContext.isBlank()) {
+                return "조회된 FAQ, 공지사항, 민원 데이터를 확인했습니다.\n" + limitText(ragContext, 500);
+            }
+            return "질문을 확인했습니다. 충전소 추천, 예약 가능 충전기 조회, 충전 시간/비용 계산, 민원/FAQ 안내를 도와드릴 수 있습니다.";
+        }
+
+        return geminiAnswer;
+    }
+
+    private String callGeminiApi(String prompt) {
+        log.info("@# EvAiChatServiceImpl.callGeminiApi()");
+
+        if (apiUrl == null || apiUrl.isBlank() || apiKey == null || apiKey.isBlank()) {
+            log.warn("@# Gemini API config empty");
+            return "";
+        }
+
+        try {
+            String url = apiUrl + "?key=" + apiKey;
+            RestTemplate restTemplate = new RestTemplate();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))));
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+            Map<String, Object> response = restTemplate.postForObject(url, request, Map.class);
+
+            if (response == null) {
+                return "";
+            }
+
+            List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+            if (candidates == null || candidates.isEmpty()) {
+                return "";
+            }
+
+            Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
+            if (content == null) {
+                return "";
+            }
+
+            List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+            if (parts == null || parts.isEmpty()) {
+                return "";
+            }
+
+            return String.valueOf(parts.get(0).get("text"));
+        } catch (Exception e) {
+            log.warn("@# Gemini API call fail => {}", e.getMessage());
+            return "";
+        }
+    }
+
+    private EvAiChatRoomDTO getOrCreateRoom(Long memberId) {
         log.info("@# EvAiChatServiceImpl.getOrCreateRoom()");
 
-        // 기존 채팅방 조회
-        EvAiChatRoomDTO roomDTO =
-                evAiChatDAO.findRoomByMemberId(memberId);
-
-        // 기존 채팅방이 있으면 반환
+        EvAiChatRoomDTO roomDTO = evAiChatDAO.findRoomByMemberId(memberId);
         if (roomDTO != null) {
             return roomDTO;
         }
 
-        // 채팅방이 없으면 새로 생성
         roomDTO = new EvAiChatRoomDTO();
-
         roomDTO.setMemberId(memberId);
         roomDTO.setTitle("AI 채팅");
-
         evAiChatDAO.insertRoom(roomDTO);
 
         log.info("@# created roomId => {}", roomDTO.getRoomId());
-
         return roomDTO;
     }
 
- // 채팅 메시지 저장
     private void saveMessage(Long roomId, String senderType, String message) {
+        saveMessage(roomId, senderType, message, null);
+    }
 
+    private void saveMessage(Long roomId, String senderType, String message, EvAiChatResponseDTO responseDTO) {
         log.info("@# EvAiChatServiceImpl.saveMessage()");
         log.info("@# senderType => {}", senderType);
 
         EvAiChatMessageDTO messageDTO = new EvAiChatMessageDTO();
-
         messageDTO.setRoomId(roomId);
         messageDTO.setSenderType(senderType);
         messageDTO.setMessage(message);
 
-        // DB 메시지 저장
-        evAiChatDAO.insertMessage(messageDTO);
+        if (responseDTO != null) {
+            messageDTO.setIntent(responseDTO.getIntent());
+            messageDTO.setActionType(responseDTO.getActionType());
+            messageDTO.setButtonText(responseDTO.getButtonText());
+            messageDTO.setActionUrl(responseDTO.getActionUrl());
+            messageDTO.setLocationJson(toJson(responseDTO.getLocation()));
+            messageDTO.setCandidatesJson(toJson(responseDTO.getCandidates()));
+            messageDTO.setReservationsJson(toJson(responseDTO.getReservations()));
+        }
 
-        // Redis 최근 대화 캐시 저장
+        evAiChatDAO.insertMessage(messageDTO);
         addMessageToCache(roomId, messageDTO);
     }
 
- // AI 답변 프롬프트 생성
-    private String callGemini(
-            List<EvAiChatMessageDTO> recentMessages,
-            String message,
-            List<EvAiStationRecommendDTO> stationList,
-            EvAiChargeInfoDTO chargeInfo,
-            EvAiChatIntentDTO intentDTO) {
-
-        log.info("@# EvAiChatServiceImpl.callGemini()");
-
-        // AI 답변 프롬프트 생성
-        StringBuilder promptBuilder = new StringBuilder();
-
-        promptBuilder.append("""
-                너는 EV Charge 전기차 충전 예약 시스템 AI 챗봇이다.
-
-                답변 규칙:
-                1. 사용자의 이전 대화를 참고하여 자연스럽게 이어서 답변해라.
-                2. 답변은 웹 채팅 형식처럼 짧고 친절하게 작성해라.
-                3. markdown 기호(**, ##, -, 1.)는 사용하지 마라.
-                4. 충전소 찾기, 예약 방법, 차량 충전 타입,
-                   충전 시간, 충전 비용 관련 질문을 도와줘라.
-                5. 너무 긴 답변은 피하고 핵심만 설명해라.
-
-                ===== 이전 대화 =====
-                """);
-
-        // 최근 대화 추가
-        for (EvAiChatMessageDTO dto : recentMessages) {
-
-            promptBuilder.append(dto.getSenderType())
-                    .append(" : ")
-                    .append(dto.getMessage())
-                    .append("\n");
+    private String toJson(Object value) {
+        if (value == null) {
+            return null;
         }
 
-        // 충전소 추천 결과 추가
-        if (stationList != null && !stationList.isEmpty()) {
-
-        	promptBuilder.append("""
-
-        	        ===== DB 조회 결과: 대표 차량 기준 주변 충전소 =====
-        	        아래 데이터는 사용자의 대표 차량과 기본 위치를 기준으로 조회한 실제 DB 결과다.
-        	        이 데이터는 기본 위치 기준 가까운 충전소 후보 5개다.
-
-        	        답변 규칙:
-        	        1. 조회된 충전소 중 최대 3개까지만 안내해라.
-        	        2. priority가 DISTANCE이면 거리(distanceKm)가 가장 가까운 충전소에 "(가장 추천)" 문구를 붙여라.
-        	        3. priority가 SPEED이면 충전 속도(chargingSpeedKw)가 가장 높은 충전소에 "(가장 추천)" 문구를 붙여라.
-        	        4. priority가 COST이면 충전기 요금(pricePerKwh)이 가장 저렴한 충전소에 "(가장 추천)" 문구를 붙여라.
-        	        5. priority가 NONE이면 거리(distanceKm)가 가장 가까운 충전소에 "(가장 추천)" 문구를 붙여라.
-        	        6. 차량 모델명과 차량 별칭을 함께 언급해라.
-        	        7. 충전소명, 거리, 사용 가능한 충전기 정보를 함께 안내해라.
-        	        8. 충전기 정보는 충전기명, 충전기 유형, 커넥터 타입, 충전 속도를 포함해라.
-        	        9. 충전기 요금 정보를 함께 안내해라.
-        	        10. 없는 충전소나 충전기 정보를 지어내지 마라.
-        	        11. 답변은 짧고 보기 쉽게 작성해라.
-        	        12. 사용자가 "가장 싼 곳", "저렴한 곳", "요금 싼 곳"을 요청했다면 priority가 COST인 것으로 보고 요금이 가장 낮은 충전소를 가장 추천해라.
-        	        13. 사용자가 "빠른 곳", "급속", "빨리 충전"을 요청했다면 priority가 SPEED인 것으로 보고 충전 속도가 가장 높은 충전소를 가장 추천해라.
-        	        14. 사용자가 "가까운 곳", "근처"를 요청했다면 priority가 DISTANCE인 것으로 보고 거리가 가장 가까운 충전소를 가장 추천해라.
-
-        	        답변 형식:
-
-        	        고객님의 대표 차량 [제조사] [모델명]([별칭]) 기준으로
-        	        조건에 맞는 충전소를 안내해드릴게요.
-
-        	        1. [충전소명] (가장 추천)
-        	        거리 : x.xxkm
-        	        사용 가능한 충전기
-        	        - [충전기명]
-        	          유형 : [충전기 유형]
-        	          커넥터 : [커넥터 타입]
-        	          출력 : [충전속도]kW
-        	        충전기 요금 : xxx원/kWh
-
-        	        2. [충전소명]
-        	        거리 : x.xxkm
-        	        사용 가능한 충전기
-        	        - [충전기명]
-        	          유형 : [충전기 유형]
-        	          커넥터 : [커넥터 타입]
-        	          출력 : [충전속도]kW
-        	        충전기 요금 : xxx원/kWh
-
-        	        3. [충전소명]
-        	        거리 : x.xxkm
-        	        사용 가능한 충전기
-        	        - [충전기명]
-        	          유형 : [충전기 유형]
-        	          커넥터 : [커넥터 타입]
-        	          출력 : [충전속도]kW
-        	        충전기 요금 : xxx원/kWh
-
-        	        현재 추천 우선순위:
-        	        """ + intentDTO.getPriority() + "\n\n");
-        	EvAiStationRecommendDTO firstStation = stationList.get(0);
-
-        	promptBuilder.append("대표 차량: ")
-            .append(firstStation.getManufacturer())
-            .append(" ")
-            .append(firstStation.getModelName())
-            .append(" (")
-            .append(firstStation.getVehicleNickname())
-            .append(")")
-            .append("\n");
-
-        	promptBuilder.append("차량 커넥터 타입: ")
-        	        .append(firstStation.getVehicleConnectorType())
-        	        .append("\n\n");
-        	
-            for (EvAiStationRecommendDTO station : stationList) {
-            	
-            	promptBuilder.append("충전소명: ")
-                        .append(station.getStationName())
-                        .append("\n");
-
-                promptBuilder.append("주소: ")
-                        .append(station.getAddress())
-                        .append("\n");
-
-                promptBuilder.append("충전기명: ")
-                        .append(station.getChargerName())
-                        .append("\n");
-
-                promptBuilder.append("충전기 유형: ")
-                        .append(station.getChargerType())
-                        .append("\n");
-
-                promptBuilder.append("커넥터 타입: ")
-                        .append(station.getConnectorType())
-                        .append("\n");
-
-                promptBuilder.append("충전 속도: ")
-                        .append(station.getChargingSpeedKw())
-                        .append("kW\n");
-
-                promptBuilder.append("요금: ")
-                        .append(station.getPricePerKwh())
-                        .append("원/kWh\n");
-
-                promptBuilder.append("상태: ")
-                        .append(station.getStatus())
-                        .append("\n");
-
-                promptBuilder.append("거리: ")
-                        .append(station.getDistanceKm())
-                        .append("km\n\n");
-            }
-
-        } else if ("STATION_RECOMMEND".equals(intentDTO.getIntent())) {
-
-            // 충전소 추천 결과 없음
-            promptBuilder.append("""
-
-                    ===== DB 조회 결과: 대표 차량 기준 주변 충전소 =====
-                    조회된 충전소가 없다.
-                    대표 차량 또는 기본 위치가 설정되지 않았을 수 있다.
-                    사용자에게 대표 차량과 기본 위치 설정 여부를 확인하도록 안내해라.
-
-                    """);
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception e) {
+            log.warn("@# ai chat metadata json convert fail => {}", e.getMessage());
+            return null;
         }
-
-        // 충전 시간/비용 계산 결과 추가
-        if (chargeInfo != null) {
-
-            promptBuilder.append("""
-
-                    ===== 충전 시간/비용 계산 결과 =====
-                    아래 데이터는 사용자의 대표 차량과 가장 가까운 사용가능 충전기를 기준으로 계산한 결과다.
-                    사용자가 충전 시간 또는 충전 비용을 물어보면 반드시 이 데이터를 기준으로 답변해라.
-                    계산 결과를 임의로 바꾸지 마라.
-
-					답변 규칙:
-					1. 사용자의 대표 차량 기준으로 계산했다고 안내해라.
-					2. 차량 커넥터 타입과 충전기 커넥터 타입이 일치하여 충전 가능한 충전기라고 설명해라.
-					3. 충전 시간 또는 비용 답변 시 반드시 아래 정보를 함께 안내해라.
-					   - 차량 모델명
-					   - 차량 별칭
-					   - 차량 커넥터 타입
-					   - 충전소명
-					   - 충전기명
-					   - 충전기 유형
-					   - 충전기 커넥터 타입
-					   - 충전속도(kW)
-					4. 계산 결과는 예상값이며 실제 충전 환경에 따라 달라질 수 있다고 짧게 안내해라.
-					5. 답변은 반드시 줄바꿈을 사용하여 항목별로 구분해라.
-					6. 차량, 충전소, 충전기, 충전시간, 충전비용을 각각 별도 줄에 출력해라.
-					7. 목록 형태(-)를 사용하지 말고 "항목 : 값" 형식으로 출력해라.
-					8. 답변 형식을 임의로 변경하지 말고 반드시 위 형식을 그대로 사용해라.
-            		
-            		답변 형식:
-
-					고객님의 [차량모델]([별칭]) 기준으로 안내드립니다.
-					
-					차량 커넥터 타입 : [차량 커넥터]
-					충전기 커넥터 타입 : [충전기 커넥터]
-					충전 가능
-					
-					충전소 : [충전소명]
-					충전기 : [충전기명]
-					충전기 유형 : [충전기 유형]
-					충전 속도 : [충전속도]kW
-					
-					[현재SOC]% → [목표SOC]%
-					
-					예상 충전 시간 : [예상시간]분
-					예상 충전 비용 : [예상비용]원
-					
-					위 계산은 예상값이며 실제 충전 환경에 따라 달라질 수 있습니다.
-                    """);
-
-            promptBuilder.append("제조사: ")
-                    .append(chargeInfo.getManufacturer())
-                    .append("\n");
-
-            promptBuilder.append("차량 모델: ")
-                    .append(chargeInfo.getModelName())
-                    .append("\n");
-
-            promptBuilder.append("차량 별칭: ")
-                    .append(chargeInfo.getVehicleNickname())
-                    .append("\n");
-
-            promptBuilder.append("차량 커넥터 타입: ")
-            .append(chargeInfo.getVehicleConnectorType())
-            .append("\n");
-
-            promptBuilder.append("충전기 커넥터 타입: ")
-            .append(chargeInfo.getChargerConnectorType())
-            .append("\n");
-
-            promptBuilder.append("배터리 용량: ")
-                    .append(chargeInfo.getBatteryCapacityKwh())
-                    .append("kWh\n");
-
-            promptBuilder.append("현재 배터리: ")
-                    .append(chargeInfo.getCurrentSoc())
-                    .append("%\n");
-
-            promptBuilder.append("목표 배터리: ")
-                    .append(chargeInfo.getTargetSoc())
-                    .append("%\n");
-
-            promptBuilder.append("필요 충전량: ")
-                    .append(chargeInfo.getRequiredKwh())
-                    .append("kWh\n");
-
-            promptBuilder.append("충전소명: ")
-                    .append(chargeInfo.getStationName())
-                    .append("\n");
-
-            promptBuilder.append("충전소 주소: ")
-                    .append(chargeInfo.getStationAddress())
-                    .append("\n");
-
-            promptBuilder.append("거리: ")
-                    .append(chargeInfo.getDistanceKm())
-                    .append("km\n");
-
-            promptBuilder.append("충전기명: ")
-                    .append(chargeInfo.getChargerName())
-                    .append("\n");
-
-            promptBuilder.append("충전기 유형: ")
-                    .append(chargeInfo.getChargerType())
-                    .append("\n");
-
-            promptBuilder.append("충전 속도: ")
-                    .append(chargeInfo.getChargingSpeedKw())
-                    .append("kW\n");
-
-            promptBuilder.append("요금: ")
-                    .append(chargeInfo.getPricePerKwh())
-                    .append("원/kWh\n");
-
-            promptBuilder.append("예상 충전 시간: ")
-                    .append(chargeInfo.getEstimatedMinutes())
-                    .append("분\n");
-
-            promptBuilder.append("예상 충전 비용: ")
-                    .append(chargeInfo.getEstimatedCost())
-                    .append("원\n");
-
-        } else if ("CHARGE_TIME".equals(intentDTO.getIntent())
-                || "CHARGE_COST".equals(intentDTO.getIntent())) {
-
-            // 충전 계산 정보 없음
-            promptBuilder.append("""
-
-                    ===== 충전 시간/비용 계산 결과 =====
-                    충전 시간 또는 비용 계산에 필요한 정보가 없다.
-                    대표 차량, 기본 위치, 사용 가능한 충전기 정보가 없을 수 있다.
-                    사용자에게 대표 차량과 기본 위치 설정 여부를 확인하도록 안내해라.
-
-                    """);
-        }
-
-        // 현재 질문 추가
-        promptBuilder.append("""
-
-                ===== 현재 질문 =====
-                """);
-
-        promptBuilder.append(message);
-
-        // Gemini 답변 생성
-        return callGeminiApi(
-                promptBuilder.toString()
-        );
-    }
-    
-    
- // Gemini 공통 호출
-    private String callGeminiApi(String prompt) {
-    	
-    	 log.info("@# callGeminiApi()");
-    	 
-        String url = apiUrl + "?key=" + apiKey;
-
-        RestTemplate restTemplate = new RestTemplate();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        Map<String, Object> body = new HashMap<>();
-
-        body.put(
-                "contents",
-                List.of(
-                        Map.of(
-                                "parts",
-                                List.of(
-                                        Map.of(
-                                                "text",
-                                                prompt
-                                        )
-                                )
-                        )
-                )
-        );
-
-        HttpEntity<Map<String, Object>> request =
-                new HttpEntity<>(body, headers);
-
-        Map<String, Object> response =
-                restTemplate.postForObject(
-                        url,
-                        request,
-                        Map.class
-                );
-
-        if (response == null) {
-            return "";
-        }
-
-        List<Map<String, Object>> candidates =
-                (List<Map<String, Object>>) response.get("candidates");
-
-        if (candidates == null || candidates.isEmpty()) {
-            return "";
-        }
-
-        Map<String, Object> candidate =
-                candidates.get(0);
-
-        Map<String, Object> content =
-                (Map<String, Object>) candidate.get("content");
-
-        List<Map<String, Object>> parts =
-                (List<Map<String, Object>>) content.get("parts");
-
-        if (parts == null || parts.isEmpty()) {
-            return "";
-        }
-
-        return String.valueOf(parts.get(0).get("text"));
-    }
-    
- // AI 최근 대화 Redis Key 생성
-    private String getChatCacheKey(Long roomId) {
-        return "ai:chat:recent:" + roomId;
     }
 
- // AI 답변 생성 시 사용할 최근 대화 조회
- // Redis 캐시 우선 사용, 캐시가 없으면 DB 조회 후 Redis 재적재
     private List<EvAiChatMessageDTO> getRecentMessages(Long roomId) {
-
         String key = getChatCacheKey(roomId);
 
         try {
-            List<String> cachedList =
-                    stringRedisTemplate.opsForList().range(key, 0, -1);
-
+            List<String> cachedList = stringRedisTemplate.opsForList().range(key, 0, -1);
             if (cachedList != null && !cachedList.isEmpty()) {
                 log.info("@# ai chat cache hit => roomId: {}", roomId);
 
                 List<EvAiChatMessageDTO> messageList = new ArrayList<>();
-
                 for (String cached : cachedList) {
-                    EvAiChatMessageDTO dto =
-                            objectMapper.readValue(cached, EvAiChatMessageDTO.class);
-
-                    messageList.add(dto);
+                    messageList.add(objectMapper.readValue(cached, EvAiChatMessageDTO.class));
                 }
 
                 return messageList;
             }
-
-            log.info("@# ai chat cache miss => roomId: {}", roomId);
-
         } catch (Exception e) {
             log.warn("@# ai chat cache read fail => {}", e.getMessage());
         }
 
-        List<EvAiChatMessageDTO> dbList =
-                evAiChatDAO.findRecentMessagesByRoomId(roomId);
-
+        List<EvAiChatMessageDTO> dbList = evAiChatDAO.findRecentMessagesByRoomId(roomId);
         saveRecentMessagesToCache(roomId, dbList);
-
         return dbList;
     }
 
-    // DB 최근 대화 Redis 저장
-    private void saveRecentMessagesToCache(
-            Long roomId,
-            List<EvAiChatMessageDTO> messageList) {
-
+    private void saveRecentMessagesToCache(Long roomId, List<EvAiChatMessageDTO> messageList) {
         if (messageList == null || messageList.isEmpty()) {
             return;
         }
@@ -920,63 +662,231 @@ public class EvAiChatServiceImpl implements EvAiChatService {
 
         try {
             stringRedisTemplate.delete(key);
-
             for (EvAiChatMessageDTO dto : messageList) {
-                String json = objectMapper.writeValueAsString(dto);
-                stringRedisTemplate.opsForList().rightPush(key, json);
+                stringRedisTemplate.opsForList().rightPush(key, objectMapper.writeValueAsString(dto));
             }
-
             stringRedisTemplate.opsForList().trim(key, -CHAT_CACHE_LIMIT, -1);
             stringRedisTemplate.expire(key, CHAT_CACHE_TTL);
-
-            log.info("@# ai chat cache save => roomId: {}, count: {}",
-                    roomId, messageList.size());
-
         } catch (Exception e) {
             log.warn("@# ai chat cache save fail => {}", e.getMessage());
         }
     }
 
-    // 새 메시지 Redis 최근 대화에 추가
-    private void addMessageToCache(
-            Long roomId,
-            EvAiChatMessageDTO messageDTO) {
-
+    private void addMessageToCache(Long roomId, EvAiChatMessageDTO messageDTO) {
         String key = getChatCacheKey(roomId);
 
         try {
-            String json = objectMapper.writeValueAsString(messageDTO);
-
-            stringRedisTemplate.opsForList().rightPush(key, json);
+            stringRedisTemplate.opsForList().rightPush(key, objectMapper.writeValueAsString(messageDTO));
             stringRedisTemplate.opsForList().trim(key, -CHAT_CACHE_LIMIT, -1);
             stringRedisTemplate.expire(key, CHAT_CACHE_TTL);
-
-            log.info("@# ai chat cache append => roomId: {}", roomId);
-
         } catch (Exception e) {
             log.warn("@# ai chat cache append fail => {}", e.getMessage());
         }
     }
-    
-    @Override
-    public void clearChatCache(Long memberId) {
 
-        log.info("@# clearChatCache()");
+    @Override
+    @Transactional
+    public void saveConversationMessage(Long memberId, String userMessage, EvAiChatResponseDTO responseDTO) {
+        log.info("@# EvAiChatServiceImpl.saveConversationMessage()");
         log.info("@# memberId => {}", memberId);
 
-        EvAiChatRoomDTO room =
-                evAiChatDAO.findRoomByMemberId(memberId);
+        EvAiChatRoomDTO roomDTO = getOrCreateRoom(memberId);
+        Long roomId = roomDTO.getRoomId();
 
-        if (room == null) {
+        if (userMessage != null && !userMessage.trim().isEmpty()) {
+            saveMessage(roomId, "USER", userMessage.trim());
+        }
+
+        if (responseDTO != null && responseDTO.getAnswer() != null) {
+            saveMessage(roomId, "AI", responseDTO.getAnswer(), responseDTO);
+        }
+    }
+
+    private String getChatCacheKey(Long roomId) {
+        return "ai:chat:recent:" + roomId;
+    }
+
+    private boolean isDefaultLocationQuestion(String message) {
+        if (message == null) {
+            return false;
+        }
+
+        String value = message.replace(" ", "").toLowerCase();
+        boolean locationWord = value.contains("내위치") || value.contains("기본출발지") || value.contains("출발지") || value.contains("위치어디");
+        boolean actionWord = value.contains("충전소") || value.contains("추천") || value.contains("찾") || value.contains("예약");
+        return locationWord && !actionWord;
+    }
+
+    private boolean isDefaultVehicleQuestion(String message) {
+        if (message == null) {
+            return false;
+        }
+
+        String value = message.replace(" ", "").toLowerCase();
+        boolean vehicleWord = value.contains("내차")
+                || value.contains("내차량")
+                || value.contains("대표차량")
+                || value.contains("기본차량")
+                || value.contains("등록차량")
+                || value.contains("차량뭐")
+                || value.contains("차뭐");
+        boolean actionWord = value.contains("충전소") || value.contains("예약") || value.contains("추천") || value.contains("찾");
+        return vehicleWord && !actionWord;
+    }
+
+    private boolean isMyReservationQuestion(String message) {
+        if (message == null) {
+            return false;
+        }
+
+        String value = message.replace(" ", "").toLowerCase();
+        boolean reservationWord = value.contains("내예약") || value.contains("예약내역") || value.contains("예약목록") || value.contains("예약조회") || value.contains("예약한곳") || value.contains("내가예약");
+        boolean cancelGuide = value.contains("취소") || value.contains("변경") || value.contains("방법") || value.contains("어떻게");
+        return reservationWord && !cancelGuide;
+    }
+
+    private boolean isReservationGuideQuestion(String message) {
+        if (message == null) {
+            return false;
+        }
+
+        String value = message.replace(" ", "").toLowerCase();
+        boolean reservationWord = value.contains("예약");
+        boolean guideWord = value.contains("취소") || value.contains("변경") || value.contains("방법") || value.contains("어떻게") || value.contains("조회");
+        boolean recommendWord = value.contains("가능") || value.contains("후보") || value.contains("추천") || value.contains("찾") || value.contains("해줘");
+        return reservationWord && guideWord && !recommendWord;
+    }
+
+    private void fillSocFromRecentMessages(EvAiChatIntentDTO intentDTO, List<EvAiChatMessageDTO> recentMessages) {
+        if (intentDTO.getCurrentSoc() != null && intentDTO.getTargetSoc() != null) {
             return;
         }
 
-        String recentCacheKey = getChatCacheKey(room.getRoomId());
-        String legacyCacheKey = "ai:chat:room:" + room.getRoomId();
+        if (recentMessages == null || recentMessages.isEmpty()) {
+            return;
+        }
 
-        stringRedisTemplate.delete(recentCacheKey);
-        stringRedisTemplate.delete(legacyCacheKey);
+        for (int i = recentMessages.size() - 1; i >= 0; i--) {
+            EvAiChatMessageDTO messageDTO = recentMessages.get(i);
+            if (!"USER".equals(messageDTO.getSenderType())) {
+                continue;
+            }
 
-        log.info("@# AI Redis Cache Deleted => {}, {}", recentCacheKey, legacyCacheKey);
+            Integer[] socValues = extractSocValues(messageDTO.getMessage());
+            if (socValues == null) {
+                continue;
+            }
+
+            intentDTO.setCurrentSoc(socValues[0]);
+            intentDTO.setTargetSoc(socValues[1]);
+            return;
+        }
+    }
+
+    private Integer[] extractSocValues(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            return null;
+        }
+
+        Pattern pattern = Pattern.compile("(\\d{1,3})\\s*%");
+        Matcher matcher = pattern.matcher(message);
+        List<Integer> socList = new ArrayList<>();
+
+        while (matcher.find()) {
+            int soc = Integer.parseInt(matcher.group(1));
+            if (soc >= 0 && soc <= 100) {
+                socList.add(soc);
+            }
+        }
+
+        if (socList.size() < 2) {
+            return null;
+        }
+
+        int currentSoc = socList.get(0);
+        int targetSoc = socList.get(1);
+        if (targetSoc <= currentSoc) {
+            return null;
+        }
+
+        return new Integer[] { currentSoc, targetSoc };
+    }
+
+    private String extractRagKeyword(String message) {
+        if (message == null) {
+            return "";
+        }
+
+        String value = message.replace(" ", "");
+        if (value.contains("결제")) {
+            return "결제";
+        }
+        if (value.contains("취소")) {
+            return "예약";
+        }
+        if (value.contains("장애") || value.contains("고장")) {
+            return "장애";
+        }
+        if (value.contains("민원")) {
+            return "민원";
+        }
+        if (value.contains("공지")) {
+            return "";
+        }
+        if (value.contains("예약")) {
+            return "예약";
+        }
+        if (value.contains("FAQ") || value.contains("faq") || value.contains("자주")) {
+            return "";
+        }
+
+        return message.length() > 20 ? "" : message.trim();
+    }
+
+    private Object value(Map<String, Object> map, String... keys) {
+        if (map == null || keys == null) {
+            return null;
+        }
+
+        for (String key : keys) {
+            if (map.containsKey(key)) {
+                return map.get(key);
+            }
+        }
+
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            for (String key : keys) {
+                if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(key)) {
+                    return entry.getValue();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String text(Object value) {
+        return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    private double nullToZero(Double value) {
+        return value == null ? 0.0 : value;
+    }
+
+    private double round(Double value) {
+        if (value == null) {
+            return 0.0;
+        }
+        return Math.round(value * 100.0) / 100.0;
+    }
+
+    private String limitText(String value, int limit) {
+        if (value == null) {
+            return "";
+        }
+        if (value.length() <= limit) {
+            return value;
+        }
+        return value.substring(0, limit) + "...";
     }
 }

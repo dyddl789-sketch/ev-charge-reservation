@@ -1,41 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import * as reservationApi from "../../apis/reservationApi";
 
-const mockReservationList = [
-  {
-    reservationId: 101,
-    stationName: "부산시청 공공충전소",
-    chargerName: "급속 01",
-    vehicleNickname: "출퇴근용 아이오닉",
-    startTimeText: "2026-06-18 14:00",
-    endTimeText: "2026-06-18 14:40",
-    estimatedCost: 12800,
-    status: "예약완료",
-    stationImageUrl: "/images/station/station-default.jpg",
-  },
-  {
-    reservationId: 102,
-    stationName: "해운대 공영주차장 충전소",
-    chargerName: "초급속 02",
-    vehicleNickname: "주말용 EV6",
-    startTimeText: "2026-06-15 19:20",
-    endTimeText: "2026-06-15 20:10",
-    estimatedCost: 15400,
-    status: "완료",
-    stationImageUrl: "/images/station/station-default.jpg",
-  },
-  {
-    reservationId: 103,
-    stationName: "센텀시티 공영주차장 충전소",
-    chargerName: "급속 03",
-    vehicleNickname: "출퇴근용 아이오닉",
-    startTimeText: "2026-06-10 10:00",
-    endTimeText: "2026-06-10 10:40",
-    estimatedCost: 11900,
-    status: "취소",
-    stationImageUrl: "/images/station/station-default.jpg",
-  },
-];
+const mockReservationList = [];
 
 const MyReservationPage = () => {
   console.log("MyReservationPage 렌더링");
@@ -45,22 +12,30 @@ const MyReservationPage = () => {
   const [reservationList, setReservationList] = useState([]);
   const [issuedCodeInfo, setIssuedCodeInfo] = useState(null);
 
-  const getReservationList = async () => {
+  const getReservationList = useCallback(async () => {
     console.log("getReservationList 실행", month);
 
     try {
       const response = await reservationApi.myList(month);
       console.log("내 예약 응답", response.data);
-      setReservationList(Array.isArray(response.data) ? response.data : mockReservationList);
+      setReservationList(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
-      console.log("내 예약 조회 실패 - 목업 데이터 사용", error);
-      setReservationList(mockReservationList);
+      console.log("내 예약 조회 실패", error);
+      alert(error.response?.data?.message || "내 예약 목록을 불러오지 못했습니다.");
+      setReservationList([]);
     }
-  };
+  }, [month]);
 
   useEffect(() => {
     getReservationList();
-  }, []);
+
+    const timer = window.setInterval(() => {
+      console.log("내 예약 목록 자동 재조회");
+      getReservationList();
+    }, 60000);
+
+    return () => window.clearInterval(timer);
+  }, [getReservationList]);
 
   const searchByMonth = (e) => {
     e.preventDefault();
@@ -120,7 +95,7 @@ const MyReservationPage = () => {
       alert(response.data?.message || "예약 인증이 완료되었습니다.");
       setReservationList((prev) =>
         prev.map((item) =>
-          item.reservationId === reservationId ? { ...item, status: "인증완료" } : item
+          item.reservationId === reservationId ? { ...item, status: "충전중" } : item
         )
       );
     } catch (error) {
@@ -162,7 +137,7 @@ const MyReservationPage = () => {
       <div className="mypage-page-header">
         <span>RESERVATION</span>
         <h1>내 예약</h1>
-        <p>예약 현황을 확인하고 예약 취소 또는 현장 인증코드를 발급할 수 있습니다.</p>
+        <p>예약 현황을 확인하고 상세보기에서 인증코드와 충전 시작 시뮬레이션을 진행할 수 있습니다.</p>
       </div>
 
       <section className="mypage-status-tabs" aria-label="예약 상태 필터">
@@ -225,6 +200,10 @@ const MyReservationPage = () => {
                     <span>예약번호</span>
                     <strong>{item.reservationId}</strong>
                   </div>
+                  <div>
+                    <span>인증 가능</span>
+                    <strong>{item.verifyAvailable ? "가능" : "예약 5분 전~5분 후"}</strong>
+                  </div>
                 </div>
 
                 <div className="mypage-list-actions">
@@ -241,9 +220,11 @@ const MyReservationPage = () => {
                     <button
                       type="button"
                       className="mypage-outline-btn"
+                      disabled={!item.verifyAvailable}
+                      title={item.verifyAvailable ? "현재 인증 가능한 시간입니다." : "예약 시작 5분 전부터 시작 후 5분까지 인증할 수 있습니다."}
                       onClick={() => verifyReservation(item.reservationId)}
                     >
-                      인증하기
+                      {item.verifyAvailable ? "인증하기" : "인증 대기"}
                     </button>
                   )}
                   {item.status === "예약완료" && (
@@ -255,11 +236,9 @@ const MyReservationPage = () => {
                       예약취소
                     </button>
                   )}
-                  {item.status !== "예약완료" && item.status !== "인증완료" && (
-                    <button type="button" className="mypage-outline-btn">
-                      상세보기
-                    </button>
-                  )}
+                  <Link to={`/my-reservations/${item.reservationId}`} className="mypage-outline-link">
+                    상세보기
+                  </Link>
                 </div>
               </div>
             </article>

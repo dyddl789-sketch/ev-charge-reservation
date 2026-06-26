@@ -47,3 +47,15 @@ export const addComplaintMemo = (complaintId, memoData) => {
   console.log("addComplaintMemo 요청", complaintId, memoData);
   return api.post(`/admin/complaints/${complaintId}/histories`, memoData);
 };
+
+// 관리자 민원 답변 완료
+export const answerComplaint = (complaintId, answerData) => {
+  console.log("answerComplaint 요청", complaintId, answerData);
+  return api.post(`/admin/complaints/${complaintId}/answer`, answerData);
+};
+
+// 관리자 민원 기반 장애 접수
+export const registerComplaintFault = (complaintId, faultData = {}) => {
+  console.log("registerComplaintFault 요청", complaintId, faultData);
+  return api.post(`/admin/complaints/${complaintId}/register-fault`, faultData);
+};

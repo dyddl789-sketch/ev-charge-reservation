@@ -17,6 +17,7 @@ import StationMapPage from "../pages/public/StationMapPage";
 import ReservationPage from "../pages/public/ReservationPage";
 import ReservationCompletePage from "../pages/public/ReservationCompletePage";
 import MyReservationPage from "../pages/public/MyReservationPage";
+import MyReservationDetailPage from "../pages/public/MyReservationDetailPage";
 import ChargingHistoryPage from "../pages/public/ChargingHistoryPage";
 import AiChatPage from "../pages/public/AiChatPage";
 import CustomerCenterPage from "../pages/public/CustomerCenterPage";
@@ -41,12 +42,14 @@ import AdminStationPage from "../pages/admin/AdminStationPage";
 import AdminReservationPage from "../pages/admin/AdminReservationPage";
 import AdminReservationDetailPage from "../pages/admin/AdminReservationDetailPage";
 import AdminComplaintPage from "../pages/admin/ComplaintPage";
+import AdminComplaintDetailPage from "../pages/admin/ComplaintDetailPage";
 import FaultPage from "../pages/admin/FaultPage";
 import InspectionPage from "../pages/admin/InspectionPage";
 import ApprovalPage from "../pages/admin/ApprovalPage";
 import StatisticsPage from "../pages/admin/StatisticsPage";
 import SalesStatPage from "../pages/admin/SalesStatPage";
 import UsageStatPage from "../pages/admin/UsageStatPage";
+import AdminProfilePage from "../pages/admin/AdminProfilePage";
 
 const AppRoutes = () => {
   console.log("AppRoutes 렌더링");
@@ -67,6 +70,7 @@ const AppRoutes = () => {
             <Route path="/vehicles" element={<VehiclePage />} />
             <Route path="/vehicles/register" element={<VehicleRegisterPage />} />
             <Route path="/my-reservations" element={<MyReservationPage />} />
+            <Route path="/my-reservations/:reservationId" element={<MyReservationDetailPage />} />
             <Route path="/charging-history" element={<ChargingHistoryPage />} />
           </Route>
 
@@ -110,6 +114,7 @@ const AppRoutes = () => {
           <Route path="reservations/:reservationId" element={<AdminReservationDetailPage />} />
 
           <Route path="complaints" element={<AdminComplaintPage />} />
+          <Route path="complaints/:complaintId" element={<AdminComplaintDetailPage />} />
           <Route path="faults" element={<FaultPage />} />
           <Route path="inspections" element={<InspectionPage />} />
           <Route path="approvals" element={<ApprovalPage />} />
@@ -117,6 +122,7 @@ const AppRoutes = () => {
           <Route path="statistics" element={<StatisticsPage />} />
           <Route path="statistics/usage" element={<UsageStatPage />} />
           <Route path="statistics/sales" element={<SalesStatPage />} />
+          <Route path="profile" element={<AdminProfilePage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import * as memberApi from "../../apis/memberApi";
+import * as authApi from "../../apis/authApi";
 
 const defaultMember = {
   userId: "kakao_4916296150",
@@ -12,6 +14,8 @@ const defaultMember = {
 
 const MyPage = () => {
   console.log("MyPage 렌더링");
+
+  const navigate = useNavigate();
 
   const [member, setMember] = useState(defaultMember);
   const [previewUrl, setPreviewUrl] = useState(defaultMember.profileImageUrl);
@@ -96,6 +100,25 @@ const MyPage = () => {
     return `/${profileImageUrl}`;
   };
 
+  const logoutAfterPasswordChange = async () => {
+    console.log("비밀번호 변경 완료 후 로그아웃 처리 시작");
+
+    try {
+      await authApi.logout();
+      console.log("비밀번호 변경 후 로그아웃 API 성공");
+    } catch (error) {
+      console.log("비밀번호 변경 후 로그아웃 API 오류 - 로컬 토큰은 제거", error);
+    }
+
+    localStorage.removeItem("ACCESS_TOKEN");
+    localStorage.removeItem("REFRESH_TOKEN");
+
+    window.dispatchEvent(new Event("auth-change"));
+
+    alert("비밀번호가 변경되었습니다. 다시 로그인해 주세요.");
+    navigate("/login", { replace: true });
+  };
+
   const submitMember = async (e) => {
     e.preventDefault();
     console.log("회원정보 수정 submit", form);
@@ -105,13 +128,42 @@ const MyPage = () => {
       return;
     }
 
-    if (!isSocialLogin && form.newPassword !== form.newPasswordConfirm) {
+    // 비밀번호 입력칸 중 하나라도 작성했다면 비밀번호 변경 요청으로 판단한다.
+    const isPasswordChangeRequested =
+      !isSocialLogin &&
+      Boolean(
+        form.currentPassword.trim() ||
+        form.newPassword.trim() ||
+        form.newPasswordConfirm.trim()
+      );
+
+    if (isPasswordChangeRequested && !form.currentPassword.trim()) {
+      alert("현재 비밀번호를 입력해 주세요.");
+      return;
+    }
+
+    if (isPasswordChangeRequested && !form.newPassword.trim()) {
+      alert("새 비밀번호를 입력해 주세요.");
+      return;
+    }
+
+    if (isPasswordChangeRequested && !form.newPasswordConfirm.trim()) {
+      alert("새 비밀번호 확인을 입력해 주세요.");
+      return;
+    }
+
+    if (isPasswordChangeRequested && form.newPassword !== form.newPasswordConfirm) {
       alert("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");
       return;
     }
 
     try {
       await memberApi.update(form);
+
+      if (isPasswordChangeRequested) {
+        await logoutAfterPasswordChange();
+        return;
+      }
 
       alert("회원정보가 수정되었습니다.");
 

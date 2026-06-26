@@ -3,6 +3,7 @@ package com.ev.service.user;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
@@ -14,6 +15,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.ev.dao.user.EvPublicFastChargerSyncDAO;
 import com.ev.dto.map.EvKakaoAddressDTO;
+import com.ev.dto.publicdata.EvPublicChargerAugmentTargetDTO;
 import com.ev.dto.publicdata.EvPublicFastChargerItemDTO;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -57,6 +59,9 @@ public class EvPublicFastChargerSyncServiceImpl implements EvPublicFastChargerSy
         log.info("@# numOfRows => {}", numOfRows);
         log.info("@# rgnNm => {}", rgnNm);
 
+        int safeNumOfRows = numOfRows <= 0 ? 10 : Math.min(numOfRows, 100);
+        log.info("@# safeNumOfRows => {}", safeNumOfRows);
+
         JsonNode root = WebClient.create(apiBaseUrl)
                 .get()
                 .uri(uriBuilder -> {
@@ -64,7 +69,7 @@ public class EvPublicFastChargerSyncServiceImpl implements EvPublicFastChargerSy
                             .path(apiPath)
                             .queryParam("serviceKey", serviceKey)
                             .queryParam("pageNo", pageNo)
-                            .queryParam("numOfRows", numOfRows)
+                            .queryParam("numOfRows", safeNumOfRows)
                             .queryParam("returnType", "JSON");
 
                     if (rgnNm != null && !rgnNm.isBlank()) {
@@ -125,6 +130,289 @@ public class EvPublicFastChargerSyncServiceImpl implements EvPublicFastChargerSy
     }
 
     /*
+     * 관리자 MIS 공공데이터 샘플 적재용 동기화
+     *
+     * API 응답 row를 넉넉히 받은 뒤 충전소 기준으로 그룹화한다.
+     * 지역별 충전소는 maxStations개, 충전소당 충전기는 maxChargersPerStation개까지 저장한다.
+     * 이렇게 하면 실제 공공데이터 기반은 유지하면서 화면에서 충전소별 충전기가 너무 1개씩만
+     * 보이는 문제를 줄일 수 있다.
+     */
+    @Override
+    public int syncRegionStationSample(int maxStations, int apiRows, String rgnNm, int maxChargersPerStation) {
+        log.info("@# EvPublicFastChargerSyncServiceImpl.syncRegionStationSample()");
+        log.info("@# maxStations => {}, apiRows => {}, rgnNm => {}, maxChargersPerStation => {}",
+                maxStations, apiRows, rgnNm, maxChargersPerStation);
+
+        int safeMaxStations = maxStations <= 0 ? 10 : Math.min(maxStations, 30);
+
+        /*
+         * 환경부 공공급속 충전기 API는 numOfRows 최대값이 100이다.
+         * 기존에는 충전소별 2~3대 확보를 위해 apiRows=400을 그대로 넘겨 resultCode=98 오류가 발생했고,
+         * 이 때문에 item이 0건으로 내려와 공공데이터 적재가 실제로 저장되지 않았다.
+         *
+         * 해결 방식:
+         * - 한 번의 요청 numOfRows는 반드시 100 이하로 제한한다.
+         * - apiRows가 100을 넘으면 pageNo를 나누어 여러 번 호출한다.
+         * - 여러 페이지에서 받은 row를 합쳐 충전소 기준으로 그룹화한 뒤 저장한다.
+         */
+        int desiredApiRows = apiRows <= 0 ? 300 : Math.min(apiRows, 500);
+        int safeRowsPerPage = Math.min(100, Math.max(20, desiredApiRows));
+        int maxPageCount = Math.max(1, (int) Math.ceil((double) desiredApiRows / safeRowsPerPage));
+        int safeMaxChargers = maxChargersPerStation <= 0 ? 3 : Math.min(maxChargersPerStation, 5);
+
+        log.info("@# 공공데이터 샘플 적재 페이징 설정 desiredApiRows => {}, safeRowsPerPage => {}, maxPageCount => {}",
+                desiredApiRows, safeRowsPerPage, maxPageCount);
+
+        List<JsonNode> itemNodeList = new ArrayList<>();
+
+        for (int pageNo = 1; pageNo <= maxPageCount; pageNo++) {
+            /*
+             * Java 람다식 안에서는 변경되는 지역변수 pageNo를 직접 사용할 수 없다.
+             * 따라서 현재 반복 회차의 pageNo를 final 변수로 복사해서 사용한다.
+             */
+            final int currentPageNo = pageNo;
+
+            JsonNode root = WebClient.create(apiBaseUrl)
+                    .get()
+                    .uri(uriBuilder -> {
+                        uriBuilder
+                                .path(apiPath)
+                                .queryParam("serviceKey", serviceKey)
+                                .queryParam("pageNo", currentPageNo)
+                                .queryParam("numOfRows", safeRowsPerPage)
+                                .queryParam("returnType", "JSON");
+
+                        if (rgnNm != null && !rgnNm.isBlank()) {
+                            uriBuilder.queryParam("rgnNm", rgnNm);
+                        }
+
+                        return uriBuilder.build();
+                    })
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .block();
+
+            String resultCode = findApiResultCode(root);
+            String resultMsg = findApiResultMsg(root);
+
+            if (resultCode != null && !isSuccessResultCode(resultCode)) {
+                log.warn("@# 공공데이터 API 오류 region => {}, pageNo => {}, numOfRows => {}, resultCode => {}, resultMsg => {}",
+                        rgnNm, currentPageNo, safeRowsPerPage, resultCode, resultMsg);
+                break;
+            }
+
+            List<JsonNode> pageItemNodeList = extractItems(root);
+            log.info("@# 샘플 적재 API pageNo => {}, itemNodeList size => {}",
+                    currentPageNo, pageItemNodeList.size());
+
+            if (pageItemNodeList.isEmpty()) {
+                log.info("@# 샘플 적재 API 데이터 없음. region => {}, pageNo => {}", rgnNm, currentPageNo);
+                break;
+            }
+
+            itemNodeList.addAll(pageItemNodeList);
+        }
+
+        log.info("@# 샘플 적재 API 전체 itemNodeList size => {}", itemNodeList.size());
+
+        Map<String, EvKakaoAddressDTO> coordinateCache = new HashMap<>();
+        Set<String> failedCoordinateCache = new HashSet<>();
+        Map<String, List<EvPublicFastChargerItemDTO>> stationGroupMap = new LinkedHashMap<>();
+
+        for (JsonNode node : itemNodeList) {
+            EvPublicFastChargerItemDTO item = toItem(node);
+            fillCoordinateByKakao(item, coordinateCache, failedCoordinateCache);
+
+            if (!isValidItem(item)) {
+                log.warn("@# 샘플 적재 저장 제외 item => {}", item);
+                continue;
+            }
+
+            stationGroupMap
+                    .computeIfAbsent(item.getExternalStationId(), key -> new ArrayList<>())
+                    .add(item);
+        }
+
+        int stationSaveCount = 0;
+        int chargerSaveCount = 0;
+
+        for (List<EvPublicFastChargerItemDTO> stationItems : stationGroupMap.values()) {
+            if (stationSaveCount >= safeMaxStations) {
+                break;
+            }
+
+            if (stationItems == null || stationItems.isEmpty()) {
+                continue;
+            }
+
+            EvPublicFastChargerItemDTO stationItem = stationItems.get(0);
+            Long stationId = syncDAO.upsertStation(stationItem);
+            stationSaveCount++;
+
+            int savedChargerInStation = 0;
+            Set<String> savedChargerExternalIdSet = new HashSet<>();
+
+            for (EvPublicFastChargerItemDTO chargerItem : stationItems) {
+                if (savedChargerInStation >= safeMaxChargers) {
+                    break;
+                }
+
+                if (!savedChargerExternalIdSet.add(chargerItem.getExternalChargerId())) {
+                    continue;
+                }
+
+                syncDAO.upsertCharger(stationId, chargerItem);
+                chargerSaveCount++;
+                savedChargerInStation++;
+            }
+
+            /*
+             * 공공데이터 API가 특정 충전소에 충전기 1개 row만 내려주는 경우가 많다.
+             * MIS 시연 화면과 예약/통계 샘플 데이터가 빈약해지지 않도록 PUBLIC_API 충전소에 한해
+             * 부족한 충전기를 보강 생성한다. LOCAL 충전소와 실제 사용자 데이터는 건드리지 않는다.
+             */
+            int activeChargerCount = syncDAO.countActiveChargersByStation(stationId);
+            int augmentCount = augmentChargersForSampleStation(stationId, stationItem, activeChargerCount, safeMaxChargers);
+            chargerSaveCount += augmentCount;
+        }
+
+        log.info("@# 지역별 공공데이터 샘플 적재 완료 region => {}, stationSaveCount => {}, chargerSaveCount => {}",
+                rgnNm, stationSaveCount, chargerSaveCount);
+
+        return chargerSaveCount;
+    }
+
+    /*
+     * 공공데이터 샘플 충전소의 충전기 수를 목표 개수까지 보강한다.
+     * 실제 API 원본 충전기가 1대만 있어도 2~3대가 보이도록 만드는 시연용 보강 로직이다.
+     */
+    private int augmentChargersForSampleStation(
+            Long stationId,
+            EvPublicFastChargerItemDTO stationItem,
+            int activeChargerCount,
+            int targetChargerCount) {
+
+        log.info("@# augmentChargersForSampleStation stationId => {}, activeChargerCount => {}, targetChargerCount => {}",
+                stationId, activeChargerCount, targetChargerCount);
+
+        if (stationId == null || stationItem == null) {
+            return 0;
+        }
+
+        if (activeChargerCount >= targetChargerCount) {
+            return 0;
+        }
+
+        int augmentCount = 0;
+
+        for (int chargerNo = activeChargerCount + 1; chargerNo <= targetChargerCount; chargerNo++) {
+            String chargerCode = String.format("%02d", chargerNo);
+            String externalChargerId = "AUGMENT-" + stationId + "-" + chargerCode;
+            String chargerName = "충전기 " + chargerCode;
+
+            ChargerSeed seed = buildAugmentedChargerSeed(chargerNo, stationItem.getChargingSpeedKw(), stationItem.getConnectorType());
+
+            int result = syncDAO.upsertAugmentedCharger(
+                    stationId,
+                    externalChargerId,
+                    chargerName,
+                    chargerCode,
+                    seed.chargerType(),
+                    seed.connectorType(),
+                    seed.chargingSpeedKw(),
+                    seed.pricePerKwh()
+            );
+
+            augmentCount += result;
+        }
+
+        log.info("@# 보강 충전기 생성 완료 stationId => {}, augmentCount => {}", stationId, augmentCount);
+
+        return augmentCount;
+    }
+
+    private ChargerSeed buildAugmentedChargerSeed(int chargerNo, BigDecimal baseSpeedKw, String baseConnectorType) {
+        int pattern = chargerNo % 3;
+
+        if (pattern == 0) {
+            return new ChargerSeed("초급속", "DC콤보", BigDecimal.valueOf(150), BigDecimal.valueOf(410));
+        }
+
+        if (pattern == 1) {
+            return new ChargerSeed("완속", "AC완속", BigDecimal.valueOf(7), BigDecimal.valueOf(260));
+        }
+
+        BigDecimal speed = baseSpeedKw != null && baseSpeedKw.compareTo(BigDecimal.ZERO) > 0
+                ? baseSpeedKw.max(BigDecimal.valueOf(50))
+                : BigDecimal.valueOf(100);
+        String connectorType = baseConnectorType == null || baseConnectorType.isBlank() ? "DC콤보" : baseConnectorType;
+
+        return new ChargerSeed(speed.compareTo(BigDecimal.valueOf(100)) >= 0 ? "초급속" : "급속",
+                connectorType,
+                speed,
+                BigDecimal.valueOf(347.20));
+    }
+
+    private record ChargerSeed(
+            String chargerType,
+            String connectorType,
+            BigDecimal chargingSpeedKw,
+            BigDecimal pricePerKwh) {
+    }
+
+
+    /*
+     * 공공데이터 적재 이후 DB에 이미 저장된 PUBLIC_API 충전소 전체를 대상으로
+     * 충전기 수가 부족한 충전소를 일괄 보강한다.
+     */
+    @Override
+    public int augmentAllPublicApiSampleChargers(int targetChargerCount) {
+        log.info("@# EvPublicFastChargerSyncServiceImpl.augmentAllPublicApiSampleChargers()");
+        log.info("@# targetChargerCount => {}", targetChargerCount);
+
+        int safeTargetCount = targetChargerCount <= 0 ? 3 : Math.min(targetChargerCount, 5);
+        List<EvPublicChargerAugmentTargetDTO> targetList = syncDAO.findPublicApiAugmentTargets();
+
+        log.info("@# PUBLIC_API 보강 대상 조회 totalStationCount => {}", targetList.size());
+
+        int targetStationCount = 0;
+        int createdCount = 0;
+
+        for (EvPublicChargerAugmentTargetDTO target : targetList) {
+            if (target == null || target.getStationId() == null) {
+                continue;
+            }
+
+            int activeCount = target.getActiveChargerCount();
+            if (activeCount >= safeTargetCount) {
+                continue;
+            }
+
+            targetStationCount++;
+
+            EvPublicFastChargerItemDTO seedItem = new EvPublicFastChargerItemDTO();
+            seedItem.setExternalStationId(target.getExternalStationId());
+            seedItem.setConnectorType(target.getConnectorType());
+            seedItem.setChargingSpeedKw(target.getChargingSpeedKw());
+
+            int augmentCount = augmentChargersForSampleStation(
+                    target.getStationId(),
+                    seedItem,
+                    activeCount,
+                    safeTargetCount
+            );
+
+            createdCount += augmentCount;
+        }
+
+        log.info("@# PUBLIC_API 전체 보강 완료 targetStationCount => {}, createdCount => {}",
+                targetStationCount, createdCount);
+
+        return createdCount;
+    }
+
+
+    /*
      * 여러 페이지 동기화
      */
     @Override
@@ -150,6 +438,59 @@ public class EvPublicFastChargerSyncServiceImpl implements EvPublicFastChargerSy
         log.info("@# 환경부 공공급속 충전기 전체 동기화 완료 totalSaveCount => {}", totalSaveCount);
 
         return totalSaveCount;
+    }
+
+    private String findApiResultCode(JsonNode root) {
+        if (root == null || root.isNull() || root.isMissingNode()) {
+            return null;
+        }
+
+        String resultCode = textFromPath(root.path("response").path("header").path("resultCode"));
+        if (resultCode != null) {
+            return resultCode;
+        }
+
+        return textFromPath(root.path("header").path("resultCode"));
+    }
+
+    private String findApiResultMsg(JsonNode root) {
+        if (root == null || root.isNull() || root.isMissingNode()) {
+            return null;
+        }
+
+        String resultMsg = textFromPath(root.path("response").path("header").path("resultMsg"));
+        if (resultMsg != null) {
+            return resultMsg;
+        }
+
+        return textFromPath(root.path("header").path("resultMsg"));
+    }
+
+    private String textFromPath(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return null;
+        }
+
+        String value = node.asText();
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private boolean isSuccessResultCode(String resultCode) {
+        if (resultCode == null || resultCode.isBlank()) {
+            return true;
+        }
+
+        String normalizedCode = resultCode.trim();
+
+        /*
+         * 환경부 공공데이터 API는 정상 응답을 00/0뿐 아니라
+         * HTTP 상태값처럼 200 + NORMAL SERVICE. 형태로 내려주는 경우가 있다.
+         * 200을 오류로 판단하면 정상 응답을 받았는데도 item 추출 전에 break되어
+         * 공공데이터 샘플 적재가 0건으로 끝난다.
+         */
+        return "00".equals(normalizedCode)
+                || "0".equals(normalizedCode)
+                || "200".equals(normalizedCode);
     }
 
     /*
@@ -652,6 +993,9 @@ public class EvPublicFastChargerSyncServiceImpl implements EvPublicFastChargerSy
         log.info("@# numOfRows => {}", numOfRows);
         log.info("@# rgnNm => {}", rgnNm);
 
+        int safeNumOfRows = numOfRows <= 0 ? 10 : Math.min(numOfRows, 100);
+        log.info("@# safeNumOfRows => {}", safeNumOfRows);
+
         String response = WebClient.create(apiBaseUrl)
                 .get()
                 .uri(uriBuilder -> {
@@ -659,7 +1003,7 @@ public class EvPublicFastChargerSyncServiceImpl implements EvPublicFastChargerSy
                             .path(apiPath)
                             .queryParam("serviceKey", serviceKey)
                             .queryParam("pageNo", pageNo)
-                            .queryParam("numOfRows", numOfRows)
+                            .queryParam("numOfRows", safeNumOfRows)
                             .queryParam("returnType", "JSON");
 
                     if (rgnNm != null && !rgnNm.isBlank()) {

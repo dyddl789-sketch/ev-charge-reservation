@@ -14,33 +14,33 @@ import com.ev.dto.admin.usage.EvAdminUsageTypeDTO;
 @Mapper
 public interface EvAdminUsageDAO {
 
-    // 이용 통계 요약 조회
-    EvAdminUsageSummaryDTO findUsageSummary(
-            @Param("startDate") String startDate,
-            @Param("endDate") String endDate
-    );
+    EvAdminUsageSummaryDTO findUsageSummary(@Param("startDate") String startDate,
+                                            @Param("endDate") String endDate,
+                                            @Param("region") String region,
+                                            @Param("stationId") Long stationId,
+                                            @Param("chargerType") String chargerType);
 
-    // 일별 이용 현황 조회
-    List<EvAdminUsageDailyDTO> findDailyUsageList(
-            @Param("startDate") String startDate,
-            @Param("endDate") String endDate
-    );
+    List<EvAdminUsageDailyDTO> findDailyUsageList(@Param("startDate") String startDate,
+                                                  @Param("endDate") String endDate,
+                                                  @Param("region") String region,
+                                                  @Param("stationId") Long stationId,
+                                                  @Param("chargerType") String chargerType);
 
-    // 시간대별 이용 현황 조회
-    List<EvAdminUsageHourlyDTO> findHourlyUsageList(
-            @Param("startDate") String startDate,
-            @Param("endDate") String endDate
-    );
+    List<EvAdminUsageHourlyDTO> findHourlyUsageList(@Param("startDate") String startDate,
+                                                    @Param("endDate") String endDate,
+                                                    @Param("region") String region,
+                                                    @Param("stationId") Long stationId,
+                                                    @Param("chargerType") String chargerType);
 
-    // 충전 타입별 이용 현황 조회
-    List<EvAdminUsageTypeDTO> findUsageTypeList(
-            @Param("startDate") String startDate,
-            @Param("endDate") String endDate
-    );
+    List<EvAdminUsageTypeDTO> findUsageTypeList(@Param("startDate") String startDate,
+                                                @Param("endDate") String endDate,
+                                                @Param("region") String region,
+                                                @Param("stationId") Long stationId,
+                                                @Param("chargerType") String chargerType);
 
-    // 충전소별 이용 순위 조회
-    List<EvAdminUsageStationRankDTO> findStationUsageRankList(
-            @Param("startDate") String startDate,
-            @Param("endDate") String endDate
-    );
+    List<EvAdminUsageStationRankDTO> findStationUsageRankList(@Param("startDate") String startDate,
+                                                              @Param("endDate") String endDate,
+                                                              @Param("region") String region,
+                                                              @Param("stationId") Long stationId,
+                                                              @Param("chargerType") String chargerType);
 }

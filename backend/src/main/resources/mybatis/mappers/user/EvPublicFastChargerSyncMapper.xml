@@ -115,11 +115,105 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             , charger_type = excluded.charger_type
             , connector_type = excluded.connector_type
             , charging_speed_kw = excluded.charging_speed_kw
-            , status = excluded.status
             , charger_code = excluded.charger_code
             , last_status_checked_at = current_timestamp
             , is_deleted = false
             , updated_at = current_timestamp
     </insert>
+
+
+    <!-- 충전소별 활성 충전기 수 조회 -->
+    <select id="countActiveChargersByStation" resultType="int">
+        select count(*)
+          from charger
+         where station_id = #{stationId}
+           and coalesce(is_deleted, false) = false
+    </select>
+
+    <!--
+        공공데이터 샘플 적재 보강 충전기 저장/수정
+        실제 API row가 1개뿐인 충전소도 시연 화면에서 2~3대 충전기가 보이도록 PUBLIC_API 충전소에만 생성한다.
+    -->
+    <insert id="upsertAugmentedCharger">
+        insert into charger (
+              station_id
+            , external_charger_id
+            , charger_name
+            , charger_type
+            , connector_type
+            , charging_speed_kw
+            , price_per_kwh
+            , status
+            , charger_code
+            , last_status_checked_at
+            , is_deleted
+            , created_at
+            , updated_at
+        ) values (
+              #{stationId}
+            , #{externalChargerId}
+            , #{chargerName}
+            , #{chargerType}
+            , #{connectorType}
+            , #{chargingSpeedKw}
+            , #{pricePerKwh}
+            , '사용가능'
+            , #{chargerCode}
+            , current_timestamp
+            , false
+            , current_timestamp
+            , current_timestamp
+        )
+        on conflict (external_charger_id)
+        do update set
+              station_id = excluded.station_id
+            , charger_name = excluded.charger_name
+            , charger_type = excluded.charger_type
+            , connector_type = excluded.connector_type
+            , charging_speed_kw = excluded.charging_speed_kw
+            , price_per_kwh = excluded.price_per_kwh
+            , status = case when charger.status = '고장' then charger.status else excluded.status end
+            , charger_code = excluded.charger_code
+            , last_status_checked_at = current_timestamp
+            , is_deleted = false
+            , updated_at = current_timestamp
+    </insert>
+
+
+    <!-- DB에 저장된 PUBLIC_API 충전소 전체 중 보강 충전기 생성 대상 조회 -->
+    <select id="findPublicApiAugmentTargets"
+            resultType="com.ev.dto.publicdata.EvPublicChargerAugmentTargetDTO">
+        select
+              s.station_id as stationId
+            , coalesce(s.external_station_id, concat('PUBLIC-STATION-', s.station_id)) as externalStationId
+            , coalesce(rep.connector_type, 'DC콤보') as connectorType
+            , coalesce(rep.charging_speed_kw, 50) as chargingSpeedKw
+            , count(c.charger_id)::int as activeChargerCount
+          from charging_station s
+          left join charger c
+            on c.station_id = s.station_id
+           and coalesce(c.is_deleted, false) = false
+          left join lateral (
+                select
+                      cx.connector_type
+                    , cx.charging_speed_kw
+                  from charger cx
+                 where cx.station_id = s.station_id
+                   and coalesce(cx.is_deleted, false) = false
+                 order by
+                      case when cx.external_charger_id like 'AUGMENT-%' then 1 else 0 end
+                    , cx.charger_id asc
+                 limit 1
+          ) rep on true
+         where coalesce(s.source_type, '') = 'PUBLIC_API'
+           and coalesce(s.is_deleted, false) = false
+         group by
+              s.station_id
+            , s.external_station_id
+            , rep.connector_type
+            , rep.charging_speed_kw
+         order by s.station_id asc
+    </select>
+
 
 </mapper>

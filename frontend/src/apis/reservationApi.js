@@ -83,12 +83,48 @@ export const chargerStatus = ({ stationId, reservationDate, startTime, estimated
   });
 };
 
+
+
+// 선택 시간 구간 임시 선점
+export const holdTimeSlot = ({ chargerId, reservationDate, startTime, estimatedMinutes }) => {
+  console.log("reservation holdTimeSlot 요청", { chargerId, reservationDate, startTime, estimatedMinutes });
+  return api.post(
+    "/reservation/lock/time-slot",
+    new URLSearchParams({ chargerId, reservationDate, startTime, estimatedMinutes }),
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+    }
+  );
+};
+
+// 선택 시간 구간 임시 선점 해제
+export const releaseTimeSlot = ({ chargerId, reservationDate, startTime, estimatedMinutes }) => {
+  console.log("reservation releaseTimeSlot 요청", { chargerId, reservationDate, startTime, estimatedMinutes });
+  return api.post(
+    "/reservation/lock/time-slot/release",
+    new URLSearchParams({ chargerId, reservationDate, startTime, estimatedMinutes }),
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+    }
+  );
+};
+
 // 내 예약 목록 조회
 export const myList = (month = "") => {
   console.log("reservation myList 요청", month);
   return api.get("/reservation/api/my", {
     params: month ? { month } : {},
   });
+};
+
+// 내 예약 상세 조회
+export const myDetail = (reservationId) => {
+  console.log("reservation myDetail 요청", reservationId);
+  return api.get(`/reservation/api/my/${reservationId}`);
 };
 
 // 충전 이용 내역 조회
@@ -121,4 +157,10 @@ export const verify = (reservationId, authCode) => {
 export const sendReceiptEmail = (reservationId) => {
   console.log("reservation sendReceiptEmail 요청", reservationId);
   return api.post("/reservation/api/receipt/email", { reservationId });
+};
+
+// 충전 시작 시뮬레이션 완료 처리
+export const completeChargingSimulation = (reservationId) => {
+  console.log("reservation completeChargingSimulation 요청", reservationId);
+  return api.post("/reservation/api/charging/simulation/complete", { reservationId });
 };

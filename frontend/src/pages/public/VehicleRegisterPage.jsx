@@ -33,12 +33,22 @@ const mockModelList = [
   },
 ];
 
+const getVehicleDisplayName = (vehicle) => {
+  if (!vehicle) {
+    return "";
+  }
+
+  const nickname = vehicle.vehicleNickname ? `“${vehicle.vehicleNickname}” ` : "";
+  return `${nickname}${vehicle.manufacturer || ""} ${vehicle.modelName || ""}`.trim();
+};
+
 const VehicleRegisterPage = () => {
   console.log("VehicleRegisterPage 렌더링");
 
   const navigate = useNavigate();
 
   const [modelList, setModelList] = useState([]);
+  const [currentDefaultVehicle, setCurrentDefaultVehicle] = useState(null);
   const [form, setForm] = useState({
     modelId: "",
     vehicleNickname: "",
@@ -65,8 +75,25 @@ const VehicleRegisterPage = () => {
     }
   };
 
+  const getCurrentDefaultVehicle = async () => {
+    console.log("현재 기본차량 조회");
+
+    try {
+      const response = await vehicleApi.list();
+      console.log("현재 기본차량 조회 응답", response.data);
+
+      const vehicleList = Array.isArray(response.data) ? response.data : [];
+      const defaultVehicle = vehicleList.find((vehicle) => vehicle.isDefault === true);
+      setCurrentDefaultVehicle(defaultVehicle || null);
+    } catch (error) {
+      console.log("현재 기본차량 조회 실패", error);
+      setCurrentDefaultVehicle(null);
+    }
+  };
+
   useEffect(() => {
     getModelList();
+    getCurrentDefaultVehicle();
   }, []);
 
   const selectedModel = useMemo(() => {
@@ -76,6 +103,17 @@ const VehicleRegisterPage = () => {
   const changeValue = (e) => {
     const { name, value, type, checked } = e.target;
     console.log("차량 등록 입력 변경", name, value);
+
+    if (name === "isDefault" && checked && currentDefaultVehicle) {
+      const currentName = getVehicleDisplayName(currentDefaultVehicle);
+      const isConfirm = window.confirm(
+        `현재 기본차량은 ${currentName}입니다.\n새 차량으로 기본차량을 변경하시겠습니까?`
+      );
+
+      if (!isConfirm) {
+        return;
+      }
+    }
 
     setForm({
       ...form,
@@ -97,6 +135,17 @@ const VehicleRegisterPage = () => {
       return;
     }
 
+    if (form.isDefault && currentDefaultVehicle) {
+      const currentName = getVehicleDisplayName(currentDefaultVehicle);
+      const isConfirm = window.confirm(
+        `현재 기본차량은 ${currentName}입니다.\n등록 후 새 차량이 기본차량으로 변경됩니다. 계속 진행할까요?`
+      );
+
+      if (!isConfirm) {
+        return;
+      }
+    }
+
     try {
       await vehicleApi.create({
         modelId: form.modelId,
@@ -109,7 +158,7 @@ const VehicleRegisterPage = () => {
       navigate("/vehicles");
     } catch (error) {
       console.log("차량 등록 오류", error);
-      alert("차량 등록 중 오류가 발생했습니다. 차량 번호 중복 여부를 확인해 주세요.");
+      alert(error.response?.data?.message || "차량 등록 중 오류가 발생했습니다. 차량 번호 중복 여부를 확인해 주세요.");
     }
   };
 
@@ -187,10 +236,17 @@ const VehicleRegisterPage = () => {
                 />
               </div>
 
-              <label className="check-row">
+              <label className="check-row vehicle-default-check-row">
                 <input type="checkbox" name="isDefault" checked={form.isDefault} onChange={changeValue} />
-                기본 차량으로 설정
+                <span>기본 차량으로 설정</span>
               </label>
+
+              {form.isDefault && currentDefaultVehicle && (
+                <div className="vehicle-default-change-box">
+                  현재 기본차량은 <strong>{getVehicleDisplayName(currentDefaultVehicle)}</strong>입니다.
+                  차량 등록 시 새 차량으로 기본차량이 변경됩니다.
+                </div>
+              )}
             </div>
 
             <div className="form-buttons">

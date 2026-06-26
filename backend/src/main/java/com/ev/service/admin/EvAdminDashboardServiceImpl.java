@@ -83,6 +83,10 @@ public class EvAdminDashboardServiceImpl implements EvAdminDashboardService {
                 evAdminDashboardDAO.findRecentNotices()
         );
 
+        dashboardDTO.setFaultChargerList(
+                evAdminDashboardDAO.findRecentBrokenChargers()
+        );
+
         log.info("@# totalMemberCount => {}", totalMemberCount);
         log.info("@# totalStationCount => {}", totalStationCount);
         log.info("@# totalChargerCount => {}", totalChargerCount);
