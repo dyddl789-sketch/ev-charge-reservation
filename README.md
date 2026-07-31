@@ -30,20 +30,56 @@
 
 ## 🧭 README 바로가기
 
-| 프로젝트 소개 | 기능·기술 | 설계·구조 | 시연·산출물 |
-|---|---|---|---|
-| [📌 프로젝트 개요](#overview) | [🚀 주요 구현 기능](#features) | [📂 프로젝트 구조](#project-structure) | [🎬 기능 시연 영상](#videos) |
-| [📍 프로젝트 개발 목표](#goals) | [🔄 서비스 이용 흐름](#service-flow) | [🧩 백엔드 패키지 구조](#backend-structure) | [📁 프로젝트 설계 산출물](#design-docs) |
-| [🛠 기술 스택](#stack) | [💻 기술 스택 상세](#tech-detail) | [📁 Resource 구조](#resource-structure) | [🎤 최종 발표 자료](#presentation) |
-| [🗃 데이터 저장 기준](#data-storage) | [⚙️ MyBatis 설정](#mybatis) | [🗄 데이터베이스 스크립트](#database-script) | [📘 프로젝트 기술서](#technical-doc) |
-| [🌿 Git 규칙](#git) | [📦 릴리즈 내역](#release) | [📎 산출물 요약](#artifact-summary) | [🖥 화면설계서](#screen-doc) |
-| [💡 프로젝트 경험](#experience) | [⬆ 맨 위로](#top) |  | [🗂 메뉴구조도](#menu-structure) |
+<table>
+  <thead>
+    <tr>
+      <th align="center">프로젝트 소개</th>
+      <th align="center">핵심 구현</th>
+      <th align="center">설계·화면</th>
+      <th align="center">시연·문서</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center"><a href="#overview">📌 프로젝트 개요</a></td>
+      <td align="center"><a href="#features">🚀 주요 구현 기능</a></td>
+      <td align="center"><a href="#project-structure">📂 프로젝트 구조</a></td>
+      <td align="center"><a href="#demo-videos">🎬 기능 시연 영상</a></td>
+    </tr>
+    <tr>
+      <td align="center"><a href="#goals">📍 프로젝트 개발 목표</a></td>
+      <td align="center"><a href="#stack-highlight">🛠 기술 스택 하이라이트</a></td>
+      <td align="center"><a href="#backend-package">🧩 백엔드 패키지 구조</a></td>
+      <td align="center"><a href="#presentation">🎤 최종 발표 자료</a></td>
+    </tr>
+    <tr>
+      <td align="center"><a href="#service-flow">🔄 서비스 이용 흐름</a></td>
+      <td align="center"><a href="#stack-detail">💻 기술 스택 상세</a></td>
+      <td align="center"><a href="#resource-structure">📁 Resource 구조</a></td>
+      <td align="center"><a href="#technical-document">📘 프로젝트 기술서</a></td>
+    </tr>
+    <tr>
+      <td align="center"><a href="#experience">💡 프로젝트 경험</a></td>
+      <td align="center"><a href="#data-storage">🗃 데이터 저장 기준</a></td>
+      <td align="center"><a href="#design-artifacts">📁 프로젝트 설계 산출물</a></td>
+      <td align="center"><a href="#screen-design">🖥 화면설계서</a></td>
+    </tr>
+    <tr>
+      <td align="center"><a href="#release-history">📦 릴리즈 내역</a></td>
+      <td align="center"><a href="#mybatis-setting">⚙️ MyBatis Mapper 설정</a></td>
+      <td align="center"><a href="#database-script">🗄 데이터베이스 스크립트</a></td>
+      <td align="center"><a href="#menu-structure">🗂 메뉴구조도</a></td>
+    </tr>
+    <tr>
+      <td align="center"><a href="#top">⬆ 맨 위로</a></td>
+      <td align="center"></td>
+      <td align="center"><a href="#artifact-summary">📎 프로젝트 산출물 요약</a></td>
+      <td align="center"><a href="#git-strategy">🌿 브랜치 전략 및 Git 규칙</a></td>
+    </tr>
+  </tbody>
+</table>
 
 > GitHub에서 항목을 클릭하면 해당 위치로 바로 이동합니다.
-
----
-
-
 
 ---
 
@@ -177,7 +213,7 @@ PostgreSQL 예약 확정
 
 ---
 
-<a id="stack"></a>
+<a id="stack-highlight"></a>
 ## 🛠 기술 스택 하이라이트
 
 ### Backend
@@ -204,7 +240,7 @@ PostgreSQL 예약 확정
 
 ---
 
-<a id="tech-detail"></a>
+<a id="stack-detail"></a>
 ## 💻 기술 스택 상세
 
 ### 프론트엔드
@@ -289,7 +325,7 @@ ev-charge-reservation/
 
 ---
 
-<a id="backend-structure"></a>
+<a id="backend-package"></a>
 ## 🧩 백엔드 패키지 구조
 
 ```text
@@ -337,7 +373,7 @@ src/main/webapp/WEB-INF/views
 
 ---
 
-<a id="mybatis"></a>
+<a id="mybatis-setting"></a>
 ## ⚙️ MyBatis Mapper 설정
 
 ```properties
@@ -349,8 +385,8 @@ DAO 인터페이스와 Mapper XML의 namespace를 일치시키고, 기능별 Map
 
 ---
 
+<a id="design-artifacts"></a>
 <details>
-<a id="design-docs"></a>
 <summary><strong>📁 프로젝트 설계 산출물</strong></summary>
 
 <br>
@@ -413,8 +449,8 @@ Spring Boot, PostgreSQL, PostGIS, Redis, 외부 API와 사용자 화면 사이�
 </details>
 
 ---
+<a id="demo-videos"></a>
 <details>
-<a id="videos"></a>
 <summary><strong>🎬 기능 시연 영상</strong></summary>
 
 <br>
@@ -575,8 +611,8 @@ EV Charge Reservation의 회원 기능, 차량 관리, 충전 예약, 소셜 로
 </details>
 
 ---
-<details>
 <a id="presentation"></a>
+<details>
 <summary><strong>🎤 최종 발표 자료</strong></summary>
 
 <br>
@@ -591,8 +627,8 @@ PDF 파일은 GitHub에서 바로 열거나 내려받을 수 있습니다.
 
 ---
 
+<a id="technical-document"></a>
 <details>
-<a id="technical-doc"></a>
 <summary><strong>📘 프로젝트 기술서</strong></summary>
 
 <br>
@@ -605,8 +641,8 @@ PDF 파일은 GitHub에서 바로 열거나 내려받을 수 있습니다.
 
 ---
 
+<a id="screen-design"></a>
 <details>
-<a id="screen-doc"></a>
 <summary><strong>🖥 화면설계서</strong></summary>
 
 <br>
@@ -621,8 +657,8 @@ PDF 파일은 GitHub에서 바로 열거나 내려받을 수 있습니다.
 
 ---
 
-<details>
 <a id="menu-structure"></a>
+<details>
 <summary><strong>🗂 메뉴구조도</strong></summary>
 
 <br>
@@ -637,8 +673,8 @@ PDF 파일은 GitHub에서 바로 열거나 내려받을 수 있습니다.
 
 ---
 
-<details>
 <a id="database-script"></a>
+<details>
 <summary><strong>🗄 데이터베이스 스크립트</strong></summary>
 
 <br>
@@ -667,8 +703,8 @@ ai_chat_message
 
 ---
 
+<a id="git-strategy"></a>
 <details>
-<a id="git"></a>
 <summary><strong>🌿 브랜치 전략 및 Git 규칙</strong></summary>
 
 <br>
@@ -718,8 +754,8 @@ chore: configure redis connection
 
 ---
 
+<a id="release-history"></a>
 <details>
-<a id="release"></a>
 <summary><strong>📦 릴리즈 내역</strong></summary>
 
 <br>
@@ -728,6 +764,15 @@ chore: configure redis connection
 |---|---|
 | **v1.0** | EV Charge Reservation 프로젝트 기본 완성 버전 |
 | **v1.1** | 소스 코드는 v1.0을 유지하고 README 및 프로젝트 산출물을 정리한 문서 개선 버전 |
+| **v1.11** | README 배너 아래 4열 분류형 목차와 섹션 바로가기를 추가한 문서 탐색 개선 버전 |
+
+### v1.11 변경 사항
+
+- README 배너 아래 `README 바로가기` 목차 추가
+- 목차를 `프로젝트 소개 / 핵심 구현 / 설계·화면 / 시연·문서` 4개 영역으로 분류
+- 각 목차 항목을 실제 README 섹션의 고정 앵커와 연결
+- 프로젝트 개요, 주요 기능, 기술 스택, 설계 산출물, 시연 영상 및 문서로 즉시 이동 가능
+- 기존 프로젝트 본문과 산출물 내용은 유지하고 문서 탐색 편의성 개선
 
 ### v1.1 변경 사항
 
@@ -773,8 +818,6 @@ chore: configure redis connection
 - AI API와 내부 DB를 연결한 사용자 맞춤형 답변 처리
 - Git 브랜치와 Pull Request 기반 팀 협업
 - 프로젝트 산출물 작성 및 GitHub 문서화
-
-<p align="right"><a href="#top">⬆ 맨 위로</a></p>
 
 ---
 
