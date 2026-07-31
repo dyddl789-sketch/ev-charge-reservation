@@ -1,3 +1,5 @@
+<a id="top"></a>
+
 <p align="center">
   <img
     src="docs/images/main-banner.png"
@@ -29,6 +31,22 @@
 
 ---
 
+## 🧭 README 바로가기
+
+| 프로젝트 소개 | 핵심 구현 | 설계·화면 | 시연·문서 |
+|---|---|---|---|
+| [📌 프로젝트 개요](#overview) | [🚀 주요 구현 기능](#features) | [🏗 시스템 아키텍처](#architecture) | [🎬 기능 시연 영상](#videos) |
+| [🔁 프로젝트 확장 배경](#background) | [🔄 핵심 업무 흐름](#workflow) | [🔄 업무 흐름도](#workflow-diagram) | [📁 프로젝트 산출물](#documents) |
+| [🎯 프로젝트 개발 목표](#goals) | [🔐 직책별 권한 구조](#roles) | [🗃 ERD](#erd) | [⚙️ 실행 방법](#run) |
+| [🛠 기술 스택](#stack) | [⭐ 핵심 기술 구현](#core-tech) | [🖥 주요 화면](#screens) | [🌿 Git·버전 관리](#git) |
+| [💻 기술 적용 상세](#tech-detail) | [🧩 주요 DB 테이블](#database) | [📂 프로젝트 구조](#structure) | [👨‍💻 담당 역할](#responsibility) |
+| [📝 프로젝트 경험](#retrospective) | [⬆ 맨 위로](#top) |  |  |
+
+> GitHub에서 항목을 클릭하면 해당 위치로 바로 이동합니다.
+
+---
+
+<a id="overview"></a>
 ## 📌 프로젝트 개요
 
 | 구분 | 내용 |
@@ -46,6 +64,7 @@
 
 ---
 
+<a id="background"></a>
 ## 🔁 프로젝트 확장 배경
 
 기존 2차 프로젝트는 차량 등록, 충전소 검색, 충전 예약, AI 충전 비서 등 **일반 사용자 중심의 예약 서비스**에 집중했습니다.
@@ -75,6 +94,7 @@ Public EV Charging Infrastructure MIS
 
 ---
 
+<a id="goals"></a>
 ## 🎯 프로젝트 개발 목표
 
 ### 사용자 서비스와 운영기관 MIS 통합
@@ -99,6 +119,7 @@ Public EV Charging Infrastructure MIS
 
 ---
 
+<a id="features"></a>
 ## 🚀 주요 구현 기능
 
 ### 👤 회원 및 인증
@@ -218,6 +239,7 @@ Public EV Charging Infrastructure MIS
 
 ---
 
+<a id="workflow"></a>
 ## 🔄 핵심 업무 흐름
 
 ### 사용자 예약 흐름
@@ -280,6 +302,7 @@ AI 민원 유형 분석
 
 ---
 
+<a id="roles"></a>
 ## 🔐 직책별 권한 구조
 
 | 권한 | 역할 | 주요 업무 |
@@ -292,6 +315,7 @@ AI 민원 유형 분석
 
 ---
 
+<a id="stack"></a>
 ## 🛠 기술 스택 하이라이트
 
 ### Frontend
@@ -320,6 +344,7 @@ AI 민원 유형 분석
 
 ---
 
+<a id="tech-detail"></a>
 ## 💻 기술 적용 상세
 
 | 기술 | 적용 내용 |
@@ -341,6 +366,7 @@ AI 민원 유형 분석
 
 ---
 
+<a id="core-tech"></a>
 ## ⭐ 핵심 기술 구현
 
 ### Redis 시간 구간 예약 선점
@@ -409,6 +435,7 @@ AI 민원 유형 분석
 
 ---
 
+<a id="architecture"></a>
 ## 🏗 시스템 아키텍처
 
 React 사용자 서비스와 관리자 MIS가 Spring Boot API를 호출하고, PostgreSQL·PostGIS·Redis 및 외부 API와 연동되는 전체 시스템 구조입니다.
@@ -428,6 +455,7 @@ React 사용자 서비스와 관리자 MIS가 Spring Boot API를 호출하고, P
 
 ---
 
+<a id="workflow-diagram"></a>
 ## 🔄 업무 흐름도
 
 사용자 서비스와 운영기관 MIS에서 민원, 장애, 점검, 결재, 조치 완료로 이어지는 업무 흐름입니다.
@@ -447,6 +475,7 @@ React 사용자 서비스와 관리자 MIS가 Spring Boot API를 호출하고, P
 
 ---
 
+<a id="erd"></a>
 ## 🗃 ERD
 
 기존 전기차 충전 예약 도메인과 MIS 확장 도메인의 테이블 관계를 통합한 ERD입니다.
@@ -466,6 +495,7 @@ React 사용자 서비스와 관리자 MIS가 Spring Boot API를 호출하고, P
 
 ---
 
+<a id="screens"></a>
 ## 🖥 주요 화면
 
 <table>
@@ -512,6 +542,7 @@ React 사용자 서비스와 관리자 MIS가 Spring Boot API를 호출하고, P
 ---
 
 <details open>
+<a id="videos"></a>
 <summary><strong>🎬 기능 시연 영상</strong></summary>
 
 <br>
@@ -666,6 +697,7 @@ React 사용자 서비스와 관리자 MIS가 Spring Boot API를 호출하고, P
 ---
 
 <details open>
+<a id="documents"></a>
 <summary><strong>📁 프로젝트 산출물</strong></summary>
 
 <br>
@@ -684,8 +716,11 @@ React 사용자 서비스와 관리자 MIS가 Spring Boot API를 호출하고, P
 
 </details>
 
+<p align="right"><a href="#top">⬆ 맨 위로</a></p>
+
 ---
 
+<a id="structure"></a>
 ## 📂 프로젝트 구조
 
 ```text
@@ -751,6 +786,7 @@ ev-charge-reservation/
 
 ---
 
+<a id="database"></a>
 ## 🧩 주요 데이터베이스 테이블
 
 ### 사용자 서비스
@@ -796,6 +832,7 @@ system_audit_log
 
 ---
 
+<a id="run"></a>
 ## ⚙️ 실행 방법
 
 ### Backend
@@ -852,6 +889,7 @@ kakao.rest-api.key=KAKAO_REST_API_KEY
 
 ---
 
+<a id="git"></a>
 ## 🌿 Git 브랜치 및 버전 관리
 
 ```text
@@ -888,6 +926,7 @@ Release 생성
 
 ---
 
+<a id="responsibility"></a>
 ## 👨‍💻 담당 역할
 
 - 프로젝트 주제 선정 및 기존 서비스 확장 방향 기획
@@ -906,6 +945,7 @@ Release 생성
 
 ---
 
+<a id="retrospective"></a>
 ## 📝 프로젝트 경험
 
 기존 전기차 충전 예약 서비스를 단순히 화면만 변경하는 수준이 아니라, 사용자 서비스와 운영기관의 실제 업무가 연결되는 MIS로 확장했습니다.
@@ -915,6 +955,8 @@ Release 생성
 또한 Redis 예약 선점, PostGIS 위치 검색, 공공데이터와 Kakao API 연동, Gemini 기반 AI 추천·분류 기능을 적용하며 기능 구현뿐 아니라 동시성, 데이터 일관성, 권한 분리, 예외 처리와 사용자 경험을 함께 고려했습니다.
 
 팀원의 조기 취업으로 프로젝트 후반을 1인 프로젝트로 진행했지만, 기획부터 개발, 테스트, Git 관리, 산출물 정리까지 끝까지 완성하며 전체 시스템을 스스로 통합하고 문제를 해결하는 경험을 쌓았습니다.
+
+<p align="right"><a href="#top">⬆ 맨 위로</a></p>
 
 ---
 
