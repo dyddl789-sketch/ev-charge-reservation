@@ -18,7 +18,7 @@
   <img src="https://img.shields.io/badge/MyBatis-Mapper-000000?style=flat-square">
 </p>
 
-<!--
+
 메인 배너 제작 후 아래 주석을 해제합니다.
 
 <p align="center">
@@ -26,7 +26,7 @@
        alt="EV Charge Reservation"
        width="100%">
 </p>
--->
+
 
 ---
 
@@ -330,30 +330,221 @@ DAO 인터페이스와 Mapper XML의 namespace를 일치시키고, 기능별 Map
 
 사용자의 회원가입부터 차량 등록, 충전소 검색, 예약 및 충전 완료까지의 업무 흐름을 정리한 문서입니다.
 
-- [업무 흐름도 원본 열기](<docs/images/개선 업무흐름도.drawio.png>)
+<p align="center">
+  <a href="docs/images/개선%20업무흐름도.drawio.png">
+    <img
+      src="docs/images/개선%20업무흐름도.drawio.png"
+      alt="EV Charge 업무 흐름도"
+      width="100%">
+  </a>
+</p>
 
-> `.drawio` 파일은 GitHub에서 바로 미리보기되지 않을 수 있으며, 파일을 내려받아 draw.io에서 열 수 있습니다.
+<p align="center">
+  이미지를 클릭하면 원본 크기로 확인할 수 있습니다.
+</p>
 
 ---
 
 ### 📌 시스템 아키텍처도
 
-Spring Boot, PostgreSQL, PostGIS, Redis, 외부 API 및 사용자 화면 간 연결 구조를 정리한 문서입니다.
+Spring Boot, PostgreSQL, PostGIS, Redis, 외부 API와 사용자 화면 사이의 연결 구조를 정리한 문서입니다.
 
-- [시스템 아키텍처도 원본 열기](docs/images/ev_charging_system_architecture.drawio.png)
+<p align="center">
+  <a href="docs/images/ev_charging_system_architecture.drawio.png">
+    <img
+      src="docs/images/ev_charging_system_architecture.drawio.png"
+      alt="EV Charge 시스템 아키텍처도"
+      width="100%">
+  </a>
+</p>
+
+<p align="center">
+  이미지를 클릭하면 원본 크기로 확인할 수 있습니다.
+</p>
 
 ---
 
 ### 📌 ERD
 
-회원, 차량, 차량 모델, 충전소, 충전기, 예약, 충전 세션 및 AI 채팅 테이블의 관계를 정리한 문서입니다.
+회원, 차량 모델, 등록 차량, 충전소, 충전기, 예약, 충전 세션 및 AI 채팅 테이블의 관계를 정리한 문서입니다.
 
-- [ERD 원본 열기](docs/images/ev-charge-erd.drawio.png)
+<p align="center">
+  <a href="docs/images/ev-charge-erd.drawio.png">
+    <img
+      src="docs/images/ev-charge-erd.drawio.png"
+      alt="EV Charge ERD"
+      width="100%">
+  </a>
+</p>
+
+<p align="center">
+  이미지를 클릭하면 원본 크기로 확인할 수 있습니다.
+</p>
 
 </details>
 
 ---
+<details>
+<summary><strong>🎬 기능 시연 영상</strong></summary>
 
+<br>
+
+EV Charge Reservation의 회원 기능, 차량 관리, 충전 예약, 소셜 로그인 및 AI 챗봇 기능을 영상으로 확인할 수 있습니다.
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <a href="https://youtu.be/yGGrbDCZpjM">
+        <img
+          src="https://img.youtube.com/vi/yGGrbDCZpjM/hqdefault.jpg"
+          alt="회원가입 로그인 회원정보 변경 시연"
+          width="100%">
+      </a>
+      <br>
+      <strong>👤 회원가입·로그인·회원정보 변경</strong>
+      <br>
+      <sub>회원가입부터 로그인, 프로필 및 회원정보 변경까지의 전체 흐름</sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="https://youtu.be/LicAmI7OQ18">
+        <img
+          src="https://img.youtube.com/vi/LicAmI7OQ18/hqdefault.jpg"
+          alt="카카오 소셜 로그인 시연"
+          width="100%">
+      </a>
+      <br>
+      <strong>🔐 카카오 소셜 로그인</strong>
+      <br>
+      <sub>Spring Security와 OAuth2 기반 카카오 로그인 및 회원 연동</sub>
+    </td>
+  </tr>
+
+  <tr>
+    <td width="50%" align="center">
+      <a href="https://youtu.be/FBk7_kQA41A">
+        <img
+          src="https://img.youtube.com/vi/FBk7_kQA41A/hqdefault.jpg"
+          alt="차량 등록 삭제 시연"
+          width="100%">
+      </a>
+      <br>
+      <strong>🚗 차량 등록·대표 차량 설정·삭제</strong>
+      <br>
+      <sub>차량 모델 선택, 차량 등록, 대표 차량 변경 및 논리 삭제 처리</sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="https://youtu.be/2Wy5XDkOfyo">
+        <img
+          src="https://img.youtube.com/vi/2Wy5XDkOfyo/hqdefault.jpg"
+          alt="충전소 검색 예약 시연"
+          width="100%">
+      </a>
+      <br>
+      <strong>⚡ 충전소 검색 및 충전 예약</strong>
+      <br>
+      <sub>충전소와 충전기 조회, 예약 정보 입력 및 충전 예약 진행</sub>
+    </td>
+  </tr>
+
+  <tr>
+    <td colspan="2" align="center">
+      <a href="https://youtu.be/fDlL7uip6bo">
+        <img
+          src="https://img.youtube.com/vi/fDlL7uip6bo/hqdefault.jpg"
+          alt="EV Charge AI 챗봇 시연"
+          width="60%">
+      </a>
+      <br>
+      <strong>🤖 EV Charge AI 챗봇</strong>
+      <br>
+      <sub>사용자 질문 분석, 차량 정보 연동, 충전소 추천 및 충전 시간·비용 안내</sub>
+    </td>
+  </tr>
+</table>
+
+<br>
+
+### 📋 영상별 주요 시연 내용
+
+#### 1. 회원가입·로그인·회원정보 변경
+
+- 회원가입 입력값 검증
+- 아이디·닉네임·이메일·휴대폰 중복 확인
+- 이메일 인증번호 발송 및 확인
+- 프로필 이미지 등록 및 미리보기
+- 일반 로그인 및 로그인 실패 메시지
+- 닉네임·비밀번호·프로필 이미지 변경
+- 변경된 회원정보의 화면 즉시 반영
+
+<p>
+  ▶ <a href="https://youtu.be/yGGrbDCZpjM"><strong>회원가입·로그인·회원정보 변경 영상 보기</strong></a>
+</p>
+
+---
+
+#### 2. 카카오 소셜 로그인
+
+- 카카오 OAuth2 로그인 요청
+- 카카오 사용자 인증 및 동의
+- 소셜 회원 정보 조회 또는 자동 등록
+- Spring Security 인증 객체 생성
+- 로그인 성공 후 서비스 화면 이동
+
+<p>
+  ▶ <a href="https://youtu.be/LicAmI7OQ18"><strong>카카오 소셜 로그인 영상 보기</strong></a>
+</p>
+
+---
+
+#### 3. 차량 등록·대표 차량 설정·삭제
+
+- 차량 모델 마스터 기반 차량 선택
+- 차량 별칭 및 차량번호 등록
+- 대표 차량 설정
+- AJAX 기반 대표 차량 즉시 변경
+- 차량 목록 및 대표 차량 정보 갱신
+- 물리 삭제가 아닌 논리 삭제 적용
+
+<p>
+  ▶ <a href="https://youtu.be/FBk7_kQA41A"><strong>차량 등록·삭제 영상 보기</strong></a>
+</p>
+
+---
+
+#### 4. 충전소 검색 및 충전 예약
+
+- 사용자 위치 기준 충전소 조회
+- 차량 커넥터와 호환되는 충전기 확인
+- 충전기 상태와 충전 요금 확인
+- 현재 배터리와 목표 배터리 입력
+- 예상 충전량·시간·비용 계산
+- 예약 가능 시간 확인 및 예약 진행
+- Redis 기반 예약 선점과 중복 예약 방지
+
+<p>
+  ▶ <a href="https://youtu.be/2Wy5XDkOfyo"><strong>충전소 검색·예약 영상 보기</strong></a>
+</p>
+
+---
+
+#### 5. EV Charge AI 챗봇
+
+- 사용자별 AI 채팅방 및 대화 저장
+- 이전 대화 불러오기
+- 사용자 질문 Intent 분석
+- 대표 차량과 기본 위치 정보 연동
+- 차량에 맞는 주변 충전소 추천
+- 현재·목표 배터리 기준 충전 시간 계산
+- 충전기 요금을 활용한 예상 비용 계산
+- 실제 DB 조회 결과 기반 AI 답변 생성
+
+<p>
+  ▶ <a href="https://youtu.be/fDlL7uip6bo"><strong>AI 챗봇 시연 영상 보기</strong></a>
+</p>
+
+</details>
+
+---
 <details>
 <summary><strong>🎤 최종 발표 자료</strong></summary>
 
