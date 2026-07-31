@@ -330,7 +330,7 @@ DAO 인터페이스와 Mapper XML의 namespace를 일치시키고, 기능별 Map
 
 사용자의 회원가입부터 차량 등록, 충전소 검색, 예약 및 충전 완료까지의 업무 흐름을 정리한 문서입니다.
 
-- [업무 흐름도 원본 열기](<docs/images/개선 업무흐름도 .drawio>)
+- [업무 흐름도 원본 열기](<docs/images/개선 업무흐름도.drawio.png>)
 
 > `.drawio` 파일은 GitHub에서 바로 미리보기되지 않을 수 있으며, 파일을 내려받아 draw.io에서 열 수 있습니다.
 
@@ -340,7 +340,7 @@ DAO 인터페이스와 Mapper XML의 namespace를 일치시키고, 기능별 Map
 
 Spring Boot, PostgreSQL, PostGIS, Redis, 외부 API 및 사용자 화면 간 연결 구조를 정리한 문서입니다.
 
-- [시스템 아키텍처도 원본 열기](docs/images/ev_charging_system_architecture.drawio)
+- [시스템 아키텍처도 원본 열기](docs/images/ev_charging_system_architecture.drawio.png)
 
 ---
 
@@ -348,7 +348,7 @@ Spring Boot, PostgreSQL, PostGIS, Redis, 외부 API 및 사용자 화면 간 연
 
 회원, 차량, 차량 모델, 충전소, 충전기, 예약, 충전 세션 및 AI 채팅 테이블의 관계를 정리한 문서입니다.
 
-- [ERD 원본 열기](docs/images/ev-charge-erd.drawio)
+- [ERD 원본 열기](docs/images/ev-charge-erd.drawio.png)
 
 </details>
 
@@ -361,7 +361,7 @@ Spring Boot, PostgreSQL, PostGIS, Redis, 외부 API 및 사용자 화면 간 연
 
 프로젝트 기획 배경, 시스템 구성, 주요 구현 기능, DB 설계 및 개발 결과를 정리한 최종 발표 자료입니다.
 
-- [최종 발표 자료 보기](<docs/ppt/최종보고서 2팀.pdf>)
+- [최종 발표 자료 보기](<docs/ppt/최종보고서_2팀.pdf>)
 
 PDF 파일은 GitHub에서 바로 열거나 내려받을 수 있습니다.
 
@@ -376,7 +376,7 @@ PDF 파일은 GitHub에서 바로 열거나 내려받을 수 있습니다.
 
 프로젝트 개요, 사용 기술, 주요 기능, 구현 과정 및 프로젝트 결과를 정리한 기술 문서입니다.
 
-- [프로젝트 기술서 보기](docs/프로젝트기술서.pdf)
+- [프로젝트 기술서 보기](docs/프로그램기술서.pdf)
 
 </details>
 
@@ -419,7 +419,7 @@ PDF 파일은 GitHub에서 바로 열거나 내려받을 수 있습니다.
 
 회원, 차량, 충전소, 충전기, 예약, 충전 세션, 즐겨찾기 및 AI 채팅 테이블 생성문을 포함합니다.
 
-- [EV-CHARGE.SQL 보기](database/EV-CHARGE.SQL)
+- [EV-CHARGE.SQL 보기](database/schema.sql)
 
 ### 주요 테이블
 
@@ -520,14 +520,14 @@ chore: configure redis connection
 
 | 산출물 | 파일 |
 |---|---|
-| 업무 흐름도 | [개선 업무흐름도.drawio](<docs/images/개선 업무흐름도 .drawio>) |
-| 시스템 아키텍처도 | [ev_charging_system_architecture.drawio](docs/images/ev_charging_system_architecture.drawio) |
-| ERD | [ev-charge-erd.drawio](docs/images/ev-charge-erd.drawio) |
-| 최종 발표 자료 | [최종보고서 2팀.pdf](<docs/ppt/최종보고서 2팀.pdf>) |
-| 프로젝트 기술서 | [프로젝트기술서.pdf](docs/프로젝트기술서.pdf) |
+| 업무 흐름도 | [개선 업무흐름도.drawio](<docs/images/개선 업무흐름도.drawio.png>) |
+| 시스템 아키텍처도 | [ev_charging_system_architecture.drawio](docs/images/ev_charging_system_architecture.drawio.png) |
+| ERD | [ev-charge-erd.drawio](docs/images/ev-charge-erd.drawio.png) |
+| 최종 발표 자료 | [최종보고서 2팀.pdf](<docs/ppt/최종보고서_2팀.pdf>) |
+| 프로젝트 기술서 | [프로젝트기술서.pdf](docs/프로그램기술서.pdf) |
 | 화면설계서 | [화면설계서.odp](docs/화면설계서.odp) |
 | 메뉴구조도 | [EV_Charge_메뉴구조도.xlsx](docs/EV_Charge_메뉴구조도.xlsx) |
-| DB 스크립트 | [EV-CHARGE.SQL](database/EV-CHARGE.SQL) |
+| DB 스크립트 | [EV-CHARGE.SQL](database/schema.sql) |
 
 ---
 
