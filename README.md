@@ -1,3 +1,5 @@
+<a id="top"></a>
+
 # ⚡ EV Charge Reservation
 
 <p align="center">
@@ -19,7 +21,6 @@
 </p>
 
 
-메인 배너 제작 후 아래 주석을 해제합니다.
 
 <p align="center">
   <img src="docs/images/ev-charge-main-banner.png"
@@ -27,9 +28,26 @@
        width="100%">
 </p>
 
+## 🧭 README 바로가기
+
+| 프로젝트 소개 | 기능·기술 | 설계·구조 | 시연·산출물 |
+|---|---|---|---|
+| [📌 프로젝트 개요](#overview) | [🚀 주요 구현 기능](#features) | [📂 프로젝트 구조](#project-structure) | [🎬 기능 시연 영상](#videos) |
+| [📍 프로젝트 개발 목표](#goals) | [🔄 서비스 이용 흐름](#service-flow) | [🧩 백엔드 패키지 구조](#backend-structure) | [📁 프로젝트 설계 산출물](#design-docs) |
+| [🛠 기술 스택](#stack) | [💻 기술 스택 상세](#tech-detail) | [📁 Resource 구조](#resource-structure) | [🎤 최종 발표 자료](#presentation) |
+| [🗃 데이터 저장 기준](#data-storage) | [⚙️ MyBatis 설정](#mybatis) | [🗄 데이터베이스 스크립트](#database-script) | [📘 프로젝트 기술서](#technical-doc) |
+| [🌿 Git 규칙](#git) | [📦 릴리즈 내역](#release) | [📎 산출물 요약](#artifact-summary) | [🖥 화면설계서](#screen-doc) |
+| [💡 프로젝트 경험](#experience) | [⬆ 맨 위로](#top) |  | [🗂 메뉴구조도](#menu-structure) |
+
+> GitHub에서 항목을 클릭하면 해당 위치로 바로 이동합니다.
 
 ---
 
+
+
+---
+
+<a id="overview"></a>
 ## 📌 프로젝트 개요
 
 | 구분 | 내용 |
@@ -45,6 +63,7 @@
 
 ---
 
+<a id="goals"></a>
 ## 📍 프로젝트 개발 목표
 
 ### 전기차 충전 서비스의 전체 흐름 구현
@@ -69,6 +88,7 @@ Controller, Service, DAO, Mapper를 역할별로 분리하고 공통 네이밍 �
 
 ---
 
+<a id="features"></a>
 ## 🚀 주요 구현 기능
 
 ### 회원 및 인증
@@ -130,6 +150,7 @@ Controller, Service, DAO, Mapper를 역할별로 분리하고 공통 네이밍 �
 
 ---
 
+<a id="service-flow"></a>
 ## 🔄 서비스 이용 흐름
 
 ```text
@@ -156,6 +177,7 @@ PostgreSQL 예약 확정
 
 ---
 
+<a id="stack"></a>
 ## 🛠 기술 스택 하이라이트
 
 ### Backend
@@ -182,6 +204,7 @@ PostgreSQL 예약 확정
 
 ---
 
+<a id="tech-detail"></a>
 ## 💻 기술 스택 상세
 
 ### 프론트엔드
@@ -216,6 +239,7 @@ PostgreSQL 예약 확정
 
 ---
 
+<a id="data-storage"></a>
 ## 🗃 데이터 저장 기준
 
 | 데이터 성격 | 저장 위치 |
@@ -238,6 +262,7 @@ Redis
 
 ---
 
+<a id="project-structure"></a>
 ## 📂 프로젝트 구조
 
 ```text
@@ -264,6 +289,7 @@ ev-charge-reservation/
 
 ---
 
+<a id="backend-structure"></a>
 ## 🧩 백엔드 패키지 구조
 
 ```text
@@ -285,6 +311,7 @@ com.ev
 
 ---
 
+<a id="resource-structure"></a>
 ## 📁 Resource 구조
 
 ```text
@@ -310,6 +337,7 @@ src/main/webapp/WEB-INF/views
 
 ---
 
+<a id="mybatis"></a>
 ## ⚙️ MyBatis Mapper 설정
 
 ```properties
@@ -322,6 +350,7 @@ DAO 인터페이스와 Mapper XML의 namespace를 일치시키고, 기능별 Map
 ---
 
 <details>
+<a id="design-docs"></a>
 <summary><strong>📁 프로젝트 설계 산출물</strong></summary>
 
 <br>
@@ -385,6 +414,7 @@ Spring Boot, PostgreSQL, PostGIS, Redis, 외부 API와 사용자 화면 사이�
 
 ---
 <details>
+<a id="videos"></a>
 <summary><strong>🎬 기능 시연 영상</strong></summary>
 
 <br>
@@ -546,6 +576,7 @@ EV Charge Reservation의 회원 기능, 차량 관리, 충전 예약, 소셜 로
 
 ---
 <details>
+<a id="presentation"></a>
 <summary><strong>🎤 최종 발표 자료</strong></summary>
 
 <br>
@@ -561,6 +592,7 @@ PDF 파일은 GitHub에서 바로 열거나 내려받을 수 있습니다.
 ---
 
 <details>
+<a id="technical-doc"></a>
 <summary><strong>📘 프로젝트 기술서</strong></summary>
 
 <br>
@@ -574,6 +606,7 @@ PDF 파일은 GitHub에서 바로 열거나 내려받을 수 있습니다.
 ---
 
 <details>
+<a id="screen-doc"></a>
 <summary><strong>🖥 화면설계서</strong></summary>
 
 <br>
@@ -589,6 +622,7 @@ PDF 파일은 GitHub에서 바로 열거나 내려받을 수 있습니다.
 ---
 
 <details>
+<a id="menu-structure"></a>
 <summary><strong>🗂 메뉴구조도</strong></summary>
 
 <br>
@@ -604,6 +638,7 @@ PDF 파일은 GitHub에서 바로 열거나 내려받을 수 있습니다.
 ---
 
 <details>
+<a id="database-script"></a>
 <summary><strong>🗄 데이터베이스 스크립트</strong></summary>
 
 <br>
@@ -633,6 +668,7 @@ ai_chat_message
 ---
 
 <details>
+<a id="git"></a>
 <summary><strong>🌿 브랜치 전략 및 Git 규칙</strong></summary>
 
 <br>
@@ -683,6 +719,7 @@ chore: configure redis connection
 ---
 
 <details>
+<a id="release"></a>
 <summary><strong>📦 릴리즈 내역</strong></summary>
 
 <br>
@@ -707,6 +744,7 @@ chore: configure redis connection
 
 ---
 
+<a id="artifact-summary"></a>
 ## 📎 프로젝트 산출물 요약
 
 | 산출물 | 파일 |
@@ -722,6 +760,7 @@ chore: configure redis connection
 
 ---
 
+<a id="experience"></a>
 ## 💡 프로젝트를 통해 경험한 내용
 
 - Spring Boot 기반 계층형 웹 애플리케이션 설계
@@ -734,6 +773,8 @@ chore: configure redis connection
 - AI API와 내부 DB를 연결한 사용자 맞춤형 답변 처리
 - Git 브랜치와 Pull Request 기반 팀 협업
 - 프로젝트 산출물 작성 및 GitHub 문서화
+
+<p align="right"><a href="#top">⬆ 맨 위로</a></p>
 
 ---
 
